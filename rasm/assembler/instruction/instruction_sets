@@ -1,6 +1,0 @@
-arithmetic.h       // 算术指令
-logical.h         // 逻辑指令
-control_flow.h    // 控制流指令
-data_transfer.h   // 数据传输指令
-floating_point.h  // 浮点指令
-system.h          // 系统指令 

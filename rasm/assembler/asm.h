@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
 #include "assembler/utils/targetPlat.h"
 #include "assembler/parser.h"
 #include "assembler/objectfile.h"
@@ -16,10 +17,17 @@ namespace Ryntra::rasm {
     class RAssembler {
     public:
         RAssembler() {
-            ErrorHandler::getInstance().clear(); // 清除之前的错误信息
+            ErrorHandler::getInstance().clear();
         }
 
         // 从文件汇编
+        /**
+         * @brief Assemble from a source file.
+         *
+         * @param inputFile - The file you want to assemble.
+         * @param targetPlatform - Which platform? x86 or x64?
+         * @return The Status of Assembling.
+         */
         bool assemble(const std::string &inputFile, TargetPlatform targetPlatform) {
             std::ifstream file(inputFile);
             if (!file.is_open()) {
@@ -32,22 +40,25 @@ namespace Ryntra::rasm {
             return assembleFromString(buffer.str(), targetPlatform);
         }
 
-        // 从字符串汇编
+        /**
+         * @brief Assemble from a source code string.
+         *
+         * @param sourceCode - The Source Code String
+         * @param targetPlatform - Which platform? x86 or x64?
+         * @return The Status of Assembling.
+         */
         bool assembleFromString(const std::string &sourceCode, TargetPlatform targetPlatform) {
             auto& errorHandler = ErrorHandler::getInstance();
             auto instructions = Parser::parse(sourceCode);
             
-            // 打印解析结果
             errorHandler.addInfo("Parse " + std::to_string(instructions.size()) + " Instruction(s)");
             
             for (const auto& inst : instructions) {
                 std::cout << "\nInstruction: " << inst.mnemonic << std::endl;
                 printInstructionType(inst.type);
                 
-                // 检查是否是 mul/div 指令，添加隐式操作数
                 if (inst.type == InstructionType::MUL || inst.type == InstructionType::DIV) {
                     std::cout << "Operand: " << (inst.operands.size() + 1) << " (s)" << std::endl;
-                    // 打印隐式操作数 RAX/EAX
                     Operand implicitOp;
                     implicitOp.type = OperandType::Register;
                     implicitOp.reg = (targetPlatform == TargetPlatform::x64) ? RegisterType::RAX : RegisterType::EAX;
@@ -57,10 +68,8 @@ namespace Ryntra::rasm {
                     std::cout << "Operand: " << inst.operands.size() << " (s)" << std::endl;
                 }
 
-                // 打印常规操作数
                 for (const auto& op : inst.operands) {
-                    // 检查 x64 模式下的 # 前缀
-                    if (targetPlatform == TargetPlatform::x64 && 
+                    if (targetPlatform == TargetPlatform::x64 &&
                         op.type == OperandType::Immediate && 
                         op.value[0] == '#') {
                         errorHandler.addWarning("'#' prefix is not needed in x64 mode for immediate value");
@@ -69,15 +78,17 @@ namespace Ryntra::rasm {
                 }
             }
             
-            // 打印所有错误和警告
             errorHandler.printAll();
-            
-            // 如果有错误，返回false
             return !errorHandler.hasErrorMessages();
         }
 
     private:
-        // 辅助函数：打印操作数信息
+        /**
+         * @brief Helper method, print all the operands of the instruction in Assembly File.
+         *
+         * @param op - The operand.
+         * @param isImplicit - Is this operand implicit? Just like `mul` or `div`.
+         */
         void printOperand(const Operand& op, bool isImplicit) const {
             std::cout << "    Type: ";
             switch (op.type) {
@@ -98,7 +109,11 @@ namespace Ryntra::rasm {
             std::cout << std::endl;
         }
 
-        // 辅助函数：打印指令类型
+        /**
+         * @brief Helper method, print the instruction type.
+         *
+         * @param type - The Instruction Type you want to print to the console.
+         */
         void printInstructionType(InstructionType type) const {
             std::cout << "Instruction Type: ";
             switch (type) {

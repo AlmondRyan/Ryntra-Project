@@ -1,7 +1,9 @@
 #pragma once
+
 #include <string>
 #include <vector>
-#include "instruction.h"
+
+#include "assembler/instruction.h"
 
 namespace Ryntra::rasm {
     class ObjectFileWriter {
@@ -9,4 +11,4 @@ namespace Ryntra::rasm {
         static bool writeToFile(const std::string& filename, 
                               const std::vector<Instruction>& instructions);
     };
-} 
+}

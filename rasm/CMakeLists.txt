@@ -4,11 +4,9 @@ add_executable(
         assembler/asm.h
         assembler/utils/targetPlat.h
         assembler/instruction.h
-#        assembler/instruction.cpp
         assembler/parser.h
         assembler/parser.cpp
         assembler/objectfile.h
-#        assembler/objectfile.cpp
         assembler/Error/errorhandling.h
 
         assembler/instruction/instruction_base.h
@@ -16,6 +14,7 @@ add_executable(
         assembler/instruction/instruction_types.h
         assembler/instruction/instructions.h
         assembler/instruction/registers.h
+        assembler/instruction/instruction_sets/arithmetic.h
 )
 
 include_directories(rasm/assembler)
