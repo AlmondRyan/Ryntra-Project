@@ -19,7 +19,7 @@ namespace Ryntra::rasm {
         void print() const {
             switch (type) {
                 case MessageType::Error:
-                    std::cout << "[Error] ";
+                    std::cout << "[error] ";
                     break;
                 case MessageType::Warning:
                     std::cout << "[Warning] ";

@@ -9,6 +9,7 @@
 #include "assembler/parser.h"
 #include "assembler/objectfile.h"
 #include "assembler/Error/errorhandling.h"
+#include "assembler/utils/path_utils.h"
 
 namespace Ryntra::rasm {
     /**
@@ -37,7 +38,25 @@ namespace Ryntra::rasm {
 
             std::stringstream buffer;
             buffer << file.rdbuf();
-            return assembleFromString(buffer.str(), targetPlatform);
+            
+            // 获取输出文件名（将.asm替换为.obj）
+            std::string outputFile = inputFile;
+            size_t extPos = outputFile.rfind('.');
+            if (extPos != std::string::npos) {
+                outputFile = outputFile.substr(0, extPos);
+            }
+            outputFile += ".obj";
+
+            bool success = assembleFromString(buffer.str(), targetPlatform);
+            if (success) {
+                // 生成目标文件
+                success = ObjectFileWriter::writeToFile(outputFile, 
+                                                      Parser::getSections(),
+                                                      Parser::getDataDefinitions(),
+                                                      Parser::getSymbols());
+            }
+
+            return success;
         }
 
         /**
@@ -76,6 +95,17 @@ namespace Ryntra::rasm {
                     }
                     printOperand(op, false);
                 }
+            }
+            
+            // 生成目标文件
+            std::string outputPath = PathUtils::generateOutputFilename("output");
+            bool success = ObjectFileWriter::writeToFile(outputPath,
+                                                       Parser::getSections(),
+                                                       Parser::getDataDefinitions(),
+                                                       Parser::getSymbols());
+
+            if (success) {
+                errorHandler.addInfo("Generated object file: " + outputPath);
             }
             
             errorHandler.printAll();
@@ -122,6 +152,9 @@ namespace Ryntra::rasm {
                 case InstructionType::SUB: std::cout << "SUB"; break;
                 case InstructionType::MUL: std::cout << "MUL"; break;
                 case InstructionType::DIV: std::cout << "DIV"; break;
+                case InstructionType::INC: std::cout << "INC"; break;
+                case InstructionType::DEC: std::cout << "DEC"; break;
+                case InstructionType::NEG: std::cout << "NEG"; break;
                 // Logical Operation
                 case InstructionType::AND: std::cout << "AND"; break;
                 case InstructionType::OR:  std::cout << "OR";  break;
@@ -171,7 +204,7 @@ namespace Ryntra::rasm {
                 case InstructionType::IRET:    std::cout << "IRET"; break;
                 case InstructionType::HLT:     std::cout << "HLT"; break;
                 // Unknown
-                case InstructionType::Unknown: std::cout << "Unknown"; break;
+                default: std::cout << "Unknown"; break;
             }
             std::cout << std::endl;
         }
