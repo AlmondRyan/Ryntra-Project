@@ -1,0 +1,38 @@
+// 单行注释，以 `//` 开头
+// This is single line comment.
+
+// 块注释，以 `/*` 开头，`*/` 结尾
+// 特殊的是，Doxygen 注释以 `/**` 开头，`*/` 结尾
+/*
+ * This is block comment.
+*/
+
+// 这里，定义一个包，域名是 `org.almondryan`，包名是 `ryntra-test`
+// declare 是一个内置的关键字，用来声明一些东西，这里是声明包名，其中 `package` 也是关键字
+// 包名的格式和 Java 一样，必须是反域名的形式
+// Ryntra 和 Java 包名的不一样的点，是 Java 的包必须让 `src` 文件夹下的结构和包名的结构一样，而 Ryntra 采用的是
+// `Ryntra_Manifest` 文件，这个文件声明在源文件的目录，其中声明了当前文件夹的包名 Prefix，然后里面的文件可以自由组合
+// 如果文件夹下有 `Ryntra_Manifest`（没有扩展名），就默认这个文件夹是 Ryntra 的软件包
+// 如果有 `@SingleSource` 注解，那么不要检查是否有 `Ryntra_Manifest` 这个文件，告诉编译器这个只有一个源文件
+@SingleSource
+declare(package) org.almondryan.ryntra-test;
+
+// `import` 是关键字，导入包或标准库
+// 标准库永远以 `ryntra.` 开头，这是一个保留包域名，所有开发者不可以定义 `ryntra.` 开头的域名
+// 这里引入了 `IO` 这个子包，负责 `stdin` 和 `stdout` 的操作
+import ryntra.IO;
+
+// 所有程序必须有一个类
+// Identifier 的要求：
+// 1. 不允许以数字开头
+// 2. 不允许用保留关键字或关键字作为 Identifier
+// 3. 长度不做限制
+public class HelloWorld {
+    // 所有程序都必须有且只有一个入口函数，签名必须是 `public static int main()` 或 `public static int main(string[] args)`
+    public static int main() {
+        // 这里调用了 IO 子包里的 print() 函数，用来向 `stdout` 输出信息
+        IO.print("Hello World!");
+        // 程序正常结束，返回 `0`
+        return 0;
+    }
+}

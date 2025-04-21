@@ -1,0 +1,15 @@
+// This is single line comment.
+/*
+ * This is block comment.
+*/
+@SingleSource
+declare(package) org.almondryan.ryntra-test;
+
+import ryntra.IO;
+
+public class HelloWorld {
+    public static int main() {
+        IO.print("Hello World!");
+        return 0;
+    }
+}
