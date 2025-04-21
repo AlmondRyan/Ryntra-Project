@@ -8,7 +8,7 @@ BreakBeforeBraces: Attach
 # Align consecutive declarations.
 AlignConsecutiveDeclarations: true
 
-# No column limit to ensure alignment is not broken by wrapping.
+# No column limit to ensure wrapping does not break alignment.
 ColumnLimit: 0
 BreakConstructorInitializers: BeforeColon
 FixNamespaceComments: true
