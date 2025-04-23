@@ -2,7 +2,6 @@
 #include <vector>
 
 namespace Ryntra::Compiler {
-
     Lexer::Lexer(std::string_view source)
         : source_(source), start_(0), current_(0), line_(1) {
         initKeywords();

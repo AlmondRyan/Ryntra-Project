@@ -2,30 +2,50 @@ cmake_minimum_required(VERSION 3.20)
 project(RyntraProject)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-message(STATUS "[Ryntra Project]: WARNING: This project uses LLVM Project that I \"Almond Ryan\" built on my computer."
-        "So if you want to build Ryntra Project on your computer, you must make sure you have an built"
-        "version of LLVM project on your computer, and change LLVM_DIR variable that pointed to your LLVM Build."
-)
+# 定义支持的子项目列表
+set(RYNTRA_SUPPORT_PROJECTS "rylink" "ryntra-compiler" "ryntra-optimizer" "rive" "rikamo" "rynd")
+set(RYNTRA_ENABLE_BUILD_PROJECTS "" CACHE STRING "List of projects you want to build, separated by semicolon (e.g. rylink;rive). Use 'all' to build all the projects.")
 
-set(LLVM_DIR "E:/llvm-toolchain-install/lib/cmake/llvm")
+# LLVM配置
+set(LLVM_DIR "E:/llvm-toolchain-install/lib/cmake/llvm" CACHE PATH "LLVM installation directory")
 message(STATUS "Looking for LLVM in: ${LLVM_DIR}")
 
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "LLVM Include dirs: ${LLVM_INCLUDE_DIRS}")
 
-# 明确指定需要的LLVM组件
-llvm_map_components_to_libnames(llvm_libs
-        core support irreader passes analysis transformutils scalaropts
+# 定义全局LLVM组件
+set(RYNTRA_LLVM_COMPONENTS
+    core
+    support
+    irreader
+    passes
+    analysis
+    transformutils
+    scalaropts
 )
-message(STATUS "Using LLVM libraries: ${llvm_libs}")
 
-#add_executable(RyntraProject tst.cpp)
+llvm_map_components_to_libnames(RYNTRA_LLVM_LIBS ${RYNTRA_LLVM_COMPONENTS})
+message(STATUS "Using LLVM libraries: ${RYNTRA_LLVM_LIBS}")
 
-#target_include_directories(RyntraProject PRIVATE ${LLVM_INCLUDE_DIRS})
-#target_compile_definitions(RyntraProject PRIVATE ${LLVM_DEFINITIONS})
+add_subdirectory(ryntra-compiler)
 
-add_subdirectory(Rycc/)
-
-#target_link_libraries(RyntraProject PRIVATE ${llvm_libs})
+if (RYNTRA_ENABLE_BUILD_PROJECTS STREQUAL "all")
+    foreach(project IN LISTS RYNTRA_SUPPORT_PROJECTS)
+        if(NOT project STREQUAL "ryntra-compiler")
+            add_subdirectory(${project})
+        endif()
+    endforeach()
+else()
+    if(NOT "${RYNTRA_ENABLE_BUILD_PROJECTS}" STREQUAL "")
+        foreach(project IN LISTS RYNTRA_ENABLE_BUILD_PROJECTS)
+            if(NOT project STREQUAL "ryntra-compiler" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${project}")
+                message(STATUS "Enable Building: ${project}")
+                add_subdirectory(${project})
+            endif()
+        endforeach()
+    endif()
+endif()
