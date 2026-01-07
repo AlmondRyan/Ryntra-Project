@@ -1,0 +1,55 @@
+
+// Generated from ./antlr/Ryntra.g4 by ANTLR 4.13.2
+
+#pragma once
+
+
+#include "antlr4-runtime.h"
+#include "RyntraParser.h"
+
+
+namespace Ryntra::antlr {
+
+/**
+ * This interface defines an abstract listener for a parse tree produced by RyntraParser.
+ */
+class  RyntraListener : public antlr4::tree::ParseTreeListener {
+public:
+
+  virtual void enterProgram(RyntraParser::ProgramContext *ctx) = 0;
+  virtual void exitProgram(RyntraParser::ProgramContext *ctx) = 0;
+
+  virtual void enterFunctionDefinition(RyntraParser::FunctionDefinitionContext *ctx) = 0;
+  virtual void exitFunctionDefinition(RyntraParser::FunctionDefinitionContext *ctx) = 0;
+
+  virtual void enterParameterList(RyntraParser::ParameterListContext *ctx) = 0;
+  virtual void exitParameterList(RyntraParser::ParameterListContext *ctx) = 0;
+
+  virtual void enterBlock(RyntraParser::BlockContext *ctx) = 0;
+  virtual void exitBlock(RyntraParser::BlockContext *ctx) = 0;
+
+  virtual void enterVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) = 0;
+  virtual void exitVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) = 0;
+
+  virtual void enterStatement(RyntraParser::StatementContext *ctx) = 0;
+  virtual void exitStatement(RyntraParser::StatementContext *ctx) = 0;
+
+  virtual void enterReturnStatement(RyntraParser::ReturnStatementContext *ctx) = 0;
+  virtual void exitReturnStatement(RyntraParser::ReturnStatementContext *ctx) = 0;
+
+  virtual void enterFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
+  virtual void exitFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
+
+  virtual void enterArgumentList(RyntraParser::ArgumentListContext *ctx) = 0;
+  virtual void exitArgumentList(RyntraParser::ArgumentListContext *ctx) = 0;
+
+  virtual void enterExpression(RyntraParser::ExpressionContext *ctx) = 0;
+  virtual void exitExpression(RyntraParser::ExpressionContext *ctx) = 0;
+
+  virtual void enterLiteral(RyntraParser::LiteralContext *ctx) = 0;
+  virtual void exitLiteral(RyntraParser::LiteralContext *ctx) = 0;
+
+
+};
+
+}  // namespace Ryntra::antlr

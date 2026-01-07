@@ -1,0 +1,42 @@
+#include <iostream>
+#include <memory>
+#include "antlr4-runtime.h"
+#include <antlr/RyntraLexer.h>
+#include <antlr/RyntraParser.h>
+#include "Compiler/AST/ASTBuilder.h"
+#include "Compiler/AST/ASTNodes.h"
+
+int main() {
+    std::string src = R"(int main() {
+    __builtin_print("abc");
+    return 0;
+})";
+    try {
+        antlr4::ANTLRInputStream input(src);
+        Ryntra::antlr::RyntraLexer lexer(&input);
+        antlr4::CommonTokenStream tokens(&lexer);
+        
+        tokens.fill();
+        Ryntra::antlr::RyntraParser parser(&tokens);
+
+        auto* programContext = parser.program();
+        if (parser.getNumberOfSyntaxErrors() > 0) {
+            std::cout << "Syntax errors found in input" << std::endl;
+            return 1;
+        }
+        
+        Ryntra::Compiler::ASTBuilder astBuilder;
+        auto astResult = astBuilder.visitProgram(programContext);
+        auto programNode = std::any_cast<std::shared_ptr<Ryntra::Compiler::ProgramNode>>(astResult);
+        
+        std::cout << ">>> Generated AST:" << std::endl;
+        std::cout << programNode->toString() << std::endl;
+
+
+    } catch (const std::exception& e) {
+        std::cout << "Error occurred: " << e.what() << std::endl;
+        return 1;
+    }
+    
+    return 0;
+}
