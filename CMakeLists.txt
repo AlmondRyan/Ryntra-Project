@@ -13,6 +13,7 @@ set(ANTLR_SOURCES
         ANTLR/antlr-generated/antlr/RyntraListener.cpp
         ANTLR/antlr-generated/antlr/RyntraParser.cpp
         ANTLR/antlr-generated/antlr/RyntraVisitor.cpp
+        Compiler/IRGenerator/IRGenerator.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)

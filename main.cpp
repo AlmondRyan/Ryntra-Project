@@ -6,10 +6,11 @@
 #include "Compiler/AST/ASTBuilder.h"
 #include "Compiler/AST/ASTNodes.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include "IRGenerator/IRGenerator.h"
 #include "Semantic/SemanticAnalyzer.h"
 
 int main() {
-    std::string src = R"(int what_the_heck() {
+    std::string src = R"(int main() {
 })";
     try {
         antlr4::ANTLRInputStream input(src);
@@ -36,6 +37,25 @@ int main() {
         auto semanticResult = semanticAnalyzer.visitProgram(programNode);
 
         Ryntra::Compiler::ErrorHandler::getInstance().print();
+
+        if (Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().size() != 0) {
+            std::cout << "Semantic Analysis failed." << std::endl;
+            return 0;
+        }
+
+        Ryntra::Compiler::IRGenerator irGenerator;
+        auto irResult = irGenerator.visitProgram(programNode);
+        auto ir = irGenerator.getIR();
+        std::cout << ir << std::endl;
+
+        std::ofstream out("output.ll");
+        if (out.is_open()) {
+            out << ir;
+            out.close();
+            std::cout << "IR Written Successfully." << std::endl;
+        } else {
+            std::cout << "Cannot open file." << std::endl;
+        }
     } catch (const std::exception& e) {
         std::cout << "Error occurred: " << e.what() << std::endl;
         return 1;
