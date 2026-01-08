@@ -31,6 +31,8 @@ add_executable(RyntraProject
         main.cpp
         ${ANTLR_SOURCES}
         Compiler/AST/ASTBuilder.cpp
+        Compiler/Semantic/SemanticAnalyzer.cpp
+        Utility/ErrorHandler/ErrorHandler.cpp
 )
 
 llvm_map_components_to_libnames(LLVM_LIBS
@@ -40,4 +42,4 @@ llvm_map_components_to_libnames(LLVM_LIBS
 )
 
 target_link_libraries(RyntraProject PRIVATE antlr4_shared ${LLVM_LIBS})
-target_include_directories(RyntraProject PRIVATE Compiler ANTLR/antlr-generated)
+target_include_directories(RyntraProject PRIVATE Compiler ANTLR/antlr-generated Utility)
