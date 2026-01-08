@@ -5,11 +5,11 @@
 #include <antlr/RyntraParser.h>
 #include "Compiler/AST/ASTBuilder.h"
 #include "Compiler/AST/ASTNodes.h"
+#include "ErrorHandler/ErrorHandler.h"
+#include "Semantic/SemanticAnalyzer.h"
 
 int main() {
-    std::string src = R"(int main() {
-    __builtin_print("abc");
-    return 0;
+    std::string src = R"(int what_the_heck() {
 })";
     try {
         antlr4::ANTLRInputStream input(src);
@@ -32,7 +32,10 @@ int main() {
         std::cout << ">>> Generated AST:" << std::endl;
         std::cout << programNode->toString() << std::endl;
 
+        Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
+        auto semanticResult = semanticAnalyzer.visitProgram(programNode);
 
+        Ryntra::Compiler::ErrorHandler::getInstance().print();
     } catch (const std::exception& e) {
         std::cout << "Error occurred: " << e.what() << std::endl;
         return 1;

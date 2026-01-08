@@ -218,6 +218,18 @@ namespace Ryntra::Compiler {
             result += "), " + body->toString() + ")";
             return result;
         }
+
+        std::string getReturnType() const {
+            return returnType;
+        }
+
+        std::string getFunctionName() const {
+            return functionName;
+        }
+
+        std::vector<std::shared_ptr<ParameterNode>> getParameters() const {
+            return parameters;
+        }
     private:
         std::string returnType;
         std::string functionName;
@@ -245,6 +257,10 @@ namespace Ryntra::Compiler {
             }
             result += "])";
             return result;
+        }
+
+        std::vector<std::shared_ptr<FunctionDefinitionNode>> getFunctions() const {
+            return functions;
         }
     private:
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
