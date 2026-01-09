@@ -1,14 +1,15 @@
 #pragma once
 
 #include "AST/ASTVisitor.h"
+#include "Semantic/SymbolTable.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 
 namespace Ryntra::Compiler {
     class IRGenerator : public IASTVisitor {
     public:
+        IRGenerator();
         std::any visitProgram(std::shared_ptr<ProgramNode> node) override;
         std::any visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) override;
         std::any visitBlock(std::shared_ptr<BlockNode> node) override;
@@ -23,10 +24,12 @@ namespace Ryntra::Compiler {
         std::any visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) override;
         std::any visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) override;
 
-        std::string getIR() const {
-            return ir;
-        }
+        std::string getIR() const;
     private:
-        std::string ir;
+        std::unique_ptr<llvm::LLVMContext> context;
+        std::unique_ptr<llvm::Module> module;
+        std::unique_ptr<llvm::IRBuilder<>> builder;
+        SymbolTable symbolTable;
+        std::map<std::string, llvm::Value*> namedValues;
     };
 }

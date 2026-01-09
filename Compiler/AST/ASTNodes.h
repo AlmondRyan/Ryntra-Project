@@ -139,6 +139,9 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        const std::string& getVarName() const { return varName; }
+        std::shared_ptr<IASTNode> getInitialValue() const { return initialValue; }
     private:
         std::string varName;
         std::shared_ptr<IASTNode> initialValue; // WARN: Possible be nullptr if there are no parameters
@@ -152,6 +155,8 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        std::shared_ptr<IASTNode> getReturnValue() const { return returnValue; }
     private:
         std::shared_ptr<IASTNode> returnValue;
     };
@@ -188,6 +193,10 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        std::shared_ptr<IASTNode> getExpression() const {
+            return expression;
+        }
     private:
         std::shared_ptr<IASTNode> expression;
     };
@@ -202,6 +211,9 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        const std::string& getType() const { return type; }
+        const std::string& getName() const { return name; }
     private:
         std::string type;
         std::string name;
