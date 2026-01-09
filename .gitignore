@@ -1,5 +1,5 @@
 ./cmake-build-release
 ./cmake-build-debug
 ./ANTLR/antlr-generated
-
+./.vscode
 Temp.ast
