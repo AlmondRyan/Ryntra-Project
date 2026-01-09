@@ -111,6 +111,14 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        std::string getFunctionName() const {
+            return functionName;
+        }
+
+        std::vector<std::shared_ptr<IASTNode>> getArguments() const {
+            return arguments;
+        }
     private:
         std::string functionName;
         std::vector<std::shared_ptr<IASTNode>> arguments;

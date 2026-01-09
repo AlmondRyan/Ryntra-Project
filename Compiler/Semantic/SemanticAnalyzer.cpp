@@ -1,5 +1,4 @@
 #include "SemanticAnalyzer.h"
-
 #include "ErrorHandler/ErrorHandler.h"
 
 namespace Ryntra::Compiler {
@@ -42,6 +41,39 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+        if (node->getFunctionName() == "__builtin_print") {
+            const auto& args = node->getArguments();
+            
+            // Check parameter counts
+            if (args.size() != 1) {
+                ErrorHandler::getInstance().makeError(
+                    "Builtin Function: __builtin_print() requires exactly 1 argument, but got " + std::to_string(args.size()),
+                    SourceLocation(0, 0)
+                );
+                return {};
+            }
+
+            // Check parameter type
+            auto arg = args[0];
+            std::any result = visit(arg);
+            
+            if (result.has_value()) {
+                try {
+                    std::string argType = std::any_cast<std::string>(result);
+                    if (argType != "string") {
+                        ErrorHandler::getInstance().makeError(
+                            "__builtin_print() argument must be string, but got " + argType,
+                            SourceLocation(0, 0)
+                        );
+                    }
+                } catch (const std::bad_any_cast&) {
+                    ErrorHandler::getInstance().makeError(
+                        "__builtin_print() argument must be a string literal.",
+                        SourceLocation(0, 0)
+                    );
+                }
+            }
+        }
         return {};
     }
 
@@ -54,7 +86,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        return {};
+        return std::string("int");
     }
 
     std::any SemanticAnalyzer::visitParameter(std::shared_ptr<ParameterNode> node) {
@@ -66,7 +98,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        return {};
+        return std::string("string");
     }
 
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
