@@ -164,6 +164,9 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+        std::shared_ptr<FunctionCallNode> getFunctionCall() const {
+            return functionCall;
+        }
     private:
         std::shared_ptr<FunctionCallNode> functionCall;
     };
@@ -226,6 +229,10 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        std::vector<std::shared_ptr<StatementNode>> getStatements() const {
+            return statements;
+        }
     private:
         std::vector<std::shared_ptr<StatementNode>> statements;
     };
@@ -264,6 +271,10 @@ namespace Ryntra::Compiler {
 
         std::vector<std::shared_ptr<ParameterNode>> getParameters() const {
             return parameters;
+        }
+
+        std::shared_ptr<BlockNode> getBody() const {
+            return body;
         }
     private:
         std::string returnType;

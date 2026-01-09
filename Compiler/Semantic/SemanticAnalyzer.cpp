@@ -1,5 +1,6 @@
 #include "SemanticAnalyzer.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include <iostream>
 
 namespace Ryntra::Compiler {
     std::any SemanticAnalyzer::visitProgram(std::shared_ptr<ProgramNode> node) {
@@ -25,10 +26,18 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
+        for (auto &param : node->getParameters()) {
+            visit(param);
+        }
+
+        visit(node->getBody());
         return {};
     }
 
     std::any SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+        for (auto &stmt : node->getStatements()) {
+            visit(stmt);
+        }
         return {};
     }
 
@@ -41,6 +50,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+        std::cout << "hello from visitFunctionCall!" << std::endl;
         if (node->getFunctionName() == "__builtin_print") {
             const auto& args = node->getArguments();
             
@@ -78,6 +88,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
+        visit(node->getFunctionCall());
         return {};
     }
 
