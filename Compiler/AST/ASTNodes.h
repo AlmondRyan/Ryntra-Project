@@ -3,15 +3,18 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <any>
 
 namespace Ryntra::Compiler {
+    class IASTVisitor;
     /**
      * @brief Abstract AST Node Type Base Class, defined @c toString() function to debug.
      */
-    class IASTNode {
+    class IASTNode : public std::enable_shared_from_this<IASTNode> {
     public:
         virtual ~IASTNode() = default;
         virtual std::string toString() const = 0;
+        virtual std::any accept(IASTVisitor* visitor) = 0;
     };
 
     /**
@@ -37,6 +40,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "IntegerLiteral(" + std::to_string(value) + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         int value;
     };
@@ -55,6 +60,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "StringLiteral(" + value + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::string value;
     };
@@ -72,6 +79,8 @@ namespace Ryntra::Compiler {
         const std::string &getName() const {
             return name;
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::string name;
     };
@@ -100,6 +109,8 @@ namespace Ryntra::Compiler {
             result += "])";
             return result;
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::string functionName;
         std::vector<std::shared_ptr<IASTNode>> arguments;
@@ -118,6 +129,8 @@ namespace Ryntra::Compiler {
             }
             return "VariableDeclaration(" + varName + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::string varName;
         std::shared_ptr<IASTNode> initialValue; // WARN: Possible be nullptr if there are no parameters
@@ -129,6 +142,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "ReturnStatement(" + returnValue->toString() + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::shared_ptr<IASTNode> returnValue;
     };
@@ -139,6 +154,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "FunctionCallStatement(" + functionCall->toString() + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::shared_ptr<FunctionCallNode> functionCall;
     };
@@ -148,6 +165,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "EmptyStatement";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     };
 
     class ExpressionStatementNode : public StatementNode {
@@ -156,6 +175,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "ExpressionStatement(" + expression->toString() + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::shared_ptr<IASTNode> expression;
     };
@@ -168,6 +189,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override {
             return "Parameter(" + type + " " + name + ")";
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::string type;
         std::string name;
@@ -193,6 +216,8 @@ namespace Ryntra::Compiler {
             result += "])";
             return result;
         }
+
+        std::any accept(IASTVisitor* visitor) override;
     private:
         std::vector<std::shared_ptr<StatementNode>> statements;
     };
@@ -218,6 +243,8 @@ namespace Ryntra::Compiler {
             result += "), " + body->toString() + ")";
             return result;
         }
+
+        std::any accept(IASTVisitor* visitor) override;
 
         std::string getReturnType() const {
             return returnType;
@@ -258,6 +285,8 @@ namespace Ryntra::Compiler {
             result += "])";
             return result;
         }
+
+        std::any accept(IASTVisitor* visitor) override;
 
         std::vector<std::shared_ptr<FunctionDefinitionNode>> getFunctions() const {
             return functions;
