@@ -111,6 +111,9 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        std::string getFunctionName() const { return functionName; }
+        std::vector<std::shared_ptr<IASTNode>> getArguments() const { return arguments; }
     private:
         std::string functionName;
         std::vector<std::shared_ptr<IASTNode>> arguments;
@@ -131,6 +134,9 @@ namespace Ryntra::Compiler {
         }
 
         std::any accept(IASTVisitor* visitor) override;
+
+        const std::string& getVariableName() const { return varName; }
+        std::shared_ptr<IASTNode> getInitializer() const { return initialValue; }
     private:
         std::string varName;
         std::shared_ptr<IASTNode> initialValue; // WARN: Possible be nullptr if there are no parameters
