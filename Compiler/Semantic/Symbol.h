@@ -7,6 +7,7 @@ namespace Ryntra::Compiler {
     enum class TypeKind {
         Int,
         String,
+        Void,
         Custom
     };
 

@@ -10,7 +10,7 @@ namespace Ryntra::Compiler {
         }
 
         bool hasMainFunction = false;
-        for (auto i: node->getFunctions()) {
+        for (const auto &i : node->getFunctions()) {
             visit(i);
             if (i->getFunctionName() == "main" && i->getReturnType() == "int") {
                 hasMainFunction = true;
@@ -50,41 +50,42 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
-        std::cout << "hello from visitFunctionCall!" << std::endl;
-        if (node->getFunctionName() == "__builtin_print") {
-            const auto& args = node->getArguments();
-            
-            // Check parameter counts
-            if (args.size() != 1) {
-                ErrorHandler::getInstance().makeError(
-                    "Builtin Function: __builtin_print() requires exactly 1 argument, but got " + std::to_string(args.size()),
-                    SourceLocation(0, 0)
-                );
-                return {};
-            }
+        std::string funcName = node->getFunctionName();
+        auto funcSymbol = symbolTable.lookupFunction(funcName);
+        if (funcSymbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError("Undefined function: " + funcName, SourceLocation(0, 0));
+            return {};
+        }
 
-            // Check parameter type
-            auto arg = args[0];
-            std::any result = visit(arg);
-            
+        const auto &args = node->getArguments();
+        const auto &params = funcSymbol->parameters;
+
+        if (args.size() != params.size()) {
+            ErrorHandler::getInstance().makeError(
+                "Function " + funcName + " requires " + std::to_string(params.size()) +
+                " arguments, but got " + std::to_string(args.size()),
+                SourceLocation(0, 0)
+            );
+            return {};
+        }
+
+        for (auto i = 0; i < args.size(); i++) {
+            auto result = visit(args[i]);
             if (result.has_value()) {
-                try {
-                    std::string argType = std::any_cast<std::string>(result);
-                    if (argType != "string") {
-                        ErrorHandler::getInstance().makeError(
-                            "__builtin_print() argument must be string, but got " + argType,
-                            SourceLocation(0, 0)
-                        );
-                    }
-                } catch (const std::bad_any_cast&) {
+                std::string argType = std::any_cast<std::string>(result);
+                std::string neededType = this->mapTypeToString(params[i].type.kind);
+
+                if (argType != neededType) {
                     ErrorHandler::getInstance().makeError(
-                        "__builtin_print() argument must be a string literal.",
+                        "Function " + funcName + " requires " + neededType + " but got " + argType,
                         SourceLocation(0, 0)
                     );
                 }
             }
         }
-        return {};
+
+        // return {};
+        return this->mapTypeToString(funcSymbol->returnType.kind);
     }
 
     std::any SemanticAnalyzer::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
@@ -115,4 +116,4 @@ namespace Ryntra::Compiler {
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
         return {};
     }
-}
+} // namespace Ryntra::Compiler

@@ -61,7 +61,7 @@ namespace Ryntra::Compiler {
         void registerBuiltinFunction() {
             FunctionSymbol fc;
             fc.name = "__builtin_print";
-            fc.returnType = {TypeKind::Int, ""};
+            fc.returnType = {TypeKind::Void, ""};
 
             Symbol stringParam({TypeKind::String, ""}, "value", SymbolKind::Parameter);
             fc.parameters.push_back(stringParam);

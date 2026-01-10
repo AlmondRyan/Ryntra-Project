@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AST/ASTVisitor.h"
+#include "SymbolTable.h"
 
 namespace Ryntra::Compiler {
     class SemanticAnalyzer : public IASTVisitor {
@@ -19,5 +20,17 @@ namespace Ryntra::Compiler {
         std::any visitStringLiteral(std::shared_ptr<StringLiteralNode> node) override;
         std::any visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) override;
         std::any visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) override;
+    private:
+        SymbolTable symbolTable;
+
+        std::string mapTypeToString(TypeKind kind) {
+            switch (kind) {
+            case TypeKind::Int: return "int";
+            case TypeKind::String: return "string";
+            case TypeKind::Void: return "void";
+            case TypeKind::Custom:
+            default: return "custom";
+            }
+        }
     };
 }
