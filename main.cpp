@@ -11,7 +11,8 @@
 
 int main() {
     std::string src = R"(int main() {
-    ___builtin_print(114514);
+    __builtin_print("Hello World!");
+    return 0;
 })";
     try {
         antlr4::ANTLRInputStream input(src);
