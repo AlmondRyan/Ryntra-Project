@@ -656,6 +656,10 @@ namespace Ryntra::Compiler {
         std::string toString() const override;
         std::any    accept(IASTVisitor *visitor) override;
 
+        std::shared_ptr<IASTNode> getLeft() const { return left; }
+        std::shared_ptr<IASTNode> getRight() const { return right; }
+        std::string               getOp() const { return operand; }
+
     private:
         std::shared_ptr<IASTNode> left;  // Left operand, such as the 1 in 1+2
         std::shared_ptr<IASTNode> right; // Right operand, such as the 2 in 1+2
@@ -664,9 +668,13 @@ namespace Ryntra::Compiler {
 
     class AssignmentExpressionNode : public IASTNode {
     public:
-        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(id), expression(exp) {}
+        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(std::move(id)), expression(std::move(exp)) {}
         std::string toString() const override;
         std::any accept(IASTVisitor *visitor) override;
+
+        const std::string& getIdentifier() const { return identifier; }
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
+
     private:
         std::string               identifier;
         std::shared_ptr<IASTNode> expression;

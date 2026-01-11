@@ -88,14 +88,12 @@ namespace Ryntra::Compiler {
             auto funcCall = std::any_cast<std::shared_ptr<FunctionCallNode>>(
                 visit(context->functionCall())
             );
-            // return std::make_shared<FunctionCallStatementNode>(std::move(funcCall));
             return createNode<FunctionCallStatementNode>(context, std::move(funcCall));
         }
         else if (context->expression()) {
             auto expr = std::any_cast<std::shared_ptr<IASTNode>>(
                 visit(context->expression())
             );
-            // return std::make_shared<ExpressionStatementNode>(std::move(expr));
             return createNode<ExpressionStatementNode>(context, std::move(expr));
         }
         else if (context->variableDeclaration()) {
@@ -104,8 +102,13 @@ namespace Ryntra::Compiler {
         else if (context->returnStatement()) {
             return visit(context->returnStatement());
         }
+        else if (context->assignment()) {
+            auto assignExpr = std::any_cast<std::shared_ptr<AssignmentExpressionNode>>(
+                visit(context->assignment())
+            );
+            return createNode<ExpressionStatementNode>(context, std::move(assignExpr));
+        }
         else {
-            // return std::make_shared<EmptyStatementNode>();
             return createNode<EmptyStatementNode>(context);
         }
     }
@@ -164,22 +167,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any ASTBuilder::visitExpression(antlr::RyntraParser::ExpressionContext *context) {
-        if (context->literal()) {
-            return visit(context->literal());
-        }
-        else if (context->functionCall()) {
-            // FunctionCallNode inherits from IASTNode, but we must cast to shared_ptr<IASTNode>
-            // for any_cast to work in the caller.
-            auto funcCall = std::any_cast<std::shared_ptr<FunctionCallNode>>(visit(context->functionCall()));
-            return std::static_pointer_cast<IASTNode>(funcCall);
-        }
-        else if (context->IDENTIFIER()) {
-            std::string varName = context->IDENTIFIER()->getText();
-            return std::static_pointer_cast<IASTNode>(std::make_shared<IdentifierNode>(varName));
-        }
-
-        // Return empty any instead of nullptr to avoid type mismatch
-        return std::any();
+        return visit(context->assignmentExpression());
     }
 
     std::any ASTBuilder::visitLiteral(antlr::RyntraParser::LiteralContext *context) {
@@ -188,13 +176,70 @@ namespace Ryntra::Compiler {
             if (str.length() >= 2 && str.front() == '"' && str.back() == '"') {
                 str = str.substr(1, str.length() - 2);
             }
-            return std::static_pointer_cast<IASTNode>(std::make_shared<StringLiteralNode>(str));
+            return std::static_pointer_cast<IASTNode>(createNode<StringLiteralNode>(context, str));
         }
         else if (context->INTEGER_LITERAL()) {
             int value = std::stoi(context->INTEGER_LITERAL()->getText());
-            return std::static_pointer_cast<IASTNode>(std::make_shared<IntegerLiteralNode>(value));
+            return std::static_pointer_cast<IASTNode>(createNode<IntegerLiteralNode>(context, value));
         }
 
         return std::any();
     }
-}
+
+    std::any ASTBuilder::visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context) {
+        if (context->ASSIGN()) {
+            std::string idName = context->IDENTIFIER()->getText();
+            auto expr = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->expression()));
+            return std::static_pointer_cast<IASTNode>(createNode<AssignmentExpressionNode>(context, idName, std::move(expr)));
+        }
+        return visit(context->additiveExpression());
+    }
+
+    std::any ASTBuilder::visitAssignment(antlr::RyntraParser::AssignmentContext *context) {
+        std::string idName = context->IDENTIFIER()->getText();
+        auto expr = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->expression()));
+        return createNode<AssignmentExpressionNode>(context, idName, std::move(expr));
+    }
+
+    std::any ASTBuilder::visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context) {
+        auto left = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->multiplicativeExpression(0)));
+        
+        for (size_t i = 1; i < context->multiplicativeExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->multiplicativeExpression(i)));
+            left = std::static_pointer_cast<IASTNode>(createNode<BinaryExpressionNode>(context, left, right, op));
+        }
+        
+        return left;
+    }
+
+    std::any ASTBuilder::visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context) {
+        auto left = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->primaryExpression(0)));
+        
+        for (size_t i = 1; i < context->primaryExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = std::any_cast<std::shared_ptr<IASTNode>>(visit(context->primaryExpression(i)));
+            left = std::static_pointer_cast<IASTNode>(createNode<BinaryExpressionNode>(context, left, right, op));
+        }
+        
+        return left;
+    }
+
+    std::any ASTBuilder::visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context) {
+        if (context->literal()) {
+            return visit(context->literal());
+        }
+        else if (context->functionCall()) {
+            auto funcCall = std::any_cast<std::shared_ptr<FunctionCallNode>>(visit(context->functionCall()));
+            return std::static_pointer_cast<IASTNode>(funcCall);
+        }
+        else if (context->IDENTIFIER()) {
+            return std::static_pointer_cast<IASTNode>(createNode<IdentifierNode>(context, context->IDENTIFIER()->getText()));
+        }
+        else if (context->LPAREN()) {
+            return visit(context->expression());
+        }
+        
+        return std::any();
+    }
+} // namespace Ryntra::Compiler

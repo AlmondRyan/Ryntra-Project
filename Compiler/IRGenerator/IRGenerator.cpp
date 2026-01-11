@@ -211,4 +211,12 @@ namespace Ryntra::Compiler {
         namedValues[node->getVarName()] = alloca;
         return (llvm::Value*)alloca;
     }
-}
+
+    std::any IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+        return {};
+    }
+
+    std::any IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+        return {};
+    }
+} // namespace Ryntra::Compiler

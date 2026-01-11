@@ -24,6 +24,9 @@ namespace Ryntra::Compiler {
         std::any visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) override;
         std::any visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) override;
 
+        std::any visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) override;
+        std::any visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
+
         std::string getIR() const;
     private:
         std::unique_ptr<llvm::LLVMContext> context;

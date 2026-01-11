@@ -163,4 +163,12 @@ namespace Ryntra::Compiler {
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
         return {};
     }
+
+    std::any SemanticAnalyzer::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+        return {};
+    }
+
+    std::any SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+        return {};
+    }
 } // namespace Ryntra::Compiler
