@@ -258,12 +258,7 @@ namespace Ryntra::Compiler {
          * @return A string that formed like
          * VariableDeclaration(name, value) or VariableDeclaration(name)
          */
-        std::string toString() const override {
-            if (initialValue) {
-                return "VariableDeclaration(" + varName + ", " + initialValue->toString() + ")";
-            }
-            return "VariableDeclaration(" + varName + ")";
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -508,19 +503,7 @@ namespace Ryntra::Compiler {
          * @brief Get the string representation of the Block Node.
          * @return A string that formed like "Block([statement1, statement2, ...])".
          */
-        std::string toString() const override {
-            std::string result = "Block([";
-            for (auto &stmt : statements) {
-                result += stmt->toString() + ", ";
-            }
-
-            if (!statements.empty()) {
-                result.pop_back();
-                result.pop_back();
-            }
-            result += "])";
-            return result;
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -544,7 +527,7 @@ namespace Ryntra::Compiler {
     /**
      * @brief The Function Definition Node.
      * @details Represents a complete function definition including its
-     * return type, name, parameters and the fucntion body.
+     * return type, name, parameters and the function body.
      */
     class FunctionDefinitionNode : public IASTNode {
     public:
@@ -567,18 +550,7 @@ namespace Ryntra::Compiler {
          * @brief Get the string representation of the Function Definition Node.
          * @return A string that formed like "FunctionDef(returnType name(param1, param2, ...), body)".
          */
-        std::string toString() const override {
-            std::string result = "FunctionDef(" + returnType + " " + functionName + "(";
-            for (const auto &param : parameters) {
-                result += param->toString() + ", ";
-            }
-            if (!parameters.empty()) {
-                result.pop_back();
-                result.pop_back();
-            }
-            result += "), " + body->toString() + ")";
-            return result;
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -654,18 +626,7 @@ namespace Ryntra::Compiler {
          * @brief Get the string representation of the Program Node.
          * @return A string that formed like "Program([function1, function2, ...])".
          */
-        std::string toString() const override {
-            std::string result = "Program([";
-            for (const auto &func : functions) {
-                result += func->toString() + ", ";
-            }
-            if (!functions.empty()) {
-                result.pop_back();
-                result.pop_back();
-            }
-            result += "])";
-            return result;
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.

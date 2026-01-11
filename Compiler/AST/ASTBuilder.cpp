@@ -2,6 +2,9 @@
 #include <any>
 
 namespace Ryntra::Compiler {
+    /**
+     * @brief Construct the root node of the program
+     */
     std::any ASTBuilder::visitProgram(antlr::RyntraParser::ProgramContext *context) {
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
         for (auto *functionContext: context->functionDefinition()) {

@@ -89,5 +89,50 @@ namespace Ryntra::Compiler {
         return result;
     }
 
+    std::string ProgramNode::toString() const {
+        std::string result = "Program([";
+        for (const auto &func : functions) {
+            result += func->toString() + ", ";
+        }
+        if (!functions.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "])";
+        return result;
+    }
 
+    std::string FunctionDefinitionNode::toString() const {
+        std::string result = "FunctionDef(" + returnType + " " + functionName + "(";
+        for (const auto &param : parameters) {
+            result += param->toString() + ", ";
+        }
+        if (!parameters.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "), " + body->toString() + ")";
+        return result;
+    }
+
+    std::string BlockNode::toString() const {
+        std::string result = "Block([";
+        for (auto &stmt : statements) {
+            result += stmt->toString() + ", ";
+        }
+
+        if (!statements.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "])";
+        return result;
+    }
+
+    std::string VariableDeclarationNode::toString() const {
+        if (initialValue) {
+            return "VariableDeclaration(" + varName + ", " + initialValue->toString() + ")";
+        }
+        return "VariableDeclaration(" + varName + ")";
+    }
 } // namespace Ryntra::Compiler
