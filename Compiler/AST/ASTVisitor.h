@@ -25,5 +25,7 @@ namespace Ryntra::Compiler {
         virtual std::any visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) = 0;
         virtual std::any visitStringLiteral(std::shared_ptr<StringLiteralNode> node) = 0;
         virtual std::any visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) = 0;
+        virtual std::any visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) = 0;
+        virtual std::any visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) = 0;
     };
 }

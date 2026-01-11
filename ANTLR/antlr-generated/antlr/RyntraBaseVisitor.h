@@ -53,7 +53,27 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitAssignment(RyntraParser::AssignmentContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitExpression(RyntraParser::ExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 

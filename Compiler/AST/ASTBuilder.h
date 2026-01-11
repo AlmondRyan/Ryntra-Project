@@ -17,7 +17,11 @@ namespace Ryntra::Compiler {
         std::any visitArgumentList(antlr::RyntraParser::ArgumentListContext *context) override;
         std::any visitExpression(antlr::RyntraParser::ExpressionContext *context) override;
         std::any visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context) override;
-
+        std::any visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context) override;
+        std::any visitAssignment(antlr::RyntraParser::AssignmentContext *context) override;
+        std::any visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context) override;
+        std::any visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context) override;
+        std::any visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context) override;
     private:
         /**
          * @brief Get the source location from ANTLR4 Parser Context.

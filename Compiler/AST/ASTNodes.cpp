@@ -135,4 +135,20 @@ namespace Ryntra::Compiler {
         }
         return "VariableDeclaration(" + varName + ")";
     }
+
+    std::string BinaryExpressionNode::toString() const {
+        return "BinaryExpression(" + left->toString() + ", " + operand + ", " + right->toString() + ")";
+    }
+
+    std::any BinaryExpressionNode::accept(IASTVisitor *visitor) {
+        return visitor->visitBinaryExpression(std::static_pointer_cast<BinaryExpressionNode>(shared_from_this()));
+    }
+
+    std::any AssignmentExpressionNode::accept(IASTVisitor *visitor) {
+        return visitor->visitAssignmentExpression(std::static_pointer_cast<AssignmentExpressionNode>(shared_from_this()));
+    }
+
+    std::string AssignmentExpressionNode::toString() const {
+        return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
+    }
 } // namespace Ryntra::Compiler

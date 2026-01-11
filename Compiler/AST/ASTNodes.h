@@ -43,6 +43,7 @@ namespace Ryntra::Compiler {
         void setLocation(SourceLocation loc) {
             location = loc;
         }
+
     private:
         SourceLocation location;
     };
@@ -647,4 +648,27 @@ namespace Ryntra::Compiler {
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
     };
 
+    class BinaryExpressionNode : public IASTNode {
+    public:
+        BinaryExpressionNode(std::shared_ptr<IASTNode> l, std::shared_ptr<IASTNode> r,
+                             std::string opr) : left(std::move(l)), right(std::move(r)), operand(std::move(opr)) {}
+
+        std::string toString() const override;
+        std::any    accept(IASTVisitor *visitor) override;
+
+    private:
+        std::shared_ptr<IASTNode> left;  // Left operand, such as the 1 in 1+2
+        std::shared_ptr<IASTNode> right; // Right operand, such as the 2 in 1+2
+        std::string               operand;
+    };
+
+    class AssignmentExpressionNode : public IASTNode {
+    public:
+        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(id), expression(exp) {}
+        std::string toString() const override;
+        std::any accept(IASTVisitor *visitor) override;
+    private:
+        std::string               identifier;
+        std::shared_ptr<IASTNode> expression;
+    };
 } // namespace Ryntra::Compiler
