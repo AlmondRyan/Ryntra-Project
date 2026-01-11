@@ -22,6 +22,7 @@ namespace Ryntra::Compiler {
         std::any visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) override;
     private:
         SymbolTable symbolTable;
+        TypeKind currentExpectedReturningType = TypeKind::Void;
 
         std::string mapTypeToString(TypeKind kind) {
             switch (kind) {
@@ -31,6 +32,13 @@ namespace Ryntra::Compiler {
             case TypeKind::Custom:
             default: return "custom";
             }
+        }
+
+        TypeKind mapStringToType(std::string kind) {
+            if (kind == "int") return TypeKind::Int;
+            if (kind == "string") return TypeKind::String;
+            if (kind == "void") return TypeKind::Void;
+            if (kind == "custom") return TypeKind::Custom;
         }
     };
 }
