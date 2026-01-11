@@ -1,4 +1,6 @@
 #pragma once
+#include "SourceLocation/SourceLocation.h"
+
 #include <any>
 #include <memory>
 #include <string>
@@ -33,6 +35,16 @@ namespace Ryntra::Compiler {
          * @return The visiting result
          */
         virtual std::any accept(IASTVisitor *visitor) = 0;
+
+        SourceLocation getLocation() const {
+            return location;
+        }
+
+        void setLocation(SourceLocation loc) {
+            location = loc;
+        }
+    private:
+        SourceLocation location;
     };
 
     /**

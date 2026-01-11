@@ -53,7 +53,8 @@ namespace Ryntra::Compiler {
         std::string funcName = node->getFunctionName();
         auto funcSymbol = symbolTable.lookupFunction(funcName);
         if (funcSymbol == std::nullopt) {
-            ErrorHandler::getInstance().makeError("Undefined function: " + funcName, SourceLocation(0, 0));
+            ErrorHandler::getInstance().makeError("Undefined function: " + funcName,
+                SourceLocation(node->getLocation().line, node->getLocation().column));
             return {};
         }
 
@@ -64,7 +65,7 @@ namespace Ryntra::Compiler {
             ErrorHandler::getInstance().makeError(
                 "Function " + funcName + " requires " + std::to_string(params.size()) +
                 " arguments, but got " + std::to_string(args.size()),
-                SourceLocation(0, 0)
+                SourceLocation(node->getLocation().line, node->getLocation().column)
             );
             return {};
         }
@@ -78,7 +79,7 @@ namespace Ryntra::Compiler {
                 if (argType != neededType) {
                     ErrorHandler::getInstance().makeError(
                         "Function " + funcName + " requires " + neededType + " but got " + argType,
-                        SourceLocation(0, 0)
+                        SourceLocation(node->getLocation().line, node->getLocation().column)
                     );
                 }
             }

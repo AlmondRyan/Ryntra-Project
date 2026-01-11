@@ -16,5 +16,16 @@ namespace Ryntra::Compiler {
         std::any visitArgumentList(antlr::RyntraParser::ArgumentListContext *context) override;
         std::any visitExpression(antlr::RyntraParser::ExpressionContext *context) override;
         std::any visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context) override;
+    private:
+        SourceLocation getLoc(antlr4::ParserRuleContext *ctx) {
+            return SourceLocation(ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+
+        template<typename Tp, typename... Args>
+        std::shared_ptr<Tp> createNode(antlr4::ParserRuleContext *ctx, Args&&... args) {
+            auto node = std::make_shared<Tp>(std::forward<Args>(args)...);
+            node->setLocation(getLoc(ctx));
+            return node;
+        }
     };
 }

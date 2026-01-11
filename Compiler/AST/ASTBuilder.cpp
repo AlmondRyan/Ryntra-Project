@@ -8,7 +8,7 @@ namespace Ryntra::Compiler {
             auto function = std::any_cast<std::shared_ptr<FunctionDefinitionNode>>(visit(functionContext));
             functions.push_back(std::move(function));
         }
-        return std::make_shared<ProgramNode>(std::move(functions));
+        return createNode<ProgramNode>(context, std::move(functions));
     }
 
     std::any ASTBuilder::visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *context) {
@@ -24,7 +24,7 @@ namespace Ryntra::Compiler {
         }
 
         auto body = std::any_cast<std::shared_ptr<BlockNode>>(visit(context->block()));
-        return std::make_shared<FunctionDefinitionNode>(returnType, functionName, std::move(parameters), std::move(body));
+        return createNode<FunctionDefinitionNode>(context, returnType, functionName, std::move(parameters), std::move(body));
     }
 
     std::any ASTBuilder::visitParameterList(antlr::RyntraParser::ParameterListContext *context) {
@@ -77,7 +77,7 @@ namespace Ryntra::Compiler {
             } catch (const std::bad_any_cast&) {}
         }
 
-        return std::make_shared<BlockNode>(std::move(statements));
+        return createNode<BlockNode>(context, std::move(statements));
     }
 
     std::any ASTBuilder::visitStatement(antlr::RyntraParser::StatementContext *context) {
@@ -85,13 +85,15 @@ namespace Ryntra::Compiler {
             auto funcCall = std::any_cast<std::shared_ptr<FunctionCallNode>>(
                 visit(context->functionCall())
             );
-            return std::make_shared<FunctionCallStatementNode>(std::move(funcCall));
+            // return std::make_shared<FunctionCallStatementNode>(std::move(funcCall));
+            return createNode<FunctionCallStatementNode>(context, std::move(funcCall));
         }
         else if (context->expression()) {
             auto expr = std::any_cast<std::shared_ptr<IASTNode>>(
                 visit(context->expression())
             );
-            return std::make_shared<ExpressionStatementNode>(std::move(expr));
+            // return std::make_shared<ExpressionStatementNode>(std::move(expr));
+            return createNode<ExpressionStatementNode>(context, std::move(expr));
         }
         else if (context->variableDeclaration()) {
             return visit(context->variableDeclaration());
@@ -100,7 +102,8 @@ namespace Ryntra::Compiler {
             return visit(context->returnStatement());
         }
         else {
-            return std::make_shared<EmptyStatementNode>();
+            // return std::make_shared<EmptyStatementNode>();
+            return createNode<EmptyStatementNode>(context);
         }
     }
 
@@ -115,7 +118,8 @@ namespace Ryntra::Compiler {
             }
         }
 
-        return std::make_shared<VariableDeclarationNode>(varName, std::move(initialValue));
+        // return std::make_shared<VariableDeclarationNode>(varName, std::move(initialValue));
+        return createNode<VariableDeclarationNode>(context, varName, std::move(initialValue));
     }
 
     std::any ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context) {
@@ -124,7 +128,8 @@ namespace Ryntra::Compiler {
         if (result.has_value()) {
             returnValue = std::any_cast<std::shared_ptr<IASTNode>>(result);
         }
-        return std::make_shared<ReturnStatementNode>(std::move(returnValue));
+        // return std::make_shared<ReturnStatementNode>(std::move(returnValue));
+        return createNode<ReturnStatementNode>(context, std::move(returnValue));
     }
 
     std::any ASTBuilder::visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context) {
@@ -138,7 +143,7 @@ namespace Ryntra::Compiler {
             arguments = std::move(args);
         }
 
-        return std::make_shared<FunctionCallNode>(funcName, std::move(arguments));
+        return createNode<FunctionCallNode>(context, funcName, std::move(arguments));
     }
 
     std::any ASTBuilder::visitArgumentList(antlr::RyntraParser::ArgumentListContext *context) {
