@@ -34,6 +34,7 @@ add_executable(RyntraProject
         Compiler/AST/ASTBuilder.cpp
         Compiler/Semantic/SemanticAnalyzer.cpp
         Utility/ErrorHandler/ErrorHandler.cpp
+        Compiler/AST/ASTNodes.cpp
 )
 
 llvm_map_components_to_libnames(LLVM_LIBS

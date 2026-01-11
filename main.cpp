@@ -11,6 +11,7 @@
 
 int main() {
     std::string src = R"(int main() {
+    ___builtin_print(114514);
 })";
     try {
         antlr4::ANTLRInputStream input(src);
@@ -38,7 +39,7 @@ int main() {
 
         Ryntra::Compiler::ErrorHandler::getInstance().print();
 
-        if (Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().size() != 0) {
+        if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
             std::cout << "Semantic Analysis failed." << std::endl;
             return 0;
         }

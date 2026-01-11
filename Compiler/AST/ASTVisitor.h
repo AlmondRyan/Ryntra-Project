@@ -8,58 +8,8 @@ namespace Ryntra::Compiler {
     public:
         ~IASTVisitor() = default;
         virtual std::any visit(std::shared_ptr<IASTNode> node) {
-            if (!node) return nullptr;
-            if (auto program = std::dynamic_pointer_cast<ProgramNode>(node)) {
-                return visitProgram(program);
-            }
-
-            if (auto functionDef = std::dynamic_pointer_cast<FunctionDefinitionNode>(node)) {
-                return visitFunctionDefinition(functionDef);
-            }
-
-            if (auto block = std::dynamic_pointer_cast<BlockNode>(node)) {
-                return visitBlock(block);
-            }
-
-            if (auto parameter = std::dynamic_pointer_cast<ParameterNode>(node)) {
-                return visitParameter(parameter);
-            }
-
-            if (auto variableDecl = std::dynamic_pointer_cast<VariableDeclarationNode>(node)) {
-                return visitVariableDeclaration(variableDecl);
-            }
-
-            if (auto returnStmt = std::dynamic_pointer_cast<ReturnStatementNode>(node)) {
-                return visitReturnStatement(returnStmt);
-            }
-
-            if (auto functionCallStmt = std::dynamic_pointer_cast<FunctionCallStatementNode>(node)) {
-                return visitFunctionCallStatement(functionCallStmt);
-            }
-
-            if (auto functionCall = std::dynamic_pointer_cast<FunctionCallNode>(node)) {
-                return visitFunctionCall(functionCall);
-            }
-
-            if (auto expressionStmt = std::dynamic_pointer_cast<ExpressionStatementNode>(node)) {
-                return visitExpressionStatement(expressionStmt);
-            }
-
-            if (auto identifier = std::dynamic_pointer_cast<IdentifierNode>(node)) {
-                return visitIdentifier(identifier);
-            }
-
-            if (auto intLit = std::dynamic_pointer_cast<IntegerLiteralNode>(node)) {
-                return visitIntegerLiteral(intLit);
-            }
-
-            if (auto stringLit = std::dynamic_pointer_cast<StringLiteralNode>(node)) {
-                return visitStringLiteral(stringLit);
-            }
-
-            if (auto emptyStmt = std::dynamic_pointer_cast<EmptyStatementNode>(node)) {
-                return visitEmptyStatement(emptyStmt);
-            }
+            if (!node) return std::any();
+            return node->accept(this);
         }
 
         virtual std::any visitProgram(std::shared_ptr<ProgramNode> node) = 0;

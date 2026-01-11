@@ -1,6 +1,6 @@
 #include "SemanticAnalyzer.h"
-
 #include "ErrorHandler/ErrorHandler.h"
+#include <iostream>
 
 namespace Ryntra::Compiler {
     std::any SemanticAnalyzer::visitProgram(std::shared_ptr<ProgramNode> node) {
@@ -10,7 +10,7 @@ namespace Ryntra::Compiler {
         }
 
         bool hasMainFunction = false;
-        for (auto i: node->getFunctions()) {
+        for (const auto &i : node->getFunctions()) {
             visit(i);
             if (i->getFunctionName() == "main" && i->getReturnType() == "int") {
                 hasMainFunction = true;
@@ -26,10 +26,18 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
+        for (auto &param : node->getParameters()) {
+            visit(param);
+        }
+
+        visit(node->getBody());
         return {};
     }
 
     std::any SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+        for (auto &stmt : node->getStatements()) {
+            visit(stmt);
+        }
         return {};
     }
 
@@ -42,10 +50,47 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
-        return {};
+        std::string funcName = node->getFunctionName();
+        auto funcSymbol = symbolTable.lookupFunction(funcName);
+        if (funcSymbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError("Undefined function: " + funcName,
+                SourceLocation(node->getLocation().line, node->getLocation().column));
+            return {};
+        }
+
+        const auto &args = node->getArguments();
+        const auto &params = funcSymbol->parameters;
+
+        if (args.size() != params.size()) {
+            ErrorHandler::getInstance().makeError(
+                "Function " + funcName + " requires " + std::to_string(params.size()) +
+                " arguments, but got " + std::to_string(args.size()),
+                SourceLocation(node->getLocation().line, node->getLocation().column)
+            );
+            return {};
+        }
+
+        for (auto i = 0; i < args.size(); i++) {
+            auto result = visit(args[i]);
+            if (result.has_value()) {
+                std::string argType = std::any_cast<std::string>(result);
+                std::string neededType = this->mapTypeToString(params[i].type.kind);
+
+                if (argType != neededType) {
+                    ErrorHandler::getInstance().makeError(
+                        "Function " + funcName + " requires " + neededType + " but got " + argType,
+                        SourceLocation(node->getLocation().line, node->getLocation().column)
+                    );
+                }
+            }
+        }
+
+        // return {};
+        return this->mapTypeToString(funcSymbol->returnType.kind);
     }
 
     std::any SemanticAnalyzer::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
+        visit(node->getFunctionCall());
         return {};
     }
 
@@ -54,7 +99,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        return {};
+        return std::string("int");
     }
 
     std::any SemanticAnalyzer::visitParameter(std::shared_ptr<ParameterNode> node) {
@@ -66,10 +111,10 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        return {};
+        return std::string("string");
     }
 
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
         return {};
     }
-}
+} // namespace Ryntra::Compiler
