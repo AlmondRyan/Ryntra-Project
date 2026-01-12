@@ -59,13 +59,20 @@ namespace Ryntra::Compiler {
         }
     private:
         void registerBuiltinFunction() {
-            FunctionSymbol fc;
-            fc.name = "__builtin_print";
-            fc.returnType = {TypeKind::Void, ""};
-
+            FunctionSymbol sBuiltinPrint;
+            sBuiltinPrint.name = "__builtin_print";
+            sBuiltinPrint.returnType = {TypeKind::Void, ""};
             Symbol stringParam({TypeKind::String, ""}, "value", SymbolKind::Parameter);
-            fc.parameters.push_back(stringParam);
-            functions.emplace(fc.name, fc);
+            sBuiltinPrint.parameters.push_back(stringParam);
+
+            FunctionSymbol sBuiltinIntToString;
+            sBuiltinIntToString.name = "__builtin_intToString";
+            sBuiltinIntToString.returnType = {TypeKind::String, ""};
+            Symbol intParam({TypeKind::Int, ""}, "value", SymbolKind::Parameter);
+            sBuiltinIntToString.parameters.push_back(intParam);
+
+            functions.emplace(sBuiltinPrint.name, sBuiltinPrint);
+            functions.emplace(sBuiltinIntToString.name, sBuiltinIntToString);
         }
     public:
         void enterScope() {

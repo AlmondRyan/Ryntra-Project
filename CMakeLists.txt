@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31)
-project(RyntraProject LANGUAGES CXX)
+project(RyntraProject LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,7 @@ set(ANTLR_SOURCES
 find_package(antlr4-runtime REQUIRED)
 find_package(LLVM CONFIG REQUIRED)
 
+add_subdirectory(Compiler/RyntraCRT)
 message(STATUS "Found LLVM Library: ${LLVM_PACKAGE_VERSION}")
 
 include_directories(${LLVM_INCLUDE_DIRS})

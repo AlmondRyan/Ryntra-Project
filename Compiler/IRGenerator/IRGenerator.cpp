@@ -119,7 +119,6 @@ namespace Ryntra::Compiler {
             if (funcName == "__builtin_print") {
                 // Declare printf if not exists: int printf(i8*, ...)
                 std::vector<llvm::Type*> argsTypes;
-                // argsTypes.push_back(llvm::Type::getInt8PtrTy(*context)); // char*
                 argsTypes.push_back(llvm::PointerType::get(*context, 0));
 
                 llvm::FunctionType* printfType = llvm::FunctionType::get(
@@ -131,20 +130,66 @@ namespace Ryntra::Compiler {
                 llvm::FunctionCallee printfFunc = module->getOrInsertFunction("printf", printfType);
                 
                 std::vector<llvm::Value*> args;
-                for (auto arg : node->getArguments()) {
-                    std::any argVal = visit(arg);
+                std::vector<llvm::Value*> stringsToFree; // Track temporary strings from intToString
+                
+                for (auto argNode : node->getArguments()) {
+                    // Check if this argument is a call to __builtin_intToString
+                    bool isTempString = false;
+                    if (auto callNode = std::dynamic_pointer_cast<FunctionCallNode>(argNode)) {
+                        if (callNode->getFunctionName() == "__builtin_intToString") {
+                            isTempString = true;
+                        }
+                    }
+
+                    std::any argVal = visit(argNode);
                     if (argVal.has_value()) {
-                        try {
-                            args.push_back(std::any_cast<llvm::Value*>(argVal));
-                        } catch (const std::bad_any_cast&) {
-                            // Should not happen if Semantic Analysis passed
+                        llvm::Value* val = std::any_cast<llvm::Value*>(argVal);
+                        args.push_back(val);
+                        if (isTempString) {
+                            stringsToFree.push_back(val);
                         }
                     }
                 }
                 
                 if (!args.empty()) {
-                     return (llvm::Value*)builder->CreateCall(printfFunc, args);
+                     llvm::Value* callInst = builder->CreateCall(printfFunc, args);
+                     
+                     // Insert free calls for temporary strings
+                     if (!stringsToFree.empty()) {
+                         llvm::FunctionType* freeType = llvm::FunctionType::get(
+                             llvm::Type::getVoidTy(*context),
+                             {llvm::PointerType::get(*context, 0)},
+                             false
+                         );
+                         llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
+                         for (auto strPtr : stringsToFree) {
+                             builder->CreateCall(freeFunc, {strPtr});
+                         }
+                     }
+                     return callInst;
                 }
+            } else if (funcName == "__builtin_intToString") {
+                // Declare rcrt_builtin_intToString if not exists: char* rcrt_builtin_intToString(int)
+                std::vector<llvm::Type*> argsTypes;
+                argsTypes.push_back(llvm::Type::getInt32Ty(*context));
+
+                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                    llvm::PointerType::get(*context, 0), // return char*
+                    argsTypes,
+                    false
+                );
+                
+                llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_intToString", toStringType);
+                
+                std::vector<llvm::Value*> args;
+                for (auto arg : node->getArguments()) {
+                    std::any argVal = visit(arg);
+                    if (argVal.has_value()) {
+                        args.push_back(std::any_cast<llvm::Value*>(argVal));
+                    }
+                }
+                
+                return (llvm::Value*)builder->CreateCall(toStringFunc, args);
             } else {
                 // Non-builtin function lookup in Module
                 llvm::Function* callee = module->getFunction(funcName);
@@ -203,11 +248,11 @@ namespace Ryntra::Compiler {
         // Default to int for now as we don't have type info in VariableDeclarationNode yet
         llvm::Type* type = val ? val->getType() : llvm::Type::getInt32Ty(*context);
         llvm::AllocaInst* alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
-        
+
         if (val) {
             builder->CreateStore(val, alloca);
         }
-        
+
         namedValues[node->getVarName()] = alloca;
         return (llvm::Value*)alloca;
     }
@@ -217,6 +262,21 @@ namespace Ryntra::Compiler {
     }
 
     std::any IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+        std::string idName = node->getIdentifier();
+        llvm::Value* alloca = namedValues[idName];
+        
+        if (!alloca) {
+            // This should be handled by semantic analyzer
+            return {};
+        }
+
+        std::any rhsVal = visit(node->getExpression());
+        if (rhsVal.has_value()) {
+            llvm::Value* val = std::any_cast<llvm::Value*>(rhsVal);
+            builder->CreateStore(val, alloca);
+            return val;
+        }
+
         return {};
     }
 } // namespace Ryntra::Compiler

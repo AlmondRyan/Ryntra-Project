@@ -11,10 +11,11 @@
 
 int main() {
     std::string src = R"(int main() {
-    __builtin_print("Hello World!");
+    __builtin_print("Hello World!\n");
     int a = 10;
     a = 20;
     int b = a;
+    __builtin_print(__builtin_intToString(a));
     return 0;
 })";
     try {
