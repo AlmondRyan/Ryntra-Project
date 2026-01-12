@@ -11,11 +11,12 @@
 
 int main() {
     std::string src = R"(int main() {
-    __builtin_print("Hello World!\n");
+    __builtin_print("Fuck you world!");
     int a = 10;
-    a = 20;
     int b = a;
+    a = 20;
     __builtin_print(__builtin_intToString(a));
+    __builtin_print(__builtin_intToString(b));
     return 0;
 })";
     try {
@@ -33,14 +34,13 @@ int main() {
         }
         
         Ryntra::Compiler::ASTBuilder astBuilder;
-        auto astResult = astBuilder.visitProgram(programContext);
-        auto programNode = std::any_cast<std::shared_ptr<Ryntra::Compiler::ProgramNode>>(astResult);
+        auto programNode = astBuilder.visitProgram(programContext);
         
         std::cout << ">>> Generated AST:" << std::endl;
         std::cout << programNode->toString() << std::endl;
 
         Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
-        auto semanticResult = semanticAnalyzer.visitProgram(programNode);
+        semanticAnalyzer.visitProgram(programNode);
 
         Ryntra::Compiler::ErrorHandler::getInstance().print();
 
@@ -50,7 +50,7 @@ int main() {
         }
 
         Ryntra::Compiler::IRGenerator irGenerator;
-        auto irResult = irGenerator.visitProgram(programNode);
+        irGenerator.visitProgram(programNode);
         auto ir = irGenerator.getIR();
         std::cout << ir << std::endl;
 

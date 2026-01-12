@@ -21,11 +21,10 @@ namespace Ryntra::Compiler {
         return str;
     }
 
-    std::any IRGenerator::visitProgram(std::shared_ptr<ProgramNode> node) {
+    void IRGenerator::visitProgram(std::shared_ptr<ProgramNode> node) {
         for (auto i : node->getFunctions()) {
             visit(i);
         }
-        return {};
     }
 
     namespace {
@@ -37,7 +36,7 @@ namespace Ryntra::Compiler {
         }
     }
 
-    std::any IRGenerator::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
+    void IRGenerator::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
         // 1. Prepare parameter types
         std::vector<llvm::Type*> paramTypes;
         for (const auto& param : node->getParameters()) {
@@ -91,26 +90,22 @@ namespace Ryntra::Compiler {
                 builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(32, 0)));
             }
         }
-
-        return func;
     }
 
-    std::any IRGenerator::visitBlock(std::shared_ptr<BlockNode> node) {
+    void IRGenerator::visitBlock(std::shared_ptr<BlockNode> node) {
         for (auto& stmt : node->getStatements()) {
             visit(stmt);
         }
-        return {};
     }
 
-    std::any IRGenerator::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
-        return {};
+    void IRGenerator::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
     }
 
-    std::any IRGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
-        return visit(node->getExpression());
+    void IRGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
+        visit(node->getExpression());
     }
 
-    std::any IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+    Type IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
         
         // 1. Symbol Table Lookup
@@ -141,9 +136,8 @@ namespace Ryntra::Compiler {
                         }
                     }
 
-                    std::any argVal = visit(argNode);
-                    if (argVal.has_value()) {
-                        llvm::Value* val = std::any_cast<llvm::Value*>(argVal);
+                    llvm::Value* val = evaluate(argNode);
+                    if (val) {
                         args.push_back(val);
                         if (isTempString) {
                             stringsToFree.push_back(val);
@@ -152,7 +146,7 @@ namespace Ryntra::Compiler {
                 }
                 
                 if (!args.empty()) {
-                     llvm::Value* callInst = builder->CreateCall(printfFunc, args);
+                     lastValue = builder->CreateCall(printfFunc, args);
                      
                      // Insert free calls for temporary strings
                      if (!stringsToFree.empty()) {
@@ -166,7 +160,7 @@ namespace Ryntra::Compiler {
                              builder->CreateCall(freeFunc, {strPtr});
                          }
                      }
-                     return callInst;
+                     return {TypeKind::Int, ""};
                 }
             } else if (funcName == "__builtin_intToString") {
                 // Declare rcrt_builtin_intToString if not exists: char* rcrt_builtin_intToString(int)
@@ -183,70 +177,74 @@ namespace Ryntra::Compiler {
                 
                 std::vector<llvm::Value*> args;
                 for (auto arg : node->getArguments()) {
-                    std::any argVal = visit(arg);
-                    if (argVal.has_value()) {
-                        args.push_back(std::any_cast<llvm::Value*>(argVal));
+                    llvm::Value* val = evaluate(arg);
+                    if (val) {
+                        args.push_back(val);
                     }
                 }
                 
-                return (llvm::Value*)builder->CreateCall(toStringFunc, args);
+                lastValue = builder->CreateCall(toStringFunc, args);
+                return {TypeKind::String, ""};
             } else {
                 // Non-builtin function lookup in Module
                 llvm::Function* callee = module->getFunction(funcName);
                 if (callee) {
                     std::vector<llvm::Value*> args;
                     for (auto argNode : node->getArguments()) {
-                        std::any argVal = visit(argNode);
-                        if (argVal.has_value()) {
-                            args.push_back(std::any_cast<llvm::Value*>(argVal));
+                        llvm::Value* val = evaluate(argNode);
+                        if (val) {
+                            args.push_back(val);
                         }
                     }
-                    return (llvm::Value*)builder->CreateCall(callee, args);
+                    lastValue = builder->CreateCall(callee, args);
+                    return {TypeKind::Custom, ""}; // Need actual return type here, but TypeKind::Custom is a placeholder
                 }
             }
         }
-        return {};
+        lastValue = nullptr;
+        return {TypeKind::Void, ""};
     }
 
-    std::any IRGenerator::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
-        return visit(node->getFunctionCall());
+    void IRGenerator::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
+        visit(node->getFunctionCall());
     }
 
-    std::any IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
+    Type IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
         llvm::Value* v = namedValues[node->getName()];
-        if (!v) return {};
-        return (llvm::Value*)builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getName());
-    }
-
-    std::any IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        return (llvm::Value*)llvm::ConstantInt::get(*context, llvm::APInt(32, std::get<int>(node->getValue())));
-    }
-
-    std::any IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
-        return {};
-    }
-
-    std::any IRGenerator::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
-        std::any val = visit(node->getReturnValue());
-        if (val.has_value()) {
-            return (llvm::Value*)builder->CreateRet(std::any_cast<llvm::Value*>(val));
+        if (!v) {
+            lastValue = nullptr;
+            return {TypeKind::Void, ""};
         }
-        return (llvm::Value*)builder->CreateRetVoid();
+        lastValue = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getName());
+        return {TypeKind::Custom, ""}; // Placeholder
     }
 
-    std::any IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        return (llvm::Value*)builder->CreateGlobalStringPtr(std::get<std::string>(node->getValue()));
+    Type IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
+        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, std::get<int>(node->getValue())));
+        return {TypeKind::Int, ""};
     }
 
-    std::any IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
-        std::any initVal = visit(node->getInitialValue());
-        llvm::Value* val = nullptr;
-        if (initVal.has_value()) {
-            val = std::any_cast<llvm::Value*>(initVal);
+    void IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
+    }
+
+    void IRGenerator::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
+        llvm::Value* val = evaluate(node->getReturnValue());
+        if (val) {
+            builder->CreateRet(val);
+        } else {
+            builder->CreateRetVoid();
         }
+    }
 
-        // Default to int for now as we don't have type info in VariableDeclarationNode yet
-        llvm::Type* type = val ? val->getType() : llvm::Type::getInt32Ty(*context);
+    Type IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
+        lastValue = builder->CreateGlobalStringPtr(std::get<std::string>(node->getValue()));
+        return {TypeKind::String, ""};
+    }
+
+    void IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
+        llvm::Value* val = evaluate(node->getInitialValue());
+
+        llvm::Type* type = mapType(*context, node->getVarType());
         llvm::AllocaInst* alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
 
         if (val) {
@@ -254,29 +252,31 @@ namespace Ryntra::Compiler {
         }
 
         namedValues[node->getVarName()] = alloca;
-        return (llvm::Value*)alloca;
     }
 
-    std::any IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
-        return {};
+    Type IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+        lastValue = nullptr;
+        return {TypeKind::Void, ""};
     }
 
-    std::any IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+    Type IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         std::string idName = node->getIdentifier();
         llvm::Value* alloca = namedValues[idName];
         
         if (!alloca) {
             // This should be handled by semantic analyzer
-            return {};
+            lastValue = nullptr;
+            return {TypeKind::Void, ""};
         }
 
-        std::any rhsVal = visit(node->getExpression());
-        if (rhsVal.has_value()) {
-            llvm::Value* val = std::any_cast<llvm::Value*>(rhsVal);
+        llvm::Value* val = evaluate(node->getExpression());
+        if (val) {
             builder->CreateStore(val, alloca);
-            return val;
+            lastValue = val;
+            return {TypeKind::Custom, ""}; // Placeholder
         }
 
-        return {};
+        lastValue = nullptr;
+        return {TypeKind::Void, ""};
     }
 } // namespace Ryntra::Compiler

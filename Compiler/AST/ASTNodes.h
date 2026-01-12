@@ -1,7 +1,6 @@
 #pragma once
 #include "SourceLocation/SourceLocation.h"
 
-#include <any>
 #include <memory>
 #include <string>
 #include <variant>
@@ -32,9 +31,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accept the visiting of visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The visiting result
          */
-        virtual std::any accept(IASTVisitor *visitor) = 0;
+        virtual void accept(IASTVisitor *visitor) = 0;
 
         SourceLocation getLocation() const {
             return location;
@@ -90,7 +88,7 @@ namespace Ryntra::Compiler {
          * @param visitor The pointer that points to the visitor.
          * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
     private:
         int value;
@@ -128,7 +126,7 @@ namespace Ryntra::Compiler {
          * @param visitor The pointer that points to the visitor.
          * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
     private:
         std::string value;
@@ -165,9 +163,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
     private:
         std::string name;
@@ -201,9 +198,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the name of the function.
@@ -265,9 +261,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the type of the Variable.
@@ -317,9 +312,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the returning value.
@@ -356,9 +350,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the Function Call that contains.
@@ -391,9 +384,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
     };
 
     /**
@@ -421,9 +413,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the Expression contained in the statement.
@@ -465,9 +456,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the type of the parameter.
@@ -517,9 +507,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the statements that closed in braces.
@@ -564,9 +553,8 @@ namespace Ryntra::Compiler {
         /**
          * @brief Accepts the visiting from the visitor.
          * @param visitor The pointer that points to the visitor.
-         * @return The result.
          */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
         /**
          * @brief Get the return type of the function.
@@ -607,47 +595,19 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode>                  body;
     };
 
-    /**
-     * @brief The Program Node.
-     * @details Represents the root node of the AST, containing all function
-     * definitions that form a complete program. This node serves as the
-     * entry point for the entire program's syntax tree structure.
-     */
     class ProgramNode : public IASTNode {
     public:
-        /**
-         * @brief The Constructor.
-         * @param funcs The vector of function definitions that compose the program.
-         */
         ProgramNode(std::vector<std::shared_ptr<FunctionDefinitionNode>> funcs)
-            : functions(std::move(funcs)) {
-        }
+            : functions(std::move(funcs)) {}
 
-        /**
-         * @brief Add a function definition to the program.
-         * @param func The function definition to be added to the program.
-         */
         void addFunction(std::shared_ptr<FunctionDefinitionNode> func) {
             functions.push_back(std::move(func));
         }
 
-        /**
-         * @brief Get the string representation of the Program Node.
-         * @return A string that formed like "Program([function1, function2, ...])".
-         */
         std::string toString() const override;
 
-        /**
-         * @brief Accepts the visiting from the visitor.
-         * @param visitor The pointer that points to the visitor.
-         * @return The result.
-         */
-        std::any accept(IASTVisitor *visitor) override;
+        void accept(IASTVisitor *visitor) override;
 
-        /**
-         * @brief Get the functions defined in the program.
-         * @return Vector of function definition nodes.
-         */
         std::vector<std::shared_ptr<FunctionDefinitionNode>> getFunctions() const {
             return functions;
         }
@@ -662,15 +622,15 @@ namespace Ryntra::Compiler {
                              std::string opr) : left(std::move(l)), right(std::move(r)), operand(std::move(opr)) {}
 
         std::string toString() const override;
-        std::any    accept(IASTVisitor *visitor) override;
+        void        accept(IASTVisitor *visitor) override;
 
         std::shared_ptr<IASTNode> getLeft() const { return left; }
         std::shared_ptr<IASTNode> getRight() const { return right; }
         std::string               getOp() const { return operand; }
 
     private:
-        std::shared_ptr<IASTNode> left;  // Left operand, such as the 1 in 1+2
-        std::shared_ptr<IASTNode> right; // Right operand, such as the 2 in 1+2
+        std::shared_ptr<IASTNode> left;
+        std::shared_ptr<IASTNode> right;
         std::string               operand;
     };
 
@@ -678,9 +638,9 @@ namespace Ryntra::Compiler {
     public:
         AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(std::move(id)), expression(std::move(exp)) {}
         std::string toString() const override;
-        std::any accept(IASTVisitor *visitor) override;
+        void        accept(IASTVisitor *visitor) override;
 
-        const std::string& getIdentifier() const { return identifier; }
+        const std::string        &getIdentifier() const { return identifier; }
         std::shared_ptr<IASTNode> getExpression() const { return expression; }
 
     private:
