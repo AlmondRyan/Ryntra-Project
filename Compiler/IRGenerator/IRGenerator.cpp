@@ -220,7 +220,7 @@ namespace Ryntra::Compiler {
     }
 
     Type IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, std::get<int>(node->getValue())));
+        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, node->getValue()));
         return {TypeKind::Int, ""};
     }
 
@@ -237,7 +237,7 @@ namespace Ryntra::Compiler {
     }
 
     Type IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        lastValue = builder->CreateGlobalStringPtr(std::get<std::string>(node->getValue()));
+        lastValue = builder->CreateGlobalStringPtr(node->getValue());
         return {TypeKind::String, ""};
     }
 

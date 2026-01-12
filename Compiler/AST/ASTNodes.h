@@ -34,13 +34,17 @@ namespace Ryntra::Compiler {
          */
         virtual void accept(IASTVisitor *visitor) = 0;
 
-        SourceLocation getLocation() const {
-            return location;
-        }
+        /**
+         * @brief Get Source Location of the Node.
+         * @return Source Location that contains row and column information
+         */
+        SourceLocation getLocation() const { return location; }
 
-        void setLocation(SourceLocation loc) {
-            location = loc;
-        }
+        /**
+         * @brief Set Source Location of the Node
+         * @param loc Source Location that contains row and column information
+         */
+        void setLocation(SourceLocation loc) { location = loc; }
 
     private:
         SourceLocation location;
@@ -53,7 +57,6 @@ namespace Ryntra::Compiler {
      */
     class LiteralNode : public IASTNode {
     public:
-        virtual std::variant<int, std::string> getValue() const = 0;
     };
 
     /**
@@ -73,9 +76,9 @@ namespace Ryntra::Compiler {
 
         /**
          * @brief Get the value.
-         * @return The std::variant that contains the value.
+         * @return The int that contains the value.
          */
-        std::variant<int, std::string> getValue() const override;
+        int getValue() const;
 
         /**
          * @brief The string representation of the Integer Literal Node.
@@ -111,9 +114,9 @@ namespace Ryntra::Compiler {
 
         /**
          * @brief Get the value of the string.
-         * @return The variant contains the string value.
+         * @return The string value.
          */
-        std::variant<int, std::string> getValue() const override;
+        std::string getValue() const;
 
         /**
          * @brief Get the string representation of the node.
@@ -143,8 +146,7 @@ namespace Ryntra::Compiler {
          * @brief The Constructor. Accepts the value of the Identifier Node.
          * @param n The value of the node.
          */
-        IdentifierNode(const std::string &n) : name(n) {
-        }
+        IdentifierNode(const std::string &n) : name(n) {}
 
         /**
          * @brief Get the string representation of the Node.
@@ -156,9 +158,7 @@ namespace Ryntra::Compiler {
          * @brief Get the name of the identifier.
          * @return The name of the Identifier.
          */
-        const std::string &getName() const {
-            return name;
-        }
+        const std::string &getName() const { return name; }
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -184,8 +184,7 @@ namespace Ryntra::Compiler {
          * @param arg The argument list of the Function
          */
         FunctionCallNode(const std::string &n, std::vector<std::shared_ptr<IASTNode>> arg)
-            : functionName(n), arguments(arg) {
-        }
+            : functionName(n), arguments(arg) {}
 
         /**
          * @brief Get the string representation of the FunctionCall Node.
@@ -205,17 +204,13 @@ namespace Ryntra::Compiler {
          * @brief Get the name of the function.
          * @return The name of the function.
          */
-        std::string getFunctionName() const {
-            return functionName;
-        }
+        std::string getFunctionName() const { return functionName; }
 
         /**
          * @brief Get the argument list of the function.
          * @return The argument list of the function.
          */
-        std::vector<std::shared_ptr<IASTNode>> getArguments() const {
-            return arguments;
-        }
+        std::vector<std::shared_ptr<IASTNode>> getArguments() const { return arguments; }
 
     private:
         std::string                            functionName;
@@ -247,8 +242,7 @@ namespace Ryntra::Compiler {
          * @param init The variable initial value.
          */
         VariableDeclarationNode(const std::string &type, const std::string &name, std::shared_ptr<IASTNode> init = nullptr)
-            : varType(type), varName(name), initialValue(std::move(init)) {
-        }
+            : varType(type), varName(name), initialValue(std::move(init)) {}
 
         /**
          * @brief Get the string representation of VariableDeclaration
@@ -298,16 +292,13 @@ namespace Ryntra::Compiler {
          * @brief The Constructor.
          * @param value The value that returns.
          */
-        ReturnStatementNode(std::shared_ptr<IASTNode> value) : returnValue(std::move(value)) {
-        }
+        ReturnStatementNode(std::shared_ptr<IASTNode> value) : returnValue(std::move(value)) {}
 
         /**
          * @brief Get the string representation of the Node.
          * @return A string that formed like `ReturnStatement(Value)`
          */
-        std::string toString() const override {
-            return "ReturnStatement(" + returnValue->toString() + ")";
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -336,16 +327,13 @@ namespace Ryntra::Compiler {
          * @brief The Constructor.
          * @param fcall The main function call that contains in.
          */
-        FunctionCallStatementNode(std::shared_ptr<FunctionCallNode> fcall) : functionCall(std::move(fcall)) {
-        }
+        FunctionCallStatementNode(std::shared_ptr<FunctionCallNode> fcall) : functionCall(std::move(fcall)) {}
 
         /**
          * @brief Get the string representation of the FunctionCallStatement.
          * @return A string that formed like: `FunctionCallStatement(function)`
          */
-        std::string toString() const override {
-            return "FunctionCallStatement(" + functionCall->toString() + ")";
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -357,9 +345,7 @@ namespace Ryntra::Compiler {
          * @brief Get the Function Call that contains.
          * @return The Function Call that contains in.
          */
-        std::shared_ptr<FunctionCallNode> getFunctionCall() const {
-            return functionCall;
-        }
+        std::shared_ptr<FunctionCallNode> getFunctionCall() const { return functionCall; }
 
     private:
         std::shared_ptr<FunctionCallNode> functionCall;
@@ -377,9 +363,7 @@ namespace Ryntra::Compiler {
          * @brief Get the string representation of the Empty Statement Node.
          * @return A string that formed like "EmptyStatement".
          */
-        std::string toString() const override {
-            return "EmptyStatement";
-        }
+        std::string toString() const override { return "EmptyStatement"; }
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -399,16 +383,13 @@ namespace Ryntra::Compiler {
          * @brief The Constructor.
          * @param expr The expression that forms the statement.
          */
-        ExpressionStatementNode(std::shared_ptr<IASTNode> expr) : expression(std::move(expr)) {
-        }
+        ExpressionStatementNode(std::shared_ptr<IASTNode> expr) : expression(std::move(expr)) {}
 
         /**
          * @brief Get the string representation of the Expression Statement Node.
          * @return A string that formed like "ExpressionStatement(Expression)".
          */
-        std::string toString() const override {
-            return "ExpressionStatement(" + expression->toString() + ")";
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -420,9 +401,7 @@ namespace Ryntra::Compiler {
          * @brief Get the Expression contained in the statement.
          * @return The expression node.
          */
-        std::shared_ptr<IASTNode> getExpression() const {
-            return expression;
-        }
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
 
     private:
         std::shared_ptr<IASTNode> expression;
@@ -442,16 +421,13 @@ namespace Ryntra::Compiler {
          * @param n The name of the parameter.
          */
         ParameterNode(const std::string &t, const std::string &n)
-            : type(t), name(n) {
-        }
+            : type(t), name(n) {}
 
         /**
          * @brief Get the string representation of the Parameter Node.
          * @return A string that formed like "Parameter(type name)".
          */
-        std::string toString() const override {
-            return "Parameter(" + type + " " + name + ")";
-        }
+        std::string toString() const override;
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -487,8 +463,7 @@ namespace Ryntra::Compiler {
          * @brief The Constructor.
          * @param stmts The vector of statements that compose the block.
          */
-        BlockNode(std::vector<std::shared_ptr<StatementNode>> stmts) : statements(std::move(stmts)) {
-        }
+        BlockNode(std::vector<std::shared_ptr<StatementNode>> stmts) : statements(std::move(stmts)) {}
 
         /**
          * @brief Add a statement to the block.
@@ -541,8 +516,7 @@ namespace Ryntra::Compiler {
                                std::vector<std::shared_ptr<ParameterNode>> params,
                                std::shared_ptr<BlockNode>                  b)
             : returnType(retType), functionName(name),
-              parameters(std::move(params)), body(std::move(b)) {
-        }
+              parameters(std::move(params)), body(std::move(b)) {}
 
         /**
          * @brief Get the string representation of the Function Definition Node.
@@ -560,17 +534,13 @@ namespace Ryntra::Compiler {
          * @brief Get the return type of the function.
          * @return The return type as string.
          */
-        std::string getReturnType() const {
-            return returnType;
-        }
+        std::string getReturnType() const { return returnType; }
 
         /**
          * @brief Get the name of the function.
          * @return The function name.
          */
-        std::string getFunctionName() const {
-            return functionName;
-        }
+        std::string getFunctionName() const { return functionName; }
 
         /**
          * @brief Get the parameters of the function.
@@ -584,9 +554,7 @@ namespace Ryntra::Compiler {
          * @brief Get the body of the function.
          * @return The block node representing the function body.
          */
-        std::shared_ptr<BlockNode> getBody() const {
-            return body;
-        }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
 
     private:
         std::string                                 returnType;
@@ -595,19 +563,88 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode>                  body;
     };
 
+    /**
+     * @brief The Assignment Expression Node representing assignment operations.
+     * @details This class represents assignment expressions of the form `identifier = expression`,
+     * where a value or result of an expression is assigned to a variable/identifier.
+     * Example: `x = 5`, `y = a + b`, `counter = counter + 1`.
+     */
+    class AssignmentExpressionNode : public IASTNode {
+    public:
+        /**
+         * @brief Constructor that creates an assignment expression node.
+         * @param id The identifier (variable name) being assigned to.
+         * @param exp The expression whose value will be assigned to the identifier.
+         */
+        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(std::move(id)), expression(std::move(exp)) {}
+
+        /**
+         * @brief Get the string representation of the Assignment Expression Node.
+         * @return A string representation of the form "AssignmentExpression(identifier = expression)".
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+        /**
+         * @brief Get the identifier being assigned to.
+         * @return The identifier name as a string reference.
+         */
+        const std::string &getIdentifier() const { return identifier; }
+
+        /**
+         * @brief Get the expression being assigned.
+         * @return The expression node that provides the value for assignment.
+         */
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
+
+    private:
+        std::string               identifier; ///< The identifier (variable name) being assigned to
+        std::shared_ptr<IASTNode> expression; ///< The expression providing the value for assignment
+    };
+
+    /**
+     * @brief The Program Node representing the entire program structure.
+     * @details This class represents the root node of the AST that contains all function definitions
+     * in the program. It serves as the top-level container for the complete source code structure.
+     */
     class ProgramNode : public IASTNode {
     public:
+        /**
+         * @brief Constructor that initializes the ProgramNode with a vector of functions.
+         * @param funcs The vector containing all function definitions in the program.
+         */
         ProgramNode(std::vector<std::shared_ptr<FunctionDefinitionNode>> funcs)
             : functions(std::move(funcs)) {}
 
+        /**
+         * @brief Adds a new function to the program.
+         * @param func The function definition to be added to the program.
+         */
         void addFunction(std::shared_ptr<FunctionDefinitionNode> func) {
             functions.push_back(std::move(func));
         }
 
+        /**
+         * @brief Get the string representation of the Program Node.
+         * @return A string representation showing all functions in the program.
+         */
         std::string toString() const override;
 
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
         void accept(IASTVisitor *visitor) override;
 
+        /**
+         * @brief Get all functions defined in the program.
+         * @return Vector containing all function definitions in the program.
+         */
         std::vector<std::shared_ptr<FunctionDefinitionNode>> getFunctions() const {
             return functions;
         }
@@ -616,35 +653,57 @@ namespace Ryntra::Compiler {
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
     };
 
+    /**
+     * @brief The Binary Expression Node representing binary operations.
+     * @details This class represents expressions that contain two operands and an operator,
+     * such as arithmetic operations (addition, subtraction), comparison operations, etc.
+     * Examples include expressions like `a + b`, `x > y`, `i == j`.
+     */
     class BinaryExpressionNode : public IASTNode {
     public:
+        /**
+         * @brief Constructor that creates a binary expression node.
+         * @param l The left operand of the binary expression.
+         * @param r The right operand of the binary expression.
+         * @param opr The operator symbol (e.g., "+", "-", "*", "/", "==", "<", etc.).
+         */
         BinaryExpressionNode(std::shared_ptr<IASTNode> l, std::shared_ptr<IASTNode> r,
                              std::string opr) : left(std::move(l)), right(std::move(r)), operand(std::move(opr)) {}
 
+        /**
+         * @brief Get the string representation of the Binary Expression Node.
+         * @return A string representation of the form "BinaryExpression(left op right)".
+         */
         std::string toString() const override;
-        void        accept(IASTVisitor *visitor) override;
 
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+        /**
+         * @brief Get the left operand of the binary expression.
+         * @return The left operand node.
+         */
         std::shared_ptr<IASTNode> getLeft() const { return left; }
+
+        /**
+         * @brief Get the right operand of the binary expression.
+         * @return The right operand node.
+         */
         std::shared_ptr<IASTNode> getRight() const { return right; }
-        std::string               getOp() const { return operand; }
+
+        /**
+         * @brief Get the operator of the binary expression.
+         * @return The operator string (e.g., "+", "-", "==").
+         */
+        std::string getOp() const { return operand; }
 
     private:
-        std::shared_ptr<IASTNode> left;
-        std::shared_ptr<IASTNode> right;
+        std::shared_ptr<IASTNode> left;  ///< The left operand of the binary expression
+        std::shared_ptr<IASTNode> right; ///< The right operand of the binary expression
         std::string               operand;
     };
 
-    class AssignmentExpressionNode : public IASTNode {
-    public:
-        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(std::move(id)), expression(std::move(exp)) {}
-        std::string toString() const override;
-        void        accept(IASTVisitor *visitor) override;
-
-        const std::string        &getIdentifier() const { return identifier; }
-        std::shared_ptr<IASTNode> getExpression() const { return expression; }
-
-    private:
-        std::string               identifier;
-        std::shared_ptr<IASTNode> expression;
-    };
 } // namespace Ryntra::Compiler

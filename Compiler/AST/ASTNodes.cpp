@@ -54,7 +54,7 @@ namespace Ryntra::Compiler {
         visitor->visitProgram(std::static_pointer_cast<ProgramNode>(shared_from_this()));
     }
 
-    std::variant<int, std::string> IntegerLiteralNode::getValue() const {
+    int IntegerLiteralNode::getValue() const {
         return value;
     }
 
@@ -62,7 +62,7 @@ namespace Ryntra::Compiler {
         return "IntegerLiteral(" + std::to_string(value) + ")";
     }
 
-    std::variant<int, std::string> StringLiteralNode::getValue() const {
+    std::string StringLiteralNode::getValue() const {
         return value;
     }
 
@@ -150,5 +150,21 @@ namespace Ryntra::Compiler {
 
     std::string AssignmentExpressionNode::toString() const {
         return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
+    }
+
+    std::string ReturnStatementNode::toString() const {
+        return "ReturnStatement(" + returnValue->toString() + ")";
+    }
+
+    std::string FunctionCallStatementNode::toString() const {
+        return "FunctionCallStatement(" + functionCall->toString() + ")";
+    }
+
+    std::string ExpressionStatementNode::toString() const {
+        return "ExpressionStatement(" + expression->toString() + ")";
+    }
+
+    std::string ParameterNode::toString() const {
+        return "Parameter(" + type + " " + name + ")";
     }
 } // namespace Ryntra::Compiler
