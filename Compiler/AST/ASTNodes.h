@@ -244,20 +244,21 @@ namespace Ryntra::Compiler {
     class VariableDeclarationNode : public StatementNode {
     public:
         /**
-         * @brief The Constructor. Accepts the variable name and variable
+         * @brief The Constructor. Accepts the variable type, name and variable
          * initial value.
+         * @param type The variable type.
          * @param name The variable name.
          * @param init The variable initial value.
          */
-        VariableDeclarationNode(const std::string &name, std::shared_ptr<IASTNode> init = nullptr)
-            : varName(name), initialValue(std::move(init)) {
+        VariableDeclarationNode(const std::string &type, const std::string &name, std::shared_ptr<IASTNode> init = nullptr)
+            : varType(type), varName(name), initialValue(std::move(init)) {
         }
 
         /**
          * @brief Get the string representation of VariableDeclaration
          * Node.
          * @return A string that formed like
-         * VariableDeclaration(name, value) or VariableDeclaration(name)
+         * VariableDeclaration(type name, value) or VariableDeclaration(type name)
          */
         std::string toString() const override;
 
@@ -267,6 +268,12 @@ namespace Ryntra::Compiler {
          * @return The result.
          */
         std::any accept(IASTVisitor *visitor) override;
+
+        /**
+         * @brief Get the type of the Variable.
+         * @return The type of the variable.
+         */
+        const std::string &getVarType() const { return varType; }
 
         /**
          * @brief Get the name of the Variable.
@@ -281,6 +288,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IASTNode> getInitialValue() const { return initialValue; }
 
     private:
+        std::string               varType;
         std::string               varName;
         std::shared_ptr<IASTNode> initialValue; // WARN: Possible be nullptr if there are no parameters
     };

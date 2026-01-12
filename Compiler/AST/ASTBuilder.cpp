@@ -114,6 +114,7 @@ namespace Ryntra::Compiler {
     }
 
     std::any ASTBuilder::visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context) {
+        std::string varType = context->INT()->getText();
         std::string varName = context->IDENTIFIER()->getText();
         std::shared_ptr<IASTNode> initialValue = nullptr;
 
@@ -124,8 +125,7 @@ namespace Ryntra::Compiler {
             }
         }
 
-        // return std::make_shared<VariableDeclarationNode>(varName, std::move(initialValue));
-        return createNode<VariableDeclarationNode>(context, varName, std::move(initialValue));
+        return createNode<VariableDeclarationNode>(context, varType, varName, std::move(initialValue));
     }
 
     std::any ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context) {

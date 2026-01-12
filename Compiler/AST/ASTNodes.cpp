@@ -131,9 +131,9 @@ namespace Ryntra::Compiler {
 
     std::string VariableDeclarationNode::toString() const {
         if (initialValue) {
-            return "VariableDeclaration(" + varName + ", " + initialValue->toString() + ")";
+            return "VariableDeclaration(" + varType + " " + varName + ", " + initialValue->toString() + ")";
         }
-        return "VariableDeclaration(" + varName + ")";
+        return "VariableDeclaration(" + varType + " " + varName + ")";
     }
 
     std::string BinaryExpressionNode::toString() const {

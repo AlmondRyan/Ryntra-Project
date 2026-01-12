@@ -58,9 +58,11 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+        symbolTable.enterScope();
         for (auto &stmt : node->getStatements()) {
             visit(stmt);
         }
+        symbolTable.exitScope();
         return {};
     }
 
@@ -161,6 +163,30 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
+        std::string varName = node->getVarName();
+        auto initialValue = node->getInitialValue();
+
+        auto valueResult = visit(initialValue);
+        if (valueResult.has_value()) {
+            auto valueType = std::any_cast<TypeKind>(valueResult);
+            Symbol variableSymbol = {
+                {valueType, ""},
+                varName,
+                SymbolKind::Variable
+            };
+
+            symbolTable.addSymbol(variableSymbol);
+        }
+
+        auto declaredType = mapStringToType(node->getVarType());
+        auto initValueType = std::any_cast<TypeKind>(valueResult);
+
+        if (declaredType != initValueType) {
+            ErrorHandler::getInstance().makeError(
+                "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType) + ".",
+                SourceLocation(node->getLocation())
+            );
+        }
         return {};
     }
 
