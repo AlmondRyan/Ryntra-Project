@@ -71,6 +71,9 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
+        if (node->getExpression()) {
+            return visit(node->getExpression());
+        }
         return {};
     }
 
@@ -123,7 +126,16 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
-        return {};
+        std::string name = node->getName();
+        auto symbol = symbolTable.lookupSymbolInScopes(name);
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined identifier: " + name,
+                SourceLocation(node->getLocation())
+            );
+            return TypeKind::Void;
+        }
+        return symbol->type.kind;
     }
 
     std::any SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
@@ -158,36 +170,42 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        // return std::string("string");
         return TypeKind::String;
     }
 
     std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
         std::string varName = node->getVarName();
+        TypeKind declaredType = mapStringToType(node->getVarType());
+        
         auto initialValue = node->getInitialValue();
-
-        auto valueResult = visit(initialValue);
-        if (valueResult.has_value()) {
-            auto valueType = std::any_cast<TypeKind>(valueResult);
-            Symbol variableSymbol = {
-                {valueType, ""},
-                varName,
-                SymbolKind::Variable
-            };
-
-            symbolTable.addSymbol(variableSymbol);
+        if (initialValue) {
+            auto valueResult = visit(initialValue);
+            if (valueResult.has_value()) {
+                TypeKind initValueType = std::any_cast<TypeKind>(valueResult);
+                
+                if (declaredType != initValueType) {
+                    ErrorHandler::getInstance().makeError(
+                        "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType) + ".",
+                        SourceLocation(node->getLocation())
+                    );
+                }
+            }
         }
 
-        auto declaredType = mapStringToType(node->getVarType());
-        auto initValueType = std::any_cast<TypeKind>(valueResult);
+        Symbol variableSymbol = {
+            {declaredType, ""},
+            varName,
+            SymbolKind::Variable
+        };
 
-        if (declaredType != initValueType) {
+        if (!symbolTable.addSymbolToCurrentScope(variableSymbol)) {
             ErrorHandler::getInstance().makeError(
-                "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType) + ".",
+                "Variable '" + varName + "' is already defined in this scope.",
                 SourceLocation(node->getLocation())
             );
         }
-        return {};
+
+        return declaredType;
     }
 
     std::any SemanticAnalyzer::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
@@ -195,6 +213,34 @@ namespace Ryntra::Compiler {
     }
 
     std::any SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
-        return {};
+        auto idName = node->getIdentifier();
+        auto symbol = symbolTable.lookupSymbolInScopes(idName);
+        
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined variable '" + idName + "' in current scope.",
+                SourceLocation(node->getLocation())
+            );
+            return TypeKind::Void;
+        }
+
+        auto rhs = visit(node->getExpression());
+        if (!rhs.has_value()) {
+            return TypeKind::Void;
+        }
+
+        TypeKind rhsType = std::any_cast<TypeKind>(rhs);
+        TypeKind lhsType = symbol->type.kind;
+
+        if (lhsType != rhsType) {
+            ErrorHandler::getInstance().makeError(
+                "Cannot assign " + mapTypeToString(rhsType) +
+                " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType),
+                SourceLocation(node->getLocation())
+            );
+            return TypeKind::Void;
+        }
+
+        return lhsType;
     }
 } // namespace Ryntra::Compiler

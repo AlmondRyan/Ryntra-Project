@@ -13,6 +13,8 @@ int main() {
     std::string src = R"(int main() {
     __builtin_print("Hello World!");
     int a = 10;
+    a = 20;
+    int b = a;
     return 0;
 })";
     try {

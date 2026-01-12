@@ -8,7 +8,8 @@ namespace Ryntra::Compiler {
         Int,
         String,
         Void,
-        Custom
+        Custom,
+        ErrorType
     };
 
     enum class SymbolKind {
