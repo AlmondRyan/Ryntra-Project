@@ -40,7 +40,10 @@ int main() {
     __builtin_print(" ");
     __builtin_print(__builtin_intToString(f));
 
-    // 4. Test return statement
+    // 5. Test Result Discarding (should do a warning)
+    f + 10;
+
+    // 6. Test return statement
     return 0;
 })";
     try {
@@ -69,8 +72,14 @@ int main() {
         Ryntra::Compiler::ErrorHandler::getInstance().print();
 
         if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
-            std::cout << "Semantic Analysis failed." << std::endl;
-            return 0;
+            for (auto i : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+                if (i.type == Ryntra::Compiler::ET_WARNING) {
+                    continue;
+                } else {
+                    std::cout << "Semantic Analysis Failed." << std::endl;
+                    return 0;
+                }
+            }
         }
 
         Ryntra::Compiler::IRGenerator irGenerator;

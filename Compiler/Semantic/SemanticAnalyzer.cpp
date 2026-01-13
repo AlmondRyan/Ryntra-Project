@@ -68,6 +68,14 @@ namespace Ryntra::Compiler {
 
     void SemanticAnalyzer::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
         if (node->getExpression()) {
+            auto expr = node->getExpression();
+            if (std::dynamic_pointer_cast<BinaryExpressionNode>(expr)) {
+                ErrorHandler::getInstance().makeWarning(
+                    "Expression result discarded.",
+                    SourceLocation(node->getLocation())
+                );
+            }
+
             visit(node->getExpression());
         }
     }
