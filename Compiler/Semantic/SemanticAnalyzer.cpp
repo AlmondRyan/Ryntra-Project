@@ -3,12 +3,12 @@
 #include <iostream>
 
 namespace Ryntra::Compiler {
-    std::any SemanticAnalyzer::visitProgram(std::shared_ptr<ProgramNode> node) {
+    void SemanticAnalyzer::visitProgram(std::shared_ptr<ProgramNode> node) {
         // Register all functions to symbol table
         for (const auto &i : node->getFunctions()) {
             FunctionSymbol functionSymbol;
             functionSymbol.name = i->getFunctionName();
-            functionSymbol.returnType.kind = mapStringToType(i->getReturnType());
+            functionSymbol.returnType = {mapStringToType(i->getReturnType()), ""};
             for (const auto &paramNode : i->getParameters()) {
                 TypeKind pk = mapStringToType(paramNode->getType());
                 Symbol s({pk, ""}, paramNode->getName(), SymbolKind::Parameter);
@@ -38,10 +38,9 @@ namespace Ryntra::Compiler {
                 );
             }
         }
-        return {};
     }
 
-    std::any SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
+    void SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
         currentExpectedReturningType = mapStringToType(node->getReturnType());
 
         symbolTable.enterScope();
@@ -54,31 +53,41 @@ namespace Ryntra::Compiler {
         visit(node->getBody());
         symbolTable.exitScope();
         currentExpectedReturningType = TypeKind::Void;
-        return {};
     }
 
-    std::any SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+    void SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+        symbolTable.enterScope();
         for (auto &stmt : node->getStatements()) {
             visit(stmt);
         }
-        return {};
+        symbolTable.exitScope();
     }
 
-    std::any SemanticAnalyzer::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
-        return {};
+    void SemanticAnalyzer::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
     }
 
-    std::any SemanticAnalyzer::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
-        return {};
+    void SemanticAnalyzer::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
+        if (node->getExpression()) {
+            auto expr = node->getExpression();
+            if (std::dynamic_pointer_cast<BinaryExpressionNode>(expr)) {
+                ErrorHandler::getInstance().makeWarning(
+                    "Expression result discarded.",
+                    SourceLocation(node->getLocation())
+                );
+            }
+
+            visit(node->getExpression());
+        }
     }
 
-    std::any SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+    Type SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
         auto funcSymbol = symbolTable.lookupFunction(funcName);
         if (funcSymbol == std::nullopt) {
             ErrorHandler::getInstance().makeError("Undefined function: " + funcName,
                 SourceLocation(node->getLocation().line, node->getLocation().column));
-            return {};
+            lastTypeResult = {TypeKind::Void, ""};
+            return lastTypeResult;
         }
 
         const auto &args = node->getArguments();
@@ -90,59 +99,58 @@ namespace Ryntra::Compiler {
                 " arguments, but got " + std::to_string(args.size()),
                 SourceLocation(node->getLocation().line, node->getLocation().column)
             );
-            return {};
         }
 
         for (auto i = 0; i < args.size(); i++) {
-            auto result = visit(args[i]);
-            if (result.has_value()) {
-                // std::string argType = std::any_cast<std::string>(result);
-                // std::string neededType = this->mapTypeToString(params[i].type.kind);
-                TypeKind argType = std::any_cast<TypeKind>(result);
-
-                if (argType != params[i].type.kind) {
+            Type argType = evaluate(args[i]);
+            if (i < params.size()) {
+                if (argType.kind != params[i].type.kind) {
                     ErrorHandler::getInstance().makeError(
                         "Function " + funcName + " requires " + mapTypeToString(params[i].type.kind) + " but got " +
-                        mapTypeToString(argType),
+                        mapTypeToString(argType.kind),
                         SourceLocation(node->getLocation().line, node->getLocation().column)
                     );
                 }
             }
         }
 
-        // return {};
-        // return this->mapTypeToString(funcSymbol->returnType.kind);
-        return funcSymbol->returnType.kind;
+        lastTypeResult = funcSymbol->returnType;
+        return lastTypeResult;
     }
 
-    std::any SemanticAnalyzer::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
+    void SemanticAnalyzer::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
         visit(node->getFunctionCall());
-        return {};
     }
 
-    std::any SemanticAnalyzer::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
-        return {};
+    Type SemanticAnalyzer::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
+        std::string name = node->getName();
+        auto symbol = symbolTable.lookupSymbolInScopes(name);
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined identifier: " + name,
+                SourceLocation(node->getLocation())
+            );
+            lastTypeResult = {TypeKind::Void, ""};
+            return lastTypeResult;
+        }
+        lastTypeResult = symbol->type;
+        return lastTypeResult;
     }
 
-    std::any SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        // return std::string("int");
-        return TypeKind::Int;
+    Type SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
+        lastTypeResult = {TypeKind::Int, ""};
+        return lastTypeResult;
     }
 
-    std::any SemanticAnalyzer::visitParameter(std::shared_ptr<ParameterNode> node) {
-        return {};
+    void SemanticAnalyzer::visitParameter(std::shared_ptr<ParameterNode> node) {
     }
 
-    std::any SemanticAnalyzer::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
-        auto result = visit(node->getReturnValue());
-        if (result.has_value()) {
-            // std::string actualType = std::any_cast<std::string>(result);
-            // TypeKind tk = mapStringToType(actualType);
-            TypeKind tk = std::any_cast<TypeKind>(result);
-
-            if (tk != currentExpectedReturningType) {
+    void SemanticAnalyzer::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
+        Type tk = evaluate(node->getReturnValue());
+        if (tk.kind != TypeKind::Void || node->getReturnValue()) {
+            if (tk.kind != currentExpectedReturningType) {
                 ErrorHandler::getInstance().makeError(
-                    "Mismatch returning type: expect " + mapTypeToString(currentExpectedReturningType) + " but got " + mapTypeToString(tk),
+                    "Mismatch returning type: expect " + mapTypeToString(currentExpectedReturningType) + " but got " + mapTypeToString(tk.kind),
                     SourceLocation(node->getLocation())
                 );
             }
@@ -152,15 +160,87 @@ namespace Ryntra::Compiler {
                     SourceLocation(node->getLocation()));
             }
         }
-        return {};
     }
 
-    std::any SemanticAnalyzer::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
-        // return std::string("string");
-        return TypeKind::String;
+    Type SemanticAnalyzer::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
+        lastTypeResult = {TypeKind::String, ""};
+        return lastTypeResult;
     }
 
-    std::any SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
-        return {};
+    void SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
+        std::string varName = node->getVarName();
+        TypeKind declaredType = mapStringToType(node->getVarType());
+        
+        auto initialValue = node->getInitialValue();
+        if (initialValue) {
+            Type initValueType = evaluate(initialValue);
+            
+            if (declaredType != initValueType.kind) {
+                ErrorHandler::getInstance().makeError(
+                    "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType.kind) + ".",
+                    SourceLocation(node->getLocation())
+                );
+            }
+        }
+
+        Symbol variableSymbol = {
+            {declaredType, ""},
+            varName,
+            SymbolKind::Variable
+        };
+
+        if (!symbolTable.addSymbolToCurrentScope(variableSymbol)) {
+            ErrorHandler::getInstance().makeError(
+                "Variable '" + varName + "' is already defined in this scope.",
+                SourceLocation(node->getLocation())
+            );
+        }
+    }
+
+    Type SemanticAnalyzer::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+        Type lhs = evaluate(node->getLeft());
+        Type rhs = evaluate(node->getRight());
+        std::string op = node->getOp();
+
+        if (lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int) {
+            lastTypeResult = {TypeKind::Int, ""};
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "Invalid operation between binary operator. Expected " + mapTypeToString(lhs.kind) +
+                " but got " + mapTypeToString(rhs.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+            lastTypeResult = {TypeKind::Void, ""};
+        }
+
+        return lastTypeResult;
+    }
+
+    Type SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+        auto idName = node->getIdentifier();
+        auto symbol = symbolTable.lookupSymbolInScopes(idName);
+        
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined variable '" + idName + "' in current scope.",
+                SourceLocation(node->getLocation())
+            );
+            lastTypeResult = {TypeKind::Void, ""};
+            return lastTypeResult;
+        }
+
+        Type rhsType = evaluate(node->getExpression());
+        Type lhsType = symbol->type;
+
+        if (lhsType.kind != rhsType.kind) {
+            ErrorHandler::getInstance().makeError(
+                "Cannot assign " + mapTypeToString(rhsType.kind) +
+                " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType.kind),
+                SourceLocation(node->getLocation())
+            );
+        }
+
+        lastTypeResult = lhsType;
+        return lastTypeResult;
     }
 } // namespace Ryntra::Compiler

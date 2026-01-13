@@ -1,23 +1,27 @@
 #pragma once
 #include "ASTNodes.h"
-#include "antlr/RyntraBaseVisitor.h"
+#include <antlr4-runtime.h>
+#include <antlr/RyntraParser.h>
 
 namespace Ryntra::Compiler {
-    class ASTBuilder : public antlr::RyntraBaseVisitor {
+    class ASTBuilder {
     public:
-        // Override from the base class
-        std::any visitProgram(antlr::RyntraParser::ProgramContext *context) override;
-        std::any visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *context) override;
-        std::any visitParameterList(antlr::RyntraParser::ParameterListContext *context) override;
-        std::any visitBlock(antlr::RyntraParser::BlockContext *context) override;
-        std::any visitStatement(antlr::RyntraParser::StatementContext *context) override;
-        std::any visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context) override;
-        std::any visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context) override;
-        std::any visitLiteral(antlr::RyntraParser::LiteralContext *context) override;
-        std::any visitArgumentList(antlr::RyntraParser::ArgumentListContext *context) override;
-        std::any visitExpression(antlr::RyntraParser::ExpressionContext *context) override;
-        std::any visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context) override;
-
+        std::shared_ptr<ProgramNode> visitProgram(antlr::RyntraParser::ProgramContext *context);
+        std::shared_ptr<FunctionDefinitionNode> visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *context);
+        std::vector<std::shared_ptr<ParameterNode>> visitParameterList(antlr::RyntraParser::ParameterListContext *context);
+        std::shared_ptr<BlockNode> visitBlock(antlr::RyntraParser::BlockContext *context);
+        std::shared_ptr<StatementNode> visitStatement(antlr::RyntraParser::StatementContext *context);
+        std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context);
+        std::shared_ptr<ReturnStatementNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context);
+        std::shared_ptr<IASTNode> visitLiteral(antlr::RyntraParser::LiteralContext *context);
+        std::vector<std::shared_ptr<IASTNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *context);
+        std::shared_ptr<IASTNode> visitExpression(antlr::RyntraParser::ExpressionContext *context);
+        std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context);
+        std::shared_ptr<IASTNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context);
+        std::shared_ptr<AssignmentExpressionNode> visitAssignment(antlr::RyntraParser::AssignmentContext *context);
+        std::shared_ptr<IASTNode> visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context);
+        std::shared_ptr<IASTNode> visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context);
+        std::shared_ptr<IASTNode> visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context);
     private:
         /**
          * @brief Get the source location from ANTLR4 Parser Context.

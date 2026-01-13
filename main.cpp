@@ -11,7 +11,39 @@
 
 int main() {
     std::string src = R"(int main() {
-    __builtin_print("Hello World!");
+    // 1. Test __builtin_print()
+    __builtin_print("Hello world!");
+
+    // 2. Test variable declaration & assignment
+    int a = 10;
+    int b = a;
+    a = 20;
+
+    // 3. Test __builtin_intToString()
+    __builtin_print(__builtin_intToString(a));
+    __builtin_print(__builtin_intToString(b));
+
+    // 4. Test Binary Operator
+    int c = a + b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(c));
+
+    int d = a - b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(d));
+
+    int e = a * b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(e));
+
+    int f = a / b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(f));
+
+    // 5. Test Result Discarding (should do a warning)
+    f + 10;
+
+    // 6. Test return statement
     return 0;
 })";
     try {
@@ -29,24 +61,29 @@ int main() {
         }
         
         Ryntra::Compiler::ASTBuilder astBuilder;
-        auto astResult = astBuilder.visitProgram(programContext);
-        auto programNode = std::any_cast<std::shared_ptr<Ryntra::Compiler::ProgramNode>>(astResult);
+        auto programNode = astBuilder.visitProgram(programContext);
         
         std::cout << ">>> Generated AST:" << std::endl;
         std::cout << programNode->toString() << std::endl;
 
         Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
-        auto semanticResult = semanticAnalyzer.visitProgram(programNode);
+        semanticAnalyzer.visitProgram(programNode);
 
         Ryntra::Compiler::ErrorHandler::getInstance().print();
 
         if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
-            std::cout << "Semantic Analysis failed." << std::endl;
-            return 0;
+            for (auto i : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+                if (i.type == Ryntra::Compiler::ET_WARNING) {
+                    continue;
+                } else {
+                    std::cout << "Semantic Analysis Failed." << std::endl;
+                    return 0;
+                }
+            }
         }
 
         Ryntra::Compiler::IRGenerator irGenerator;
-        auto irResult = irGenerator.visitProgram(programNode);
+        irGenerator.visitProgram(programNode);
         auto ir = irGenerator.getIR();
         std::cout << ir << std::endl;
 

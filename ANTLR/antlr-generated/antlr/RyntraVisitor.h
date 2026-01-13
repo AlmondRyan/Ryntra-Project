@@ -38,7 +38,17 @@ public:
 
     virtual std::any visitArgumentList(RyntraParser::ArgumentListContext *context) = 0;
 
+    virtual std::any visitAssignment(RyntraParser::AssignmentContext *context) = 0;
+
     virtual std::any visitExpression(RyntraParser::ExpressionContext *context) = 0;
+
+    virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *context) = 0;
+
+    virtual std::any visitAdditiveExpression(RyntraParser::AdditiveExpressionContext *context) = 0;
+
+    virtual std::any visitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *context) = 0;
+
+    virtual std::any visitPrimaryExpression(RyntraParser::PrimaryExpressionContext *context) = 0;
 
     virtual std::any visitLiteral(RyntraParser::LiteralContext *context) = 0;
 

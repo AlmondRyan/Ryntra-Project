@@ -2,59 +2,59 @@
 #include "ASTVisitor.h"
 
 namespace Ryntra::Compiler {
-    std::any IntegerLiteralNode::accept(IASTVisitor *visitor) {
-        return visitor->visitIntegerLiteral(std::static_pointer_cast<IntegerLiteralNode>(shared_from_this()));
+    void IntegerLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitIntegerLiteral(std::static_pointer_cast<IntegerLiteralNode>(shared_from_this()));
     }
 
-    std::any StringLiteralNode::accept(IASTVisitor *visitor) {
-        return visitor->visitStringLiteral(std::static_pointer_cast<StringLiteralNode>(shared_from_this()));
+    void StringLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitStringLiteral(std::static_pointer_cast<StringLiteralNode>(shared_from_this()));
     }
 
-    std::any IdentifierNode::accept(IASTVisitor *visitor) {
-        return visitor->visitIdentifier(std::static_pointer_cast<IdentifierNode>(shared_from_this()));
+    void IdentifierNode::accept(IASTVisitor *visitor) {
+        visitor->visitIdentifier(std::static_pointer_cast<IdentifierNode>(shared_from_this()));
     }
 
-    std::any FunctionCallNode::accept(IASTVisitor *visitor) {
-        return visitor->visitFunctionCall(std::static_pointer_cast<FunctionCallNode>(shared_from_this()));
+    void FunctionCallNode::accept(IASTVisitor *visitor) {
+        visitor->visitFunctionCall(std::static_pointer_cast<FunctionCallNode>(shared_from_this()));
     }
 
-    std::any VariableDeclarationNode::accept(IASTVisitor *visitor) {
-        return visitor->visitVariableDeclaration(std::static_pointer_cast<VariableDeclarationNode>(shared_from_this()));
+    void VariableDeclarationNode::accept(IASTVisitor *visitor) {
+        visitor->visitVariableDeclaration(std::static_pointer_cast<VariableDeclarationNode>(shared_from_this()));
     }
 
-    std::any ReturnStatementNode::accept(IASTVisitor *visitor) {
-        return visitor->visitReturnStatement(std::static_pointer_cast<ReturnStatementNode>(shared_from_this()));
+    void ReturnStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitReturnStatement(std::static_pointer_cast<ReturnStatementNode>(shared_from_this()));
     }
 
-    std::any FunctionCallStatementNode::accept(IASTVisitor *visitor) {
-        return visitor->visitFunctionCallStatement(std::static_pointer_cast<FunctionCallStatementNode>(shared_from_this()));
+    void FunctionCallStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitFunctionCallStatement(std::static_pointer_cast<FunctionCallStatementNode>(shared_from_this()));
     }
 
-    std::any EmptyStatementNode::accept(IASTVisitor *visitor) {
-        return visitor->visitEmptyStatement(std::static_pointer_cast<EmptyStatementNode>(shared_from_this()));
+    void EmptyStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitEmptyStatement(std::static_pointer_cast<EmptyStatementNode>(shared_from_this()));
     }
 
-    std::any ExpressionStatementNode::accept(IASTVisitor *visitor) {
-        return visitor->visitExpressionStatement(std::static_pointer_cast<ExpressionStatementNode>(shared_from_this()));
+    void ExpressionStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitExpressionStatement(std::static_pointer_cast<ExpressionStatementNode>(shared_from_this()));
     }
 
-    std::any ParameterNode::accept(IASTVisitor *visitor) {
-        return visitor->visitParameter(std::static_pointer_cast<ParameterNode>(shared_from_this()));
+    void ParameterNode::accept(IASTVisitor *visitor) {
+        visitor->visitParameter(std::static_pointer_cast<ParameterNode>(shared_from_this()));
     }
 
-    std::any BlockNode::accept(IASTVisitor *visitor) {
-        return visitor->visitBlock(std::static_pointer_cast<BlockNode>(shared_from_this()));
+    void BlockNode::accept(IASTVisitor *visitor) {
+        visitor->visitBlock(std::static_pointer_cast<BlockNode>(shared_from_this()));
     }
 
-    std::any FunctionDefinitionNode::accept(IASTVisitor *visitor) {
-        return visitor->visitFunctionDefinition(std::static_pointer_cast<FunctionDefinitionNode>(shared_from_this()));
+    void FunctionDefinitionNode::accept(IASTVisitor *visitor) {
+        visitor->visitFunctionDefinition(std::static_pointer_cast<FunctionDefinitionNode>(shared_from_this()));
     }
 
-    std::any ProgramNode::accept(IASTVisitor *visitor) {
-        return visitor->visitProgram(std::static_pointer_cast<ProgramNode>(shared_from_this()));
+    void ProgramNode::accept(IASTVisitor *visitor) {
+        visitor->visitProgram(std::static_pointer_cast<ProgramNode>(shared_from_this()));
     }
 
-    std::variant<int, std::string> IntegerLiteralNode::getValue() const {
+    int IntegerLiteralNode::getValue() const {
         return value;
     }
 
@@ -62,7 +62,7 @@ namespace Ryntra::Compiler {
         return "IntegerLiteral(" + std::to_string(value) + ")";
     }
 
-    std::variant<int, std::string> StringLiteralNode::getValue() const {
+    std::string StringLiteralNode::getValue() const {
         return value;
     }
 
@@ -131,8 +131,40 @@ namespace Ryntra::Compiler {
 
     std::string VariableDeclarationNode::toString() const {
         if (initialValue) {
-            return "VariableDeclaration(" + varName + ", " + initialValue->toString() + ")";
+            return "VariableDeclaration(" + varType + " " + varName + ", " + initialValue->toString() + ")";
         }
-        return "VariableDeclaration(" + varName + ")";
+        return "VariableDeclaration(" + varType + " " + varName + ")";
+    }
+
+    std::string BinaryExpressionNode::toString() const {
+        return "BinaryExpression(" + left->toString() + ", " + operand + ", " + right->toString() + ")";
+    }
+
+    void BinaryExpressionNode::accept(IASTVisitor *visitor) {
+        visitor->visitBinaryExpression(std::static_pointer_cast<BinaryExpressionNode>(shared_from_this()));
+    }
+
+    void AssignmentExpressionNode::accept(IASTVisitor *visitor) {
+        visitor->visitAssignmentExpression(std::static_pointer_cast<AssignmentExpressionNode>(shared_from_this()));
+    }
+
+    std::string AssignmentExpressionNode::toString() const {
+        return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
+    }
+
+    std::string ReturnStatementNode::toString() const {
+        return "ReturnStatement(" + returnValue->toString() + ")";
+    }
+
+    std::string FunctionCallStatementNode::toString() const {
+        return "FunctionCallStatement(" + functionCall->toString() + ")";
+    }
+
+    std::string ExpressionStatementNode::toString() const {
+        return "ExpressionStatement(" + expression->toString() + ")";
+    }
+
+    std::string ParameterNode::toString() const {
+        return "Parameter(" + type + " " + name + ")";
     }
 } // namespace Ryntra::Compiler

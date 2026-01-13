@@ -45,8 +45,23 @@ public:
   virtual void enterArgumentList(RyntraParser::ArgumentListContext * /*ctx*/) override { }
   virtual void exitArgumentList(RyntraParser::ArgumentListContext * /*ctx*/) override { }
 
+  virtual void enterAssignment(RyntraParser::AssignmentContext * /*ctx*/) override { }
+  virtual void exitAssignment(RyntraParser::AssignmentContext * /*ctx*/) override { }
+
   virtual void enterExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
   virtual void exitExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
+
+  virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
+  virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
+
+  virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
+  virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
+
+  virtual void enterMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
+  virtual void exitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
+
+  virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
+  virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
 
   virtual void enterLiteral(RyntraParser::LiteralContext * /*ctx*/) override { }
   virtual void exitLiteral(RyntraParser::LiteralContext * /*ctx*/) override { }

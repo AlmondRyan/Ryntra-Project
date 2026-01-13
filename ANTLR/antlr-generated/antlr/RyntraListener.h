@@ -43,8 +43,23 @@ public:
   virtual void enterArgumentList(RyntraParser::ArgumentListContext *ctx) = 0;
   virtual void exitArgumentList(RyntraParser::ArgumentListContext *ctx) = 0;
 
+  virtual void enterAssignment(RyntraParser::AssignmentContext *ctx) = 0;
+  virtual void exitAssignment(RyntraParser::AssignmentContext *ctx) = 0;
+
   virtual void enterExpression(RyntraParser::ExpressionContext *ctx) = 0;
   virtual void exitExpression(RyntraParser::ExpressionContext *ctx) = 0;
+
+  virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
+  virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
+
+  virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;
+  virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;
+
+  virtual void enterMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) = 0;
+  virtual void exitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) = 0;
+
+  virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;
+  virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;
 
   virtual void enterLiteral(RyntraParser::LiteralContext *ctx) = 0;
   virtual void exitLiteral(RyntraParser::LiteralContext *ctx) = 0;

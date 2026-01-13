@@ -4,18 +4,27 @@ grammar Ryntra;
 
 INT: 'int' ;
 RETURN: 'return';
+STRING: 'string';
+
+PLUS: '+';
+MINUS: '-';
+MULT: '*';
+DIV: '/';
+ASSIGN: '=';
+
 SEMICOLON : ';' ;
 LPAREN: '(' ;
 RPAREN: ')' ;
 LBRACE: '{' ;
 RBRACE: '}' ;
+COMMA: ',';
+
 STRING_LITERAL: '"' ( ~["\\\r\n] | '\\' ["\\bfnrt] )* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
+INTEGER_LITERAL: '0' | [1-9] [0-9]*;
+
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 WS : [ \t\r\n]+ -> skip ;
-COMMA: ',';
-ASSIGN: '=';
-INTEGER_LITERAL: '0' | [1-9] [0-9]*;
 
 // PARSER RULES
 
@@ -35,6 +44,7 @@ block
 
 variableDeclaration
     : INT IDENTIFIER (ASSIGN expression)?
+    | STRING IDENTIFIER (ASSIGN expression)?
     ;
 
 statement:
@@ -42,6 +52,7 @@ statement:
     | expression SEMICOLON
     | variableDeclaration SEMICOLON
     | returnStatement SEMICOLON
+    | assignment SEMICOLON
     | SEMICOLON
     ;
 
@@ -52,10 +63,30 @@ returnStatement
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
 argumentList: expression (COMMA expression)*;
 
-expression:
-    literal
+assignment: IDENTIFIER ASSIGN expression;
+
+expression
+    : assignmentExpression
+    ;
+
+assignmentExpression
+    : additiveExpression
+    | IDENTIFIER ASSIGN expression
+    ;
+
+additiveExpression
+    : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
+    ;
+
+multiplicativeExpression
+    : primaryExpression ((MULT | DIV) primaryExpression)*
+    ;
+
+primaryExpression
+    : literal
     | functionCall
     | IDENTIFIER
+    | LPAREN expression RPAREN
     ;
 
 literal:
