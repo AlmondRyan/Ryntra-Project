@@ -134,6 +134,7 @@ namespace Ryntra::Compiler {
             if (str.length() >= 2 && str.front() == '"' && str.back() == '"') {
                 str = str.substr(1, str.length() - 2);
             }
+            str = unescape(str);
             return createNode<StringLiteralNode>(context, str);
         }
         else if (context->INTEGER_LITERAL()) {

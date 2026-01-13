@@ -46,5 +46,22 @@ namespace Ryntra::Compiler {
             node->setLocation(getLoc(ctx));
             return node;
         }
+
+        std::string unescape(std::string input) {
+            std::string result;
+            for (size_t i = 0; i < input.length(); ++i) {
+                if (input[i] == '\\' && i + 1 < input.length()) {
+                    char next = input[++i];
+                    if (next == 'n') result += '\n';
+                    else if (next == 't') result += '\t';
+                    else if (next == '\\') result += '\\';
+                    else if (next == '"') result += '"';
+                    else result += next;
+                } else {
+                    result += input[i];
+                }
+            }
+            return result; // 必须返回结果！
+        }
     };
 } // namespace Ryntra::Compiler

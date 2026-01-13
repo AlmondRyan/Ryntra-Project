@@ -12,7 +12,7 @@
 int main() {
     std::string src = R"(int main() {
     // 1. Test __builtin_print()
-    __builtin_print("Hello world!");
+    __builtin_print("Hello world! \n");
 
     // 2. Test variable declaration & assignment
     int a = 10;
