@@ -255,8 +255,16 @@ namespace Ryntra::Compiler {
     }
 
     Type IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
-        lastValue = nullptr;
-        return {TypeKind::Void, ""};
+        llvm::Value *leftValue = evaluate(node->getLeft());
+        llvm::Value *rightValue = evaluate(node->getRight());
+        std::string op = node->getOp();
+
+        if (op == "+") lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
+        if (op == "-") lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
+        if (op == "*") lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
+        if (op == "/") lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+
+        return {TypeKind::Int, ""};
     }
 
     Type IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {

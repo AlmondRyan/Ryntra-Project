@@ -27,7 +27,7 @@ namespace Ryntra::Compiler {
         Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) override;
         Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
 
-        std::string getIR() const;
+        [[nodiscard]] std::string getIR() const;
     private:
         std::unique_ptr<llvm::LLVMContext> context;
         std::unique_ptr<llvm::Module> module;

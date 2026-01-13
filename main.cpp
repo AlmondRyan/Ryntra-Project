@@ -11,12 +11,36 @@
 
 int main() {
     std::string src = R"(int main() {
-    __builtin_print("Fuck you world!");
+    // 1. Test __builtin_print()
+    __builtin_print("Hello world!");
+
+    // 2. Test variable declaration & assignment
     int a = 10;
     int b = a;
     a = 20;
+
+    // 3. Test __builtin_intToString()
     __builtin_print(__builtin_intToString(a));
     __builtin_print(__builtin_intToString(b));
+
+    // 4. Test Binary Operator
+    int c = a + b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(c));
+
+    int d = a - b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(d));
+
+    int e = a * b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(e));
+
+    int f = a / b;
+    __builtin_print(" ");
+    __builtin_print(__builtin_intToString(f));
+
+    // 4. Test return statement
     return 0;
 })";
     try {

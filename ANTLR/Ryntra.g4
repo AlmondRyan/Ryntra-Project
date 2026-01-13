@@ -4,6 +4,7 @@ grammar Ryntra;
 
 INT: 'int' ;
 RETURN: 'return';
+STRING: 'string';
 
 PLUS: '+';
 MINUS: '-';
@@ -43,6 +44,7 @@ block
 
 variableDeclaration
     : INT IDENTIFIER (ASSIGN expression)?
+    | STRING IDENTIFIER (ASSIGN expression)?
     ;
 
 statement:

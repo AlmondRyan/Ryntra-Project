@@ -190,7 +190,21 @@ namespace Ryntra::Compiler {
     }
 
     Type SemanticAnalyzer::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
-        lastTypeResult = {TypeKind::Void, ""};
+        Type lhs = evaluate(node->getLeft());
+        Type rhs = evaluate(node->getRight());
+        std::string op = node->getOp();
+
+        if (lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int) {
+            lastTypeResult = {TypeKind::Int, ""};
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "Invalid operation between binary operator. Expected " + mapTypeToString(lhs.kind) +
+                " but got " + mapTypeToString(rhs.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+            lastTypeResult = {TypeKind::Void, ""};
+        }
+
         return lastTypeResult;
     }
 
