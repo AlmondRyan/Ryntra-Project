@@ -19,6 +19,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context);
         std::shared_ptr<IASTNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context);
         std::shared_ptr<AssignmentExpressionNode> visitAssignment(antlr::RyntraParser::AssignmentContext *context);
+        std::shared_ptr<IASTNode> visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context);
         std::shared_ptr<IASTNode> visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context);
         std::shared_ptr<IASTNode> visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context);
         std::shared_ptr<IASTNode> visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context);

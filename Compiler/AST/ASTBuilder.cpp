@@ -151,7 +151,19 @@ namespace Ryntra::Compiler {
             auto expr = visitExpression(context->expression());
             return createNode<AssignmentExpressionNode>(context, idName, std::move(expr));
         }
-        return visitAdditiveExpression(context->additiveExpression());
+        return visitRelationalExpression(context->relationalExpression());
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context) {
+        auto left = visitAdditiveExpression(context->additiveExpression(0));
+        
+        for (size_t i = 1; i < context->additiveExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitAdditiveExpression(context->additiveExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
     }
 
     std::shared_ptr<AssignmentExpressionNode> ASTBuilder::visitAssignment(antlr::RyntraParser::AssignmentContext *context) {
