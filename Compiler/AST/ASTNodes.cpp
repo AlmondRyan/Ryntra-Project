@@ -202,4 +202,13 @@ namespace Ryntra::Compiler {
     void IfStatementNode::accept(IASTVisitor *visitor) {
         visitor->visitIfStatement(std::static_pointer_cast<IfStatementNode>(shared_from_this()));
     }
+
+    std::string WhileStatementNode::toString() const {
+        std::string result = "WhileStatement(" + condition->toString() + ", " + body->toString() + ")";
+        return result;
+    }
+
+    void WhileStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitWhileStatement(std::static_pointer_cast<WhileStatementNode>(shared_from_this()));
+    }
 } // namespace Ryntra::Compiler

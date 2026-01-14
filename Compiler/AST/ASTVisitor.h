@@ -26,5 +26,6 @@ namespace Ryntra::Compiler {
         virtual Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) = 0;
         virtual Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) = 0;
         virtual Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) = 0;
+        virtual void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) = 0;
     };
 }

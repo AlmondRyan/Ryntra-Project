@@ -444,4 +444,30 @@ namespace Ryntra::Compiler {
         lastValue = llvm::ConstantInt::get(*context, llvm::APInt(1, node->getValue() ? 1 : 0));
         return {TypeKind::Boolean, ""};
     }
+
+    void IRGenerator::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "while.cond", func);
+        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "while.body");
+        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "while.end");
+
+        builder->CreateBr(loopCondBB);
+
+        builder->SetInsertPoint(loopCondBB);
+        llvm::Value* condValue = evaluate(node->getCondition());
+        if (!condValue) return;
+        builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
+
+        func->insert(func->end(), loopBodyBB);
+        builder->SetInsertPoint(loopBodyBB);
+        visit(node->getBody());
+        
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(loopCondBB);
+        }
+
+        func->insert(func->end(), afterLoopBB);
+        builder->SetInsertPoint(afterLoopBB);
+    }
 } // namespace Ryntra::Compiler

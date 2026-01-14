@@ -81,6 +81,9 @@ namespace Ryntra::Compiler {
         else if (context->ifStatement()) {
             return visitIfStatement(context->ifStatement());
         }
+        else if (context->whileStatement()) {
+            return visitWhileStatement(context->whileStatement());
+        }
         else {
             return createNode<EmptyStatementNode>(context);
         }
@@ -285,5 +288,11 @@ namespace Ryntra::Compiler {
         }
         
         return nullptr;
+    }
+
+    std::shared_ptr<WhileStatementNode> ASTBuilder::visitWhileStatement(antlr::RyntraParser::WhileStatementContext *context) {
+        auto condition = visitExpression(context->expression());
+        auto body = visitBlock(context->block());
+        return createNode<WhileStatementNode>(context, std::move(condition), std::move(body));
     }
 } // namespace Ryntra::Compiler

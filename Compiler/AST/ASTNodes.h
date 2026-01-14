@@ -804,4 +804,19 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode> thenBody;
         std::shared_ptr<IASTNode>  elseBody; ///< This could be nullptr if there's no else
     };
+
+    class WhileStatementNode : public StatementNode {
+    public:
+        WhileStatementNode(std::shared_ptr<IASTNode> cond, std::shared_ptr<BlockNode> body)
+            : condition(std::move(cond)), body(std::move(body)) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+    private:
+        std::shared_ptr<IASTNode> condition;
+        std::shared_ptr<BlockNode> body;
+    };
 } // namespace Ryntra::Compiler
