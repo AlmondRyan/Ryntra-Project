@@ -21,7 +21,9 @@ int main() {
 
     // 3. Test __builtin_intToString()
     __builtin_print(__builtin_intToString(a));
+    __builtin_print(" ");
     __builtin_print(__builtin_intToString(b));
+    __builtin_print("\n");
 
     // 4. Test Binary Operator
     int c = a + b;
@@ -39,6 +41,7 @@ int main() {
     int f = a / b;
     __builtin_print(" ");
     __builtin_print(__builtin_intToString(f));
+    __builtin_print("\n");
 
     // 5. Test Result Discarding (should do a warning)
     f + 10;
@@ -51,7 +54,7 @@ int main() {
     if (a == 20) {
         __builtin_print("a is 20");
     } else if (a == 10) {
-        __builtin_print("omg this is not possible);
+        __builtin_print("omg this is not possible");
     } else {
         __builtin_print("why");
     }

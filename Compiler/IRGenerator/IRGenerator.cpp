@@ -103,7 +103,41 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
-        // TODO: Implement IR Generation for If Statement
+        llvm::Value* condValue = evaluate(node->getCondition());
+        if (!condValue) return;
+
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*context, "then", func);
+        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(*context, "else");
+        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "ifcont");
+
+        if (node->getElseBody()) {
+            builder->CreateCondBr(condValue, thenBB, elseBB);
+        } else {
+            builder->CreateCondBr(condValue, thenBB, mergeBB);
+        }
+
+        // Emit then block
+        builder->SetInsertPoint(thenBB);
+        visit(node->getThenBody());
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(mergeBB);
+        }
+
+        // Emit else block
+        if (node->getElseBody()) {
+            func->insert(func->end(), elseBB);
+            builder->SetInsertPoint(elseBB);
+            visit(node->getElseBody());
+            if (!builder->GetInsertBlock()->getTerminator()) {
+                builder->CreateBr(mergeBB);
+            }
+        }
+
+        // Emit merge block
+        func->insert(func->end(), mergeBB);
+        builder->SetInsertPoint(mergeBB);
     }
 
     void IRGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
@@ -260,9 +294,59 @@ namespace Ryntra::Compiler {
     }
 
     Type IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+        std::string op = node->getOp();
+
+        // Handle logical AND/OR with short-circuiting
+        if (op == "&&") {
+            llvm::Value* lhsValue = evaluate(node->getLeft());
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            
+            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "and.rhs", func);
+            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "and.merge", func);
+            
+            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            builder->CreateCondBr(lhsValue, rhsBB, mergeBB);
+            
+            builder->SetInsertPoint(rhsBB);
+            llvm::Value* rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            builder->CreateBr(mergeBB);
+            
+            builder->SetInsertPoint(mergeBB);
+            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "andtmp");
+            phi->addIncoming(llvm::ConstantInt::getFalse(*context), entryBB);
+            phi->addIncoming(rhsValue, rhsEndBB);
+            
+            lastValue = phi;
+            return {TypeKind::Boolean, ""};
+        }
+
+        if (op == "||") {
+            llvm::Value* lhsValue = evaluate(node->getLeft());
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            
+            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "or.rhs", func);
+            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "or.merge", func);
+            
+            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            builder->CreateCondBr(lhsValue, mergeBB, rhsBB);
+            
+            builder->SetInsertPoint(rhsBB);
+            llvm::Value* rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            builder->CreateBr(mergeBB);
+            
+            builder->SetInsertPoint(mergeBB);
+            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "ortmp");
+            phi->addIncoming(llvm::ConstantInt::getTrue(*context), entryBB);
+            phi->addIncoming(rhsValue, rhsEndBB);
+            
+            lastValue = phi;
+            return {TypeKind::Boolean, ""};
+        }
+
         llvm::Value *leftValue = evaluate(node->getLeft());
         llvm::Value *rightValue = evaluate(node->getRight());
-        std::string op = node->getOp();
 
         if (op == "+") {
             lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
@@ -279,6 +363,32 @@ namespace Ryntra::Compiler {
         if (op == "/") {
             lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
             return {TypeKind::Int, ""};
+        }
+
+        // Comparison operators
+        if (op == "==") {
+            lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
+            return {TypeKind::Boolean, ""};
+        }
+        if (op == "!=") {
+            lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
+            return {TypeKind::Boolean, ""};
+        }
+        if (op == "<") {
+            lastValue = builder->CreateICmpSLT(leftValue, rightValue, "lttmp");
+            return {TypeKind::Boolean, ""};
+        }
+        if (op == "<=") {
+            lastValue = builder->CreateICmpSLE(leftValue, rightValue, "letmp");
+            return {TypeKind::Boolean, ""};
+        }
+        if (op == ">") {
+            lastValue = builder->CreateICmpSGT(leftValue, rightValue, "gttmp");
+            return {TypeKind::Boolean, ""};
+        }
+        if (op == ">=") {
+            lastValue = builder->CreateICmpSGE(leftValue, rightValue, "getmp");
+            return {TypeKind::Boolean, ""};
         }
 
         lastValue = nullptr;
