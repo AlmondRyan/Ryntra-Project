@@ -55,8 +55,14 @@ public:
   virtual void enterExpression(RyntraParser::ExpressionContext *ctx) = 0;
   virtual void exitExpression(RyntraParser::ExpressionContext *ctx) = 0;
 
-  virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
-  virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
+  virtual void enterLogicalOrExpression(RyntraParser::LogicalOrExpressionContext *ctx) = 0;
+  virtual void exitLogicalOrExpression(RyntraParser::LogicalOrExpressionContext *ctx) = 0;
+
+  virtual void enterLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) = 0;
+  virtual void exitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) = 0;
+
+  virtual void enterEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) = 0;
+  virtual void exitEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) = 0;
 
   virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
   virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
@@ -66,6 +72,9 @@ public:
 
   virtual void enterMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) = 0;
   virtual void exitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) = 0;
+
+  virtual void enterUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) = 0;
+  virtual void exitUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) = 0;
 
   virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;
   virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;

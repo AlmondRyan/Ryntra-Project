@@ -2,12 +2,17 @@ grammar Ryntra;
 
 // LEXICAL RULES
 
+// Keywords
 INT: 'int' ;
 RETURN: 'return';
 STRING: 'string';
 IF: 'if';
 ELSE: 'else';
+BOOL: 'bool';
+TRUE: 'true';
+FALSE: 'false';
 
+// Operators
 PLUS: '+';
 MINUS: '-';
 MULT: '*';
@@ -18,7 +23,11 @@ LESS: '<';
 COND_EQUAL: '==';
 GREATER_EQ: '>=';
 LESS_EQ: '<=';
+LOGIC_AND: '&&';
+LOGIC_OR: '||';
+NOT: '!';
 
+// Symbols
 SEMICOLON : ';' ;
 LPAREN: '(' ;
 RPAREN: ')' ;
@@ -26,10 +35,12 @@ LBRACE: '{' ;
 RBRACE: '}' ;
 COMMA: ',';
 
+// Literals
 STRING_LITERAL: '"' ( ~["\\\r\n] | '\\' ["\\bfnrt] )* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 INTEGER_LITERAL: '0' | [1-9] [0-9]*;
 
+// Comments and Whitespaces
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 WS : [ \t\r\n]+ -> skip ;
 
@@ -52,6 +63,7 @@ block
 variableDeclaration
     : INT IDENTIFIER (ASSIGN expression)?
     | STRING IDENTIFIER (ASSIGN expression)?
+    | BOOL IDENTIFIER (ASSIGN expression)?
     ;
 
 statement:
@@ -82,16 +94,23 @@ argumentList: expression (COMMA expression)*;
 assignment: IDENTIFIER ASSIGN expression;
 
 expression
-    : assignmentExpression
+    : logicalOrExpression
     ;
 
-assignmentExpression
-    : relationalExpression
-    | IDENTIFIER ASSIGN expression
+logicalOrExpression
+    : logicalAndExpression (LOGIC_OR logicalAndExpression)*
+    ;
+
+logicalAndExpression
+    : equalityExpression (LOGIC_AND equalityExpression)*
+    ;
+
+equalityExpression
+    : relationalExpression ((COND_EQUAL) relationalExpression)*
     ;
 
 relationalExpression
-    : additiveExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ | COND_EQUAL) additiveExpression)*
+    : additiveExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ) additiveExpression)*
     ;
 
 additiveExpression
@@ -99,7 +118,13 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : primaryExpression ((MULT | DIV) primaryExpression)*
+    : unaryExpression ((MULT | DIV) unaryExpression)*
+    ;
+
+unaryExpression
+    : primaryExpression
+    | NOT unaryExpression
+    | MINUS unaryExpression
     ;
 
 primaryExpression
@@ -111,4 +136,6 @@ primaryExpression
 
 literal:
     STRING_LITERAL
-    | INTEGER_LITERAL;
+    | INTEGER_LITERAL
+    | TRUE
+    | FALSE;

@@ -69,7 +69,15 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) override {
+  virtual std::any visitLogicalOrExpression(RyntraParser::LogicalOrExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -82,6 +90,10 @@ public:
   }
 
   virtual std::any visitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 

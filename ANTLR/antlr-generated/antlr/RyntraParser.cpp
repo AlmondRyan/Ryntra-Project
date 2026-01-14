@@ -56,81 +56,97 @@ void ryntraParserInitialize() {
     std::vector<std::string>{
       "program", "functionDefinition", "parameterList", "block", "variableDeclaration", 
       "statement", "returnStatement", "ifStatement", "elseClause", "functionCall", 
-      "argumentList", "assignment", "expression", "assignmentExpression", 
-      "relationalExpression", "additiveExpression", "multiplicativeExpression", 
+      "argumentList", "assignment", "expression", "logicalOrExpression", 
+      "logicalAndExpression", "equalityExpression", "relationalExpression", 
+      "additiveExpression", "multiplicativeExpression", "unaryExpression", 
       "primaryExpression", "literal"
     },
     std::vector<std::string>{
-      "", "'int'", "'return'", "'string'", "'if'", "'else'", "'+'", "'-'", 
-      "'*'", "'/'", "'='", "'>'", "'<'", "'=='", "'>='", "'<='", "';'", 
-      "'('", "')'", "'{'", "'}'", "','"
+      "", "'int'", "'return'", "'string'", "'if'", "'else'", "'bool'", "'true'", 
+      "'false'", "'+'", "'-'", "'*'", "'/'", "'='", "'>'", "'<'", "'=='", 
+      "'>='", "'<='", "'&&'", "'||'", "'!'", "';'", "'('", "')'", "'{'", 
+      "'}'", "','"
     },
     std::vector<std::string>{
-      "", "INT", "RETURN", "STRING", "IF", "ELSE", "PLUS", "MINUS", "MULT", 
-      "DIV", "ASSIGN", "GREATER", "LESS", "COND_EQUAL", "GREATER_EQ", "LESS_EQ", 
-      "SEMICOLON", "LPAREN", "RPAREN", "LBRACE", "RBRACE", "COMMA", "STRING_LITERAL", 
+      "", "INT", "RETURN", "STRING", "IF", "ELSE", "BOOL", "TRUE", "FALSE", 
+      "PLUS", "MINUS", "MULT", "DIV", "ASSIGN", "GREATER", "LESS", "COND_EQUAL", 
+      "GREATER_EQ", "LESS_EQ", "LOGIC_AND", "LOGIC_OR", "NOT", "SEMICOLON", 
+      "LPAREN", "RPAREN", "LBRACE", "RBRACE", "COMMA", "STRING_LITERAL", 
       "IDENTIFIER", "INTEGER_LITERAL", "LINE_COMMENT", "WS"
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,26,185,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,32,222,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
-  	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,1,0,4,0,40,8,0,11,0,12,0,41,
-  	1,0,1,0,1,1,1,1,1,1,1,1,3,1,50,8,1,1,1,1,1,1,1,1,2,1,2,1,2,1,2,1,2,5,
-  	2,60,8,2,10,2,12,2,63,9,2,1,3,1,3,5,3,67,8,3,10,3,12,3,70,9,3,1,3,1,3,
-  	1,4,1,4,1,4,1,4,3,4,78,8,4,1,4,1,4,1,4,1,4,3,4,84,8,4,3,4,86,8,4,1,5,
-  	1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,3,5,105,
-  	8,5,1,6,1,6,1,6,1,7,1,7,1,7,1,7,1,7,1,7,3,7,116,8,7,1,8,1,8,1,8,3,8,121,
-  	8,8,1,9,1,9,1,9,3,9,126,8,9,1,9,1,9,1,10,1,10,1,10,5,10,133,8,10,10,10,
-  	12,10,136,9,10,1,11,1,11,1,11,1,11,1,12,1,12,1,13,1,13,1,13,1,13,3,13,
-  	148,8,13,1,14,1,14,1,14,5,14,153,8,14,10,14,12,14,156,9,14,1,15,1,15,
-  	1,15,5,15,161,8,15,10,15,12,15,164,9,15,1,16,1,16,1,16,5,16,169,8,16,
-  	10,16,12,16,172,9,16,1,17,1,17,1,17,1,17,1,17,1,17,1,17,3,17,181,8,17,
-  	1,18,1,18,1,18,0,0,19,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,
-  	36,0,4,1,0,11,15,1,0,6,7,1,0,8,9,2,0,22,22,24,24,189,0,39,1,0,0,0,2,45,
-  	1,0,0,0,4,54,1,0,0,0,6,64,1,0,0,0,8,85,1,0,0,0,10,104,1,0,0,0,12,106,
-  	1,0,0,0,14,109,1,0,0,0,16,117,1,0,0,0,18,122,1,0,0,0,20,129,1,0,0,0,22,
-  	137,1,0,0,0,24,141,1,0,0,0,26,147,1,0,0,0,28,149,1,0,0,0,30,157,1,0,0,
-  	0,32,165,1,0,0,0,34,180,1,0,0,0,36,182,1,0,0,0,38,40,3,2,1,0,39,38,1,
-  	0,0,0,40,41,1,0,0,0,41,39,1,0,0,0,41,42,1,0,0,0,42,43,1,0,0,0,43,44,5,
-  	0,0,1,44,1,1,0,0,0,45,46,5,1,0,0,46,47,5,23,0,0,47,49,5,17,0,0,48,50,
-  	3,4,2,0,49,48,1,0,0,0,49,50,1,0,0,0,50,51,1,0,0,0,51,52,5,18,0,0,52,53,
-  	3,6,3,0,53,3,1,0,0,0,54,55,5,1,0,0,55,61,5,23,0,0,56,57,5,21,0,0,57,58,
-  	5,1,0,0,58,60,5,23,0,0,59,56,1,0,0,0,60,63,1,0,0,0,61,59,1,0,0,0,61,62,
-  	1,0,0,0,62,5,1,0,0,0,63,61,1,0,0,0,64,68,5,19,0,0,65,67,3,10,5,0,66,65,
-  	1,0,0,0,67,70,1,0,0,0,68,66,1,0,0,0,68,69,1,0,0,0,69,71,1,0,0,0,70,68,
-  	1,0,0,0,71,72,5,20,0,0,72,7,1,0,0,0,73,74,5,1,0,0,74,77,5,23,0,0,75,76,
-  	5,10,0,0,76,78,3,24,12,0,77,75,1,0,0,0,77,78,1,0,0,0,78,86,1,0,0,0,79,
-  	80,5,3,0,0,80,83,5,23,0,0,81,82,5,10,0,0,82,84,3,24,12,0,83,81,1,0,0,
-  	0,83,84,1,0,0,0,84,86,1,0,0,0,85,73,1,0,0,0,85,79,1,0,0,0,86,9,1,0,0,
-  	0,87,88,3,18,9,0,88,89,5,16,0,0,89,105,1,0,0,0,90,91,3,24,12,0,91,92,
-  	5,16,0,0,92,105,1,0,0,0,93,94,3,8,4,0,94,95,5,16,0,0,95,105,1,0,0,0,96,
-  	97,3,12,6,0,97,98,5,16,0,0,98,105,1,0,0,0,99,100,3,22,11,0,100,101,5,
-  	16,0,0,101,105,1,0,0,0,102,105,3,14,7,0,103,105,5,16,0,0,104,87,1,0,0,
-  	0,104,90,1,0,0,0,104,93,1,0,0,0,104,96,1,0,0,0,104,99,1,0,0,0,104,102,
-  	1,0,0,0,104,103,1,0,0,0,105,11,1,0,0,0,106,107,5,2,0,0,107,108,3,24,12,
-  	0,108,13,1,0,0,0,109,110,5,4,0,0,110,111,5,17,0,0,111,112,3,24,12,0,112,
-  	113,5,18,0,0,113,115,3,6,3,0,114,116,3,16,8,0,115,114,1,0,0,0,115,116,
-  	1,0,0,0,116,15,1,0,0,0,117,120,5,5,0,0,118,121,3,14,7,0,119,121,3,6,3,
-  	0,120,118,1,0,0,0,120,119,1,0,0,0,121,17,1,0,0,0,122,123,5,23,0,0,123,
-  	125,5,17,0,0,124,126,3,20,10,0,125,124,1,0,0,0,125,126,1,0,0,0,126,127,
-  	1,0,0,0,127,128,5,18,0,0,128,19,1,0,0,0,129,134,3,24,12,0,130,131,5,21,
-  	0,0,131,133,3,24,12,0,132,130,1,0,0,0,133,136,1,0,0,0,134,132,1,0,0,0,
-  	134,135,1,0,0,0,135,21,1,0,0,0,136,134,1,0,0,0,137,138,5,23,0,0,138,139,
-  	5,10,0,0,139,140,3,24,12,0,140,23,1,0,0,0,141,142,3,26,13,0,142,25,1,
-  	0,0,0,143,148,3,28,14,0,144,145,5,23,0,0,145,146,5,10,0,0,146,148,3,24,
-  	12,0,147,143,1,0,0,0,147,144,1,0,0,0,148,27,1,0,0,0,149,154,3,30,15,0,
-  	150,151,7,0,0,0,151,153,3,30,15,0,152,150,1,0,0,0,153,156,1,0,0,0,154,
-  	152,1,0,0,0,154,155,1,0,0,0,155,29,1,0,0,0,156,154,1,0,0,0,157,162,3,
-  	32,16,0,158,159,7,1,0,0,159,161,3,32,16,0,160,158,1,0,0,0,161,164,1,0,
-  	0,0,162,160,1,0,0,0,162,163,1,0,0,0,163,31,1,0,0,0,164,162,1,0,0,0,165,
-  	170,3,34,17,0,166,167,7,2,0,0,167,169,3,34,17,0,168,166,1,0,0,0,169,172,
-  	1,0,0,0,170,168,1,0,0,0,170,171,1,0,0,0,171,33,1,0,0,0,172,170,1,0,0,
-  	0,173,181,3,36,18,0,174,181,3,18,9,0,175,181,5,23,0,0,176,177,5,17,0,
-  	0,177,178,3,24,12,0,178,179,5,18,0,0,179,181,1,0,0,0,180,173,1,0,0,0,
-  	180,174,1,0,0,0,180,175,1,0,0,0,180,176,1,0,0,0,181,35,1,0,0,0,182,183,
-  	7,3,0,0,183,37,1,0,0,0,17,41,49,61,68,77,83,85,104,115,120,125,134,147,
-  	154,162,170,180
+  	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
+  	21,1,0,4,0,46,8,0,11,0,12,0,47,1,0,1,0,1,1,1,1,1,1,1,1,3,1,56,8,1,1,1,
+  	1,1,1,1,1,2,1,2,1,2,1,2,1,2,5,2,66,8,2,10,2,12,2,69,9,2,1,3,1,3,5,3,73,
+  	8,3,10,3,12,3,76,9,3,1,3,1,3,1,4,1,4,1,4,1,4,3,4,84,8,4,1,4,1,4,1,4,1,
+  	4,3,4,90,8,4,1,4,1,4,1,4,1,4,3,4,96,8,4,3,4,98,8,4,1,5,1,5,1,5,1,5,1,
+  	5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,3,5,117,8,5,1,6,1,6,
+  	1,6,1,7,1,7,1,7,1,7,1,7,1,7,3,7,128,8,7,1,8,1,8,1,8,3,8,133,8,8,1,9,1,
+  	9,1,9,3,9,138,8,9,1,9,1,9,1,10,1,10,1,10,5,10,145,8,10,10,10,12,10,148,
+  	9,10,1,11,1,11,1,11,1,11,1,12,1,12,1,13,1,13,1,13,5,13,159,8,13,10,13,
+  	12,13,162,9,13,1,14,1,14,1,14,5,14,167,8,14,10,14,12,14,170,9,14,1,15,
+  	1,15,1,15,5,15,175,8,15,10,15,12,15,178,9,15,1,16,1,16,1,16,5,16,183,
+  	8,16,10,16,12,16,186,9,16,1,17,1,17,1,17,5,17,191,8,17,10,17,12,17,194,
+  	9,17,1,18,1,18,1,18,5,18,199,8,18,10,18,12,18,202,9,18,1,19,1,19,1,19,
+  	1,19,1,19,3,19,209,8,19,1,20,1,20,1,20,1,20,1,20,1,20,1,20,3,20,218,8,
+  	20,1,21,1,21,1,21,0,0,22,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,
+  	34,36,38,40,42,0,4,2,0,14,15,17,18,1,0,9,10,1,0,11,12,3,0,7,8,28,28,30,
+  	30,229,0,45,1,0,0,0,2,51,1,0,0,0,4,60,1,0,0,0,6,70,1,0,0,0,8,97,1,0,0,
+  	0,10,116,1,0,0,0,12,118,1,0,0,0,14,121,1,0,0,0,16,129,1,0,0,0,18,134,
+  	1,0,0,0,20,141,1,0,0,0,22,149,1,0,0,0,24,153,1,0,0,0,26,155,1,0,0,0,28,
+  	163,1,0,0,0,30,171,1,0,0,0,32,179,1,0,0,0,34,187,1,0,0,0,36,195,1,0,0,
+  	0,38,208,1,0,0,0,40,217,1,0,0,0,42,219,1,0,0,0,44,46,3,2,1,0,45,44,1,
+  	0,0,0,46,47,1,0,0,0,47,45,1,0,0,0,47,48,1,0,0,0,48,49,1,0,0,0,49,50,5,
+  	0,0,1,50,1,1,0,0,0,51,52,5,1,0,0,52,53,5,29,0,0,53,55,5,23,0,0,54,56,
+  	3,4,2,0,55,54,1,0,0,0,55,56,1,0,0,0,56,57,1,0,0,0,57,58,5,24,0,0,58,59,
+  	3,6,3,0,59,3,1,0,0,0,60,61,5,1,0,0,61,67,5,29,0,0,62,63,5,27,0,0,63,64,
+  	5,1,0,0,64,66,5,29,0,0,65,62,1,0,0,0,66,69,1,0,0,0,67,65,1,0,0,0,67,68,
+  	1,0,0,0,68,5,1,0,0,0,69,67,1,0,0,0,70,74,5,25,0,0,71,73,3,10,5,0,72,71,
+  	1,0,0,0,73,76,1,0,0,0,74,72,1,0,0,0,74,75,1,0,0,0,75,77,1,0,0,0,76,74,
+  	1,0,0,0,77,78,5,26,0,0,78,7,1,0,0,0,79,80,5,1,0,0,80,83,5,29,0,0,81,82,
+  	5,13,0,0,82,84,3,24,12,0,83,81,1,0,0,0,83,84,1,0,0,0,84,98,1,0,0,0,85,
+  	86,5,3,0,0,86,89,5,29,0,0,87,88,5,13,0,0,88,90,3,24,12,0,89,87,1,0,0,
+  	0,89,90,1,0,0,0,90,98,1,0,0,0,91,92,5,6,0,0,92,95,5,29,0,0,93,94,5,13,
+  	0,0,94,96,3,24,12,0,95,93,1,0,0,0,95,96,1,0,0,0,96,98,1,0,0,0,97,79,1,
+  	0,0,0,97,85,1,0,0,0,97,91,1,0,0,0,98,9,1,0,0,0,99,100,3,18,9,0,100,101,
+  	5,22,0,0,101,117,1,0,0,0,102,103,3,24,12,0,103,104,5,22,0,0,104,117,1,
+  	0,0,0,105,106,3,8,4,0,106,107,5,22,0,0,107,117,1,0,0,0,108,109,3,12,6,
+  	0,109,110,5,22,0,0,110,117,1,0,0,0,111,112,3,22,11,0,112,113,5,22,0,0,
+  	113,117,1,0,0,0,114,117,3,14,7,0,115,117,5,22,0,0,116,99,1,0,0,0,116,
+  	102,1,0,0,0,116,105,1,0,0,0,116,108,1,0,0,0,116,111,1,0,0,0,116,114,1,
+  	0,0,0,116,115,1,0,0,0,117,11,1,0,0,0,118,119,5,2,0,0,119,120,3,24,12,
+  	0,120,13,1,0,0,0,121,122,5,4,0,0,122,123,5,23,0,0,123,124,3,24,12,0,124,
+  	125,5,24,0,0,125,127,3,6,3,0,126,128,3,16,8,0,127,126,1,0,0,0,127,128,
+  	1,0,0,0,128,15,1,0,0,0,129,132,5,5,0,0,130,133,3,14,7,0,131,133,3,6,3,
+  	0,132,130,1,0,0,0,132,131,1,0,0,0,133,17,1,0,0,0,134,135,5,29,0,0,135,
+  	137,5,23,0,0,136,138,3,20,10,0,137,136,1,0,0,0,137,138,1,0,0,0,138,139,
+  	1,0,0,0,139,140,5,24,0,0,140,19,1,0,0,0,141,146,3,24,12,0,142,143,5,27,
+  	0,0,143,145,3,24,12,0,144,142,1,0,0,0,145,148,1,0,0,0,146,144,1,0,0,0,
+  	146,147,1,0,0,0,147,21,1,0,0,0,148,146,1,0,0,0,149,150,5,29,0,0,150,151,
+  	5,13,0,0,151,152,3,24,12,0,152,23,1,0,0,0,153,154,3,26,13,0,154,25,1,
+  	0,0,0,155,160,3,28,14,0,156,157,5,20,0,0,157,159,3,28,14,0,158,156,1,
+  	0,0,0,159,162,1,0,0,0,160,158,1,0,0,0,160,161,1,0,0,0,161,27,1,0,0,0,
+  	162,160,1,0,0,0,163,168,3,30,15,0,164,165,5,19,0,0,165,167,3,30,15,0,
+  	166,164,1,0,0,0,167,170,1,0,0,0,168,166,1,0,0,0,168,169,1,0,0,0,169,29,
+  	1,0,0,0,170,168,1,0,0,0,171,176,3,32,16,0,172,173,5,16,0,0,173,175,3,
+  	32,16,0,174,172,1,0,0,0,175,178,1,0,0,0,176,174,1,0,0,0,176,177,1,0,0,
+  	0,177,31,1,0,0,0,178,176,1,0,0,0,179,184,3,34,17,0,180,181,7,0,0,0,181,
+  	183,3,34,17,0,182,180,1,0,0,0,183,186,1,0,0,0,184,182,1,0,0,0,184,185,
+  	1,0,0,0,185,33,1,0,0,0,186,184,1,0,0,0,187,192,3,36,18,0,188,189,7,1,
+  	0,0,189,191,3,36,18,0,190,188,1,0,0,0,191,194,1,0,0,0,192,190,1,0,0,0,
+  	192,193,1,0,0,0,193,35,1,0,0,0,194,192,1,0,0,0,195,200,3,38,19,0,196,
+  	197,7,2,0,0,197,199,3,38,19,0,198,196,1,0,0,0,199,202,1,0,0,0,200,198,
+  	1,0,0,0,200,201,1,0,0,0,201,37,1,0,0,0,202,200,1,0,0,0,203,209,3,40,20,
+  	0,204,205,5,21,0,0,205,209,3,38,19,0,206,207,5,10,0,0,207,209,3,38,19,
+  	0,208,203,1,0,0,0,208,204,1,0,0,0,208,206,1,0,0,0,209,39,1,0,0,0,210,
+  	218,3,42,21,0,211,218,3,18,9,0,212,218,5,29,0,0,213,214,5,23,0,0,214,
+  	215,3,24,12,0,215,216,5,24,0,0,216,218,1,0,0,0,217,210,1,0,0,0,217,211,
+  	1,0,0,0,217,212,1,0,0,0,217,213,1,0,0,0,218,41,1,0,0,0,219,220,7,3,0,
+  	0,220,43,1,0,0,0,21,47,55,67,74,83,89,95,97,116,127,132,137,146,160,168,
+  	176,184,192,200,208,217
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -236,17 +252,17 @@ RyntraParser::ProgramContext* RyntraParser::program() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(39); 
+    setState(45); 
     _errHandler->sync(this);
     _la = _input->LA(1);
     do {
-      setState(38);
+      setState(44);
       functionDefinition();
-      setState(41); 
+      setState(47); 
       _errHandler->sync(this);
       _la = _input->LA(1);
     } while (_la == RyntraParser::INT);
-    setState(43);
+    setState(49);
     match(RyntraParser::EOF);
    
   }
@@ -328,23 +344,23 @@ RyntraParser::FunctionDefinitionContext* RyntraParser::functionDefinition() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(45);
+    setState(51);
     match(RyntraParser::INT);
-    setState(46);
+    setState(52);
     match(RyntraParser::IDENTIFIER);
-    setState(47);
+    setState(53);
     match(RyntraParser::LPAREN);
-    setState(49);
+    setState(55);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == RyntraParser::INT) {
-      setState(48);
+      setState(54);
       parameterList();
     }
-    setState(51);
+    setState(57);
     match(RyntraParser::RPAREN);
-    setState(52);
+    setState(58);
     block();
    
   }
@@ -426,21 +442,21 @@ RyntraParser::ParameterListContext* RyntraParser::parameterList() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(54);
+    setState(60);
     match(RyntraParser::INT);
-    setState(55);
-    match(RyntraParser::IDENTIFIER);
     setState(61);
+    match(RyntraParser::IDENTIFIER);
+    setState(67);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == RyntraParser::COMMA) {
-      setState(56);
+      setState(62);
       match(RyntraParser::COMMA);
-      setState(57);
-      match(RyntraParser::INT);
-      setState(58);
-      match(RyntraParser::IDENTIFIER);
       setState(63);
+      match(RyntraParser::INT);
+      setState(64);
+      match(RyntraParser::IDENTIFIER);
+      setState(69);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -516,20 +532,20 @@ RyntraParser::BlockContext* RyntraParser::block() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(64);
+    setState(70);
     match(RyntraParser::LBRACE);
-    setState(68);
+    setState(74);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 29556766) != 0)) {
-      setState(65);
+      ((1ULL << _la) & 1893729758) != 0)) {
+      setState(71);
       statement();
-      setState(70);
+      setState(76);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(71);
+    setState(77);
     match(RyntraParser::RBRACE);
    
   }
@@ -566,6 +582,10 @@ RyntraParser::ExpressionContext* RyntraParser::VariableDeclarationContext::expre
 
 tree::TerminalNode* RyntraParser::VariableDeclarationContext::STRING() {
   return getToken(RyntraParser::STRING, 0);
+}
+
+tree::TerminalNode* RyntraParser::VariableDeclarationContext::BOOL() {
+  return getToken(RyntraParser::BOOL, 0);
 }
 
 
@@ -606,32 +626,13 @@ RyntraParser::VariableDeclarationContext* RyntraParser::variableDeclaration() {
     exitRule();
   });
   try {
-    setState(85);
+    setState(97);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case RyntraParser::INT: {
         enterOuterAlt(_localctx, 1);
-        setState(73);
-        match(RyntraParser::INT);
-        setState(74);
-        match(RyntraParser::IDENTIFIER);
-        setState(77);
-        _errHandler->sync(this);
-
-        _la = _input->LA(1);
-        if (_la == RyntraParser::ASSIGN) {
-          setState(75);
-          match(RyntraParser::ASSIGN);
-          setState(76);
-          expression();
-        }
-        break;
-      }
-
-      case RyntraParser::STRING: {
-        enterOuterAlt(_localctx, 2);
         setState(79);
-        match(RyntraParser::STRING);
+        match(RyntraParser::INT);
         setState(80);
         match(RyntraParser::IDENTIFIER);
         setState(83);
@@ -642,6 +643,44 @@ RyntraParser::VariableDeclarationContext* RyntraParser::variableDeclaration() {
           setState(81);
           match(RyntraParser::ASSIGN);
           setState(82);
+          expression();
+        }
+        break;
+      }
+
+      case RyntraParser::STRING: {
+        enterOuterAlt(_localctx, 2);
+        setState(85);
+        match(RyntraParser::STRING);
+        setState(86);
+        match(RyntraParser::IDENTIFIER);
+        setState(89);
+        _errHandler->sync(this);
+
+        _la = _input->LA(1);
+        if (_la == RyntraParser::ASSIGN) {
+          setState(87);
+          match(RyntraParser::ASSIGN);
+          setState(88);
+          expression();
+        }
+        break;
+      }
+
+      case RyntraParser::BOOL: {
+        enterOuterAlt(_localctx, 3);
+        setState(91);
+        match(RyntraParser::BOOL);
+        setState(92);
+        match(RyntraParser::IDENTIFIER);
+        setState(95);
+        _errHandler->sync(this);
+
+        _la = _input->LA(1);
+        if (_la == RyntraParser::ASSIGN) {
+          setState(93);
+          match(RyntraParser::ASSIGN);
+          setState(94);
           expression();
         }
         break;
@@ -732,64 +771,64 @@ RyntraParser::StatementContext* RyntraParser::statement() {
     exitRule();
   });
   try {
-    setState(104);
+    setState(116);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(87);
+      setState(99);
       functionCall();
-      setState(88);
+      setState(100);
       match(RyntraParser::SEMICOLON);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(90);
+      setState(102);
       expression();
-      setState(91);
+      setState(103);
       match(RyntraParser::SEMICOLON);
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(93);
+      setState(105);
       variableDeclaration();
-      setState(94);
+      setState(106);
       match(RyntraParser::SEMICOLON);
       break;
     }
 
     case 4: {
       enterOuterAlt(_localctx, 4);
-      setState(96);
+      setState(108);
       returnStatement();
-      setState(97);
+      setState(109);
       match(RyntraParser::SEMICOLON);
       break;
     }
 
     case 5: {
       enterOuterAlt(_localctx, 5);
-      setState(99);
+      setState(111);
       assignment();
-      setState(100);
+      setState(112);
       match(RyntraParser::SEMICOLON);
       break;
     }
 
     case 6: {
       enterOuterAlt(_localctx, 6);
-      setState(102);
+      setState(114);
       ifStatement();
       break;
     }
 
     case 7: {
       enterOuterAlt(_localctx, 7);
-      setState(103);
+      setState(115);
       match(RyntraParser::SEMICOLON);
       break;
     }
@@ -860,9 +899,9 @@ RyntraParser::ReturnStatementContext* RyntraParser::returnStatement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(106);
+    setState(118);
     match(RyntraParser::RETURN);
-    setState(107);
+    setState(119);
     expression();
    
   }
@@ -944,22 +983,22 @@ RyntraParser::IfStatementContext* RyntraParser::ifStatement() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(109);
+    setState(121);
     match(RyntraParser::IF);
-    setState(110);
+    setState(122);
     match(RyntraParser::LPAREN);
-    setState(111);
+    setState(123);
     expression();
-    setState(112);
+    setState(124);
     match(RyntraParser::RPAREN);
-    setState(113);
+    setState(125);
     block();
-    setState(115);
+    setState(127);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == RyntraParser::ELSE) {
-      setState(114);
+      setState(126);
       elseClause();
     }
    
@@ -1029,19 +1068,19 @@ RyntraParser::ElseClauseContext* RyntraParser::elseClause() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(117);
+    setState(129);
     match(RyntraParser::ELSE);
-    setState(120);
+    setState(132);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case RyntraParser::IF: {
-        setState(118);
+        setState(130);
         ifStatement();
         break;
       }
 
       case RyntraParser::LBRACE: {
-        setState(119);
+        setState(131);
         block();
         break;
       }
@@ -1121,21 +1160,21 @@ RyntraParser::FunctionCallContext* RyntraParser::functionCall() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(122);
+    setState(134);
     match(RyntraParser::IDENTIFIER);
-    setState(123);
+    setState(135);
     match(RyntraParser::LPAREN);
 
-    setState(125);
+    setState(137);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 29491200) != 0)) {
-      setState(124);
+      ((1ULL << _la) & 1889535360) != 0)) {
+      setState(136);
       argumentList();
     }
-    setState(127);
+    setState(139);
     match(RyntraParser::RPAREN);
    
   }
@@ -1209,17 +1248,17 @@ RyntraParser::ArgumentListContext* RyntraParser::argumentList() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(129);
+    setState(141);
     expression();
-    setState(134);
+    setState(146);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == RyntraParser::COMMA) {
-      setState(130);
+      setState(142);
       match(RyntraParser::COMMA);
-      setState(131);
+      setState(143);
       expression();
-      setState(136);
+      setState(148);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1290,11 +1329,11 @@ RyntraParser::AssignmentContext* RyntraParser::assignment() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(137);
+    setState(149);
     match(RyntraParser::IDENTIFIER);
-    setState(138);
+    setState(150);
     match(RyntraParser::ASSIGN);
-    setState(139);
+    setState(151);
     expression();
    
   }
@@ -1313,8 +1352,8 @@ RyntraParser::ExpressionContext::ExpressionContext(ParserRuleContext *parent, si
   : ParserRuleContext(parent, invokingState) {
 }
 
-RyntraParser::AssignmentExpressionContext* RyntraParser::ExpressionContext::assignmentExpression() {
-  return getRuleContext<RyntraParser::AssignmentExpressionContext>(0);
+RyntraParser::LogicalOrExpressionContext* RyntraParser::ExpressionContext::logicalOrExpression() {
+  return getRuleContext<RyntraParser::LogicalOrExpressionContext>(0);
 }
 
 
@@ -1355,8 +1394,8 @@ RyntraParser::ExpressionContext* RyntraParser::expression() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(141);
-    assignmentExpression();
+    setState(153);
+    logicalOrExpression();
    
   }
   catch (RecognitionException &e) {
@@ -1368,56 +1407,57 @@ RyntraParser::ExpressionContext* RyntraParser::expression() {
   return _localctx;
 }
 
-//----------------- AssignmentExpressionContext ------------------------------------------------------------------
+//----------------- LogicalOrExpressionContext ------------------------------------------------------------------
 
-RyntraParser::AssignmentExpressionContext::AssignmentExpressionContext(ParserRuleContext *parent, size_t invokingState)
+RyntraParser::LogicalOrExpressionContext::LogicalOrExpressionContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-RyntraParser::RelationalExpressionContext* RyntraParser::AssignmentExpressionContext::relationalExpression() {
-  return getRuleContext<RyntraParser::RelationalExpressionContext>(0);
+std::vector<RyntraParser::LogicalAndExpressionContext *> RyntraParser::LogicalOrExpressionContext::logicalAndExpression() {
+  return getRuleContexts<RyntraParser::LogicalAndExpressionContext>();
 }
 
-tree::TerminalNode* RyntraParser::AssignmentExpressionContext::IDENTIFIER() {
-  return getToken(RyntraParser::IDENTIFIER, 0);
+RyntraParser::LogicalAndExpressionContext* RyntraParser::LogicalOrExpressionContext::logicalAndExpression(size_t i) {
+  return getRuleContext<RyntraParser::LogicalAndExpressionContext>(i);
 }
 
-tree::TerminalNode* RyntraParser::AssignmentExpressionContext::ASSIGN() {
-  return getToken(RyntraParser::ASSIGN, 0);
+std::vector<tree::TerminalNode *> RyntraParser::LogicalOrExpressionContext::LOGIC_OR() {
+  return getTokens(RyntraParser::LOGIC_OR);
 }
 
-RyntraParser::ExpressionContext* RyntraParser::AssignmentExpressionContext::expression() {
-  return getRuleContext<RyntraParser::ExpressionContext>(0);
+tree::TerminalNode* RyntraParser::LogicalOrExpressionContext::LOGIC_OR(size_t i) {
+  return getToken(RyntraParser::LOGIC_OR, i);
 }
 
 
-size_t RyntraParser::AssignmentExpressionContext::getRuleIndex() const {
-  return RyntraParser::RuleAssignmentExpression;
+size_t RyntraParser::LogicalOrExpressionContext::getRuleIndex() const {
+  return RyntraParser::RuleLogicalOrExpression;
 }
 
-void RyntraParser::AssignmentExpressionContext::enterRule(tree::ParseTreeListener *listener) {
+void RyntraParser::LogicalOrExpressionContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<RyntraListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterAssignmentExpression(this);
+    parserListener->enterLogicalOrExpression(this);
 }
 
-void RyntraParser::AssignmentExpressionContext::exitRule(tree::ParseTreeListener *listener) {
+void RyntraParser::LogicalOrExpressionContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<RyntraListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitAssignmentExpression(this);
+    parserListener->exitLogicalOrExpression(this);
 }
 
 
-std::any RyntraParser::AssignmentExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
+std::any RyntraParser::LogicalOrExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<RyntraVisitor*>(visitor))
-    return parserVisitor->visitAssignmentExpression(this);
+    return parserVisitor->visitLogicalOrExpression(this);
   else
     return visitor->visitChildren(this);
 }
 
-RyntraParser::AssignmentExpressionContext* RyntraParser::assignmentExpression() {
-  AssignmentExpressionContext *_localctx = _tracker.createInstance<AssignmentExpressionContext>(_ctx, getState());
-  enterRule(_localctx, 26, RyntraParser::RuleAssignmentExpression);
+RyntraParser::LogicalOrExpressionContext* RyntraParser::logicalOrExpression() {
+  LogicalOrExpressionContext *_localctx = _tracker.createInstance<LogicalOrExpressionContext>(_ctx, getState());
+  enterRule(_localctx, 26, RyntraParser::RuleLogicalOrExpression);
+  size_t _la = 0;
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1427,29 +1467,192 @@ RyntraParser::AssignmentExpressionContext* RyntraParser::assignmentExpression() 
     exitRule();
   });
   try {
-    setState(147);
+    enterOuterAlt(_localctx, 1);
+    setState(155);
+    logicalAndExpression();
+    setState(160);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 12, _ctx)) {
-    case 1: {
-      enterOuterAlt(_localctx, 1);
-      setState(143);
+    _la = _input->LA(1);
+    while (_la == RyntraParser::LOGIC_OR) {
+      setState(156);
+      match(RyntraParser::LOGIC_OR);
+      setState(157);
+      logicalAndExpression();
+      setState(162);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- LogicalAndExpressionContext ------------------------------------------------------------------
+
+RyntraParser::LogicalAndExpressionContext::LogicalAndExpressionContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<RyntraParser::EqualityExpressionContext *> RyntraParser::LogicalAndExpressionContext::equalityExpression() {
+  return getRuleContexts<RyntraParser::EqualityExpressionContext>();
+}
+
+RyntraParser::EqualityExpressionContext* RyntraParser::LogicalAndExpressionContext::equalityExpression(size_t i) {
+  return getRuleContext<RyntraParser::EqualityExpressionContext>(i);
+}
+
+std::vector<tree::TerminalNode *> RyntraParser::LogicalAndExpressionContext::LOGIC_AND() {
+  return getTokens(RyntraParser::LOGIC_AND);
+}
+
+tree::TerminalNode* RyntraParser::LogicalAndExpressionContext::LOGIC_AND(size_t i) {
+  return getToken(RyntraParser::LOGIC_AND, i);
+}
+
+
+size_t RyntraParser::LogicalAndExpressionContext::getRuleIndex() const {
+  return RyntraParser::RuleLogicalAndExpression;
+}
+
+void RyntraParser::LogicalAndExpressionContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterLogicalAndExpression(this);
+}
+
+void RyntraParser::LogicalAndExpressionContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitLogicalAndExpression(this);
+}
+
+
+std::any RyntraParser::LogicalAndExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<RyntraVisitor*>(visitor))
+    return parserVisitor->visitLogicalAndExpression(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+RyntraParser::LogicalAndExpressionContext* RyntraParser::logicalAndExpression() {
+  LogicalAndExpressionContext *_localctx = _tracker.createInstance<LogicalAndExpressionContext>(_ctx, getState());
+  enterRule(_localctx, 28, RyntraParser::RuleLogicalAndExpression);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(163);
+    equalityExpression();
+    setState(168);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == RyntraParser::LOGIC_AND) {
+      setState(164);
+      match(RyntraParser::LOGIC_AND);
+      setState(165);
+      equalityExpression();
+      setState(170);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- EqualityExpressionContext ------------------------------------------------------------------
+
+RyntraParser::EqualityExpressionContext::EqualityExpressionContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<RyntraParser::RelationalExpressionContext *> RyntraParser::EqualityExpressionContext::relationalExpression() {
+  return getRuleContexts<RyntraParser::RelationalExpressionContext>();
+}
+
+RyntraParser::RelationalExpressionContext* RyntraParser::EqualityExpressionContext::relationalExpression(size_t i) {
+  return getRuleContext<RyntraParser::RelationalExpressionContext>(i);
+}
+
+std::vector<tree::TerminalNode *> RyntraParser::EqualityExpressionContext::COND_EQUAL() {
+  return getTokens(RyntraParser::COND_EQUAL);
+}
+
+tree::TerminalNode* RyntraParser::EqualityExpressionContext::COND_EQUAL(size_t i) {
+  return getToken(RyntraParser::COND_EQUAL, i);
+}
+
+
+size_t RyntraParser::EqualityExpressionContext::getRuleIndex() const {
+  return RyntraParser::RuleEqualityExpression;
+}
+
+void RyntraParser::EqualityExpressionContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterEqualityExpression(this);
+}
+
+void RyntraParser::EqualityExpressionContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitEqualityExpression(this);
+}
+
+
+std::any RyntraParser::EqualityExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<RyntraVisitor*>(visitor))
+    return parserVisitor->visitEqualityExpression(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+RyntraParser::EqualityExpressionContext* RyntraParser::equalityExpression() {
+  EqualityExpressionContext *_localctx = _tracker.createInstance<EqualityExpressionContext>(_ctx, getState());
+  enterRule(_localctx, 30, RyntraParser::RuleEqualityExpression);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(171);
+    relationalExpression();
+    setState(176);
+    _errHandler->sync(this);
+    _la = _input->LA(1);
+    while (_la == RyntraParser::COND_EQUAL) {
+      setState(172);
+      match(RyntraParser::COND_EQUAL);
+      setState(173);
       relationalExpression();
-      break;
-    }
-
-    case 2: {
-      enterOuterAlt(_localctx, 2);
-      setState(144);
-      match(RyntraParser::IDENTIFIER);
-      setState(145);
-      match(RyntraParser::ASSIGN);
-      setState(146);
-      expression();
-      break;
-    }
-
-    default:
-      break;
+      setState(178);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
     }
    
   }
@@ -1508,14 +1711,6 @@ tree::TerminalNode* RyntraParser::RelationalExpressionContext::LESS_EQ(size_t i)
   return getToken(RyntraParser::LESS_EQ, i);
 }
 
-std::vector<tree::TerminalNode *> RyntraParser::RelationalExpressionContext::COND_EQUAL() {
-  return getTokens(RyntraParser::COND_EQUAL);
-}
-
-tree::TerminalNode* RyntraParser::RelationalExpressionContext::COND_EQUAL(size_t i) {
-  return getToken(RyntraParser::COND_EQUAL, i);
-}
-
 
 size_t RyntraParser::RelationalExpressionContext::getRuleIndex() const {
   return RyntraParser::RuleRelationalExpression;
@@ -1543,7 +1738,7 @@ std::any RyntraParser::RelationalExpressionContext::accept(tree::ParseTreeVisito
 
 RyntraParser::RelationalExpressionContext* RyntraParser::relationalExpression() {
   RelationalExpressionContext *_localctx = _tracker.createInstance<RelationalExpressionContext>(_ctx, getState());
-  enterRule(_localctx, 28, RyntraParser::RuleRelationalExpression);
+  enterRule(_localctx, 32, RyntraParser::RuleRelationalExpression);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1555,26 +1750,26 @@ RyntraParser::RelationalExpressionContext* RyntraParser::relationalExpression() 
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(149);
+    setState(179);
     additiveExpression();
-    setState(154);
+    setState(184);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while ((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 63488) != 0)) {
-      setState(150);
+      ((1ULL << _la) & 442368) != 0)) {
+      setState(180);
       _la = _input->LA(1);
       if (!((((_la & ~ 0x3fULL) == 0) &&
-        ((1ULL << _la) & 63488) != 0))) {
+        ((1ULL << _la) & 442368) != 0))) {
       _errHandler->recoverInline(this);
       }
       else {
         _errHandler->reportMatch(this);
         consume();
       }
-      setState(151);
+      setState(181);
       additiveExpression();
-      setState(156);
+      setState(186);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1646,7 +1841,7 @@ std::any RyntraParser::AdditiveExpressionContext::accept(tree::ParseTreeVisitor 
 
 RyntraParser::AdditiveExpressionContext* RyntraParser::additiveExpression() {
   AdditiveExpressionContext *_localctx = _tracker.createInstance<AdditiveExpressionContext>(_ctx, getState());
-  enterRule(_localctx, 30, RyntraParser::RuleAdditiveExpression);
+  enterRule(_localctx, 34, RyntraParser::RuleAdditiveExpression);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1658,15 +1853,15 @@ RyntraParser::AdditiveExpressionContext* RyntraParser::additiveExpression() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(157);
+    setState(187);
     multiplicativeExpression();
-    setState(162);
+    setState(192);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == RyntraParser::PLUS
 
     || _la == RyntraParser::MINUS) {
-      setState(158);
+      setState(188);
       _la = _input->LA(1);
       if (!(_la == RyntraParser::PLUS
 
@@ -1677,9 +1872,9 @@ RyntraParser::AdditiveExpressionContext* RyntraParser::additiveExpression() {
         _errHandler->reportMatch(this);
         consume();
       }
-      setState(159);
+      setState(189);
       multiplicativeExpression();
-      setState(164);
+      setState(194);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
@@ -1700,12 +1895,12 @@ RyntraParser::MultiplicativeExpressionContext::MultiplicativeExpressionContext(P
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<RyntraParser::PrimaryExpressionContext *> RyntraParser::MultiplicativeExpressionContext::primaryExpression() {
-  return getRuleContexts<RyntraParser::PrimaryExpressionContext>();
+std::vector<RyntraParser::UnaryExpressionContext *> RyntraParser::MultiplicativeExpressionContext::unaryExpression() {
+  return getRuleContexts<RyntraParser::UnaryExpressionContext>();
 }
 
-RyntraParser::PrimaryExpressionContext* RyntraParser::MultiplicativeExpressionContext::primaryExpression(size_t i) {
-  return getRuleContext<RyntraParser::PrimaryExpressionContext>(i);
+RyntraParser::UnaryExpressionContext* RyntraParser::MultiplicativeExpressionContext::unaryExpression(size_t i) {
+  return getRuleContext<RyntraParser::UnaryExpressionContext>(i);
 }
 
 std::vector<tree::TerminalNode *> RyntraParser::MultiplicativeExpressionContext::MULT() {
@@ -1751,7 +1946,7 @@ std::any RyntraParser::MultiplicativeExpressionContext::accept(tree::ParseTreeVi
 
 RyntraParser::MultiplicativeExpressionContext* RyntraParser::multiplicativeExpression() {
   MultiplicativeExpressionContext *_localctx = _tracker.createInstance<MultiplicativeExpressionContext>(_ctx, getState());
-  enterRule(_localctx, 32, RyntraParser::RuleMultiplicativeExpression);
+  enterRule(_localctx, 36, RyntraParser::RuleMultiplicativeExpression);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1763,15 +1958,15 @@ RyntraParser::MultiplicativeExpressionContext* RyntraParser::multiplicativeExpre
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(165);
-    primaryExpression();
-    setState(170);
+    setState(195);
+    unaryExpression();
+    setState(200);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == RyntraParser::MULT
 
     || _la == RyntraParser::DIV) {
-      setState(166);
+      setState(196);
       _la = _input->LA(1);
       if (!(_la == RyntraParser::MULT
 
@@ -1782,11 +1977,117 @@ RyntraParser::MultiplicativeExpressionContext* RyntraParser::multiplicativeExpre
         _errHandler->reportMatch(this);
         consume();
       }
-      setState(167);
-      primaryExpression();
-      setState(172);
+      setState(197);
+      unaryExpression();
+      setState(202);
       _errHandler->sync(this);
       _la = _input->LA(1);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- UnaryExpressionContext ------------------------------------------------------------------
+
+RyntraParser::UnaryExpressionContext::UnaryExpressionContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+RyntraParser::PrimaryExpressionContext* RyntraParser::UnaryExpressionContext::primaryExpression() {
+  return getRuleContext<RyntraParser::PrimaryExpressionContext>(0);
+}
+
+tree::TerminalNode* RyntraParser::UnaryExpressionContext::NOT() {
+  return getToken(RyntraParser::NOT, 0);
+}
+
+RyntraParser::UnaryExpressionContext* RyntraParser::UnaryExpressionContext::unaryExpression() {
+  return getRuleContext<RyntraParser::UnaryExpressionContext>(0);
+}
+
+tree::TerminalNode* RyntraParser::UnaryExpressionContext::MINUS() {
+  return getToken(RyntraParser::MINUS, 0);
+}
+
+
+size_t RyntraParser::UnaryExpressionContext::getRuleIndex() const {
+  return RyntraParser::RuleUnaryExpression;
+}
+
+void RyntraParser::UnaryExpressionContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterUnaryExpression(this);
+}
+
+void RyntraParser::UnaryExpressionContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<RyntraListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitUnaryExpression(this);
+}
+
+
+std::any RyntraParser::UnaryExpressionContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<RyntraVisitor*>(visitor))
+    return parserVisitor->visitUnaryExpression(this);
+  else
+    return visitor->visitChildren(this);
+}
+
+RyntraParser::UnaryExpressionContext* RyntraParser::unaryExpression() {
+  UnaryExpressionContext *_localctx = _tracker.createInstance<UnaryExpressionContext>(_ctx, getState());
+  enterRule(_localctx, 38, RyntraParser::RuleUnaryExpression);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    setState(208);
+    _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case RyntraParser::TRUE:
+      case RyntraParser::FALSE:
+      case RyntraParser::LPAREN:
+      case RyntraParser::STRING_LITERAL:
+      case RyntraParser::IDENTIFIER:
+      case RyntraParser::INTEGER_LITERAL: {
+        enterOuterAlt(_localctx, 1);
+        setState(203);
+        primaryExpression();
+        break;
+      }
+
+      case RyntraParser::NOT: {
+        enterOuterAlt(_localctx, 2);
+        setState(204);
+        match(RyntraParser::NOT);
+        setState(205);
+        unaryExpression();
+        break;
+      }
+
+      case RyntraParser::MINUS: {
+        enterOuterAlt(_localctx, 3);
+        setState(206);
+        match(RyntraParser::MINUS);
+        setState(207);
+        unaryExpression();
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
     }
    
   }
@@ -1856,7 +2157,7 @@ std::any RyntraParser::PrimaryExpressionContext::accept(tree::ParseTreeVisitor *
 
 RyntraParser::PrimaryExpressionContext* RyntraParser::primaryExpression() {
   PrimaryExpressionContext *_localctx = _tracker.createInstance<PrimaryExpressionContext>(_ctx, getState());
-  enterRule(_localctx, 34, RyntraParser::RulePrimaryExpression);
+  enterRule(_localctx, 40, RyntraParser::RulePrimaryExpression);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1866,37 +2167,37 @@ RyntraParser::PrimaryExpressionContext* RyntraParser::primaryExpression() {
     exitRule();
   });
   try {
-    setState(180);
+    setState(217);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 16, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(173);
+      setState(210);
       literal();
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(174);
+      setState(211);
       functionCall();
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(175);
+      setState(212);
       match(RyntraParser::IDENTIFIER);
       break;
     }
 
     case 4: {
       enterOuterAlt(_localctx, 4);
-      setState(176);
+      setState(213);
       match(RyntraParser::LPAREN);
-      setState(177);
+      setState(214);
       expression();
-      setState(178);
+      setState(215);
       match(RyntraParser::RPAREN);
       break;
     }
@@ -1929,6 +2230,14 @@ tree::TerminalNode* RyntraParser::LiteralContext::INTEGER_LITERAL() {
   return getToken(RyntraParser::INTEGER_LITERAL, 0);
 }
 
+tree::TerminalNode* RyntraParser::LiteralContext::TRUE() {
+  return getToken(RyntraParser::TRUE, 0);
+}
+
+tree::TerminalNode* RyntraParser::LiteralContext::FALSE() {
+  return getToken(RyntraParser::FALSE, 0);
+}
+
 
 size_t RyntraParser::LiteralContext::getRuleIndex() const {
   return RyntraParser::RuleLiteral;
@@ -1956,7 +2265,7 @@ std::any RyntraParser::LiteralContext::accept(tree::ParseTreeVisitor *visitor) {
 
 RyntraParser::LiteralContext* RyntraParser::literal() {
   LiteralContext *_localctx = _tracker.createInstance<LiteralContext>(_ctx, getState());
-  enterRule(_localctx, 36, RyntraParser::RuleLiteral);
+  enterRule(_localctx, 42, RyntraParser::RuleLiteral);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1968,11 +2277,10 @@ RyntraParser::LiteralContext* RyntraParser::literal() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(182);
+    setState(219);
     _la = _input->LA(1);
-    if (!(_la == RyntraParser::STRING_LITERAL
-
-    || _la == RyntraParser::INTEGER_LITERAL)) {
+    if (!((((_la & ~ 0x3fULL) == 0) &&
+      ((1ULL << _la) & 1342177664) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {

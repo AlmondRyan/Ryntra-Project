@@ -57,8 +57,14 @@ public:
   virtual void enterExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
   virtual void exitExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
 
-  virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
-  virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
+  virtual void enterLogicalOrExpression(RyntraParser::LogicalOrExpressionContext * /*ctx*/) override { }
+  virtual void exitLogicalOrExpression(RyntraParser::LogicalOrExpressionContext * /*ctx*/) override { }
+
+  virtual void enterLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
+  virtual void exitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
+
+  virtual void enterEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
+  virtual void exitEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
 
   virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
   virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
@@ -68,6 +74,9 @@ public:
 
   virtual void enterMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
   virtual void exitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
+
+  virtual void enterUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
+  virtual void exitUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
 
   virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
   virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
