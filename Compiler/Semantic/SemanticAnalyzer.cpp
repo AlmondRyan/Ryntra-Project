@@ -39,21 +39,32 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
+        // Get current expecting type, which is The function return type
         currentExpectedReturningType = mapStringToType(node->getReturnType());
 
+        // A Function is wrapped by braces, the block in braces will be a single scope
         symbolTable.enterScope();
+
+        // Iterate parameters
         for (auto &param : node->getParameters()) {
+            // Add parameter into symbol table
             Symbol s = {{mapStringToType(param->getType()), ""}, param->getName(), SymbolKind::Parameter};
             symbolTable.addSymbolToCurrentScope(s);
+            // Process parameter (visitParameter());
             visit(param);
         }
 
+        // Visit Block
         visit(node->getBody());
+
+        // The function is completely processed, exit current scope
         symbolTable.exitScope();
+        // Reset the currentExpectedReturningType
         currentExpectedReturningType = TypeKind::Void;
     }
 
     void SemanticAnalyzer::visitBlock(std::shared_ptr<BlockNode> node) {
+        // Visit current block, a block will be a single scope
         symbolTable.enterScope();
         for (auto &stmt : node->getStatements()) {
             visit(stmt);
@@ -209,17 +220,6 @@ namespace Ryntra::Compiler {
         Type        rhs = evaluate(node->getRight());
         std::string op = node->getOp();
 
-        // if (lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int) {
-        //     lastTypeResult = {TypeKind::Int, ""};
-        // } else if ()
-        // else {
-        //     ErrorHandler::getInstance().makeError(
-        //         "Invalid operation between binary operator. Expected " + mapTypeToString(lhs.kind) +
-        //         " but got " + mapTypeToString(rhs.kind) + ".",
-        //         SourceLocation(node->getLocation())
-        //     );
-        //     lastTypeResult = {TypeKind::Void, ""};
-        // }
         if (op == "+" || op == "-" || op == "*" || op == "/") {
             if (!(lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int)) {
                 ErrorHandler::getInstance().makeError(
@@ -296,8 +296,7 @@ namespace Ryntra::Compiler {
             if (exprType.kind == TypeKind::Int) {
                 lastTypeResult = {TypeKind::Int, ""};
             } else {
-                ErrorHandler::getInstance().makeError(
-                    "Operator - only use in int type.",
+                ErrorHandler::getInstance().makeError("Operator - only use in int type.",
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Int, ""};
             }

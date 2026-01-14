@@ -2,9 +2,9 @@
 
 #include "AST/ASTVisitor.h"
 #include "Semantic/SymbolTable.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/IRBuilder.h"
 
 namespace Ryntra::Compiler {
     class IRGenerator : public IASTVisitor {
@@ -32,23 +32,26 @@ namespace Ryntra::Compiler {
 
         Type visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) override;
         Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
-    private:
-        std::unique_ptr<llvm::LLVMContext> context;
-        std::unique_ptr<llvm::Module> module;
-        std::unique_ptr<llvm::IRBuilder<>> builder;
-        SymbolTable symbolTable;
-        std::map<std::string, llvm::Value*> namedValues;
 
-        llvm::Value* lastValue = nullptr;
+    private:
+        std::unique_ptr<llvm::LLVMContext>   context;
+        std::unique_ptr<llvm::Module>        module;
+        std::unique_ptr<llvm::IRBuilder<>>   builder;
+        SymbolTable                          symbolTable;
+        std::map<std::string, llvm::Value *> namedValues;
+
+        llvm::Value *lastValue = nullptr;
 
         void visit(std::shared_ptr<IASTNode> node) {
-            if (node) node->accept(this);
+            if (node)
+                node->accept(this);
         }
 
-        llvm::Value* evaluate(std::shared_ptr<IASTNode> node) {
-            if (!node) return nullptr;
+        llvm::Value *evaluate(std::shared_ptr<IASTNode> node) {
+            if (!node)
+                return nullptr;
             node->accept(this);
             return lastValue;
         }
     };
-}
+} // namespace Ryntra::Compiler

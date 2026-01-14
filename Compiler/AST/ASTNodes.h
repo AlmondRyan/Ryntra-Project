@@ -193,7 +193,7 @@ namespace Ryntra::Compiler {
          * @brief Get the name of the identifier.
          * @return The name of the Identifier.
          */
-        const std::string &getName() const { return name; }
+        const std::string getName() const { return name; }
 
         /**
          * @brief Accepts the visiting from the visitor.
