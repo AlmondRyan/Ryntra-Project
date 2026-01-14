@@ -14,8 +14,9 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<FunctionDefinitionNode> ASTBuilder::visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *context) {
-        // TODO: If function not returns int, change this
-        std::string returnType = context->INT()->getText();
+        std::string returnType = "int"; // Default as the grammar currently only supports INT
+        if (context->INT()) returnType = context->INT()->getText();
+        
         std::string functionName = context->IDENTIFIER()->getText();
         std::vector<std::shared_ptr<ParameterNode>> parameters;
         if (context->parameterList()) {
@@ -29,12 +30,14 @@ namespace Ryntra::Compiler {
     std::vector<std::shared_ptr<ParameterNode>> ASTBuilder::visitParameterList(antlr::RyntraParser::ParameterListContext *context) {
         std::vector<std::shared_ptr<ParameterNode>> parameters;
 
-        // TODO: If function parameters not only int, change this
-        auto intTokens = context->INT();
         auto idTokens = context->IDENTIFIER();
+        auto intTokens = context->INT();
 
-        for (size_t i = 0; i < intTokens.size(); ++i) {
-            std::string type = intTokens[i]->getText();
+        for (size_t i = 0; i < idTokens.size(); ++i) {
+            std::string type = "int";
+            if (i < intTokens.size()) {
+                type = intTokens[i]->getText();
+            }
             std::string name = idTokens[i]->getText();
             parameters.push_back(
                 std::make_shared<ParameterNode>(type, name)
@@ -84,7 +87,11 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<VariableDeclarationNode> ASTBuilder::visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context) {
-        std::string varType = context->INT()->getText();
+        std::string varType = "";
+        if (context->INT()) varType = "int";
+        else if (context->STRING()) varType = "string";
+        else if (context->BOOL()) varType = "bool";
+        
         std::string varName = context->IDENTIFIER()->getText();
         std::shared_ptr<IASTNode> initialValue = nullptr;
 
@@ -146,7 +153,43 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitExpression(antlr::RyntraParser::ExpressionContext *context) {
-        return visitAssignmentExpression(context->assignmentExpression());
+        return visitLogicalOrExpression(context->logicalOrExpression());
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitLogicalOrExpression(antlr::RyntraParser::LogicalOrExpressionContext *context) {
+        auto left = visitLogicalAndExpression(context->logicalAndExpression(0));
+        
+        for (size_t i = 1; i < context->logicalAndExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitLogicalAndExpression(context->logicalAndExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitLogicalAndExpression(antlr::RyntraParser::LogicalAndExpressionContext *context) {
+        auto left = visitEqualityExpression(context->equalityExpression(0));
+        
+        for (size_t i = 1; i < context->equalityExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitEqualityExpression(context->equalityExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitEqualityExpression(antlr::RyntraParser::EqualityExpressionContext *context) {
+        auto left = visitRelationalExpression(context->relationalExpression(0));
+        
+        for (size_t i = 1; i < context->relationalExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitRelationalExpression(context->relationalExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitLiteral(antlr::RyntraParser::LiteralContext *context) {
@@ -162,17 +205,14 @@ namespace Ryntra::Compiler {
             int value = std::stoi(context->INTEGER_LITERAL()->getText());
             return createNode<IntegerLiteralNode>(context, value);
         }
+        else if (context->TRUE()) {
+            return createNode<BooleanLiteralNode>(context, true);
+        }
+        else if (context->FALSE()) {
+            return createNode<BooleanLiteralNode>(context, false);
+        }
 
         return nullptr;
-    }
-
-    std::shared_ptr<IASTNode> ASTBuilder::visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context) {
-        if (context->ASSIGN()) {
-            std::string idName = context->IDENTIFIER()->getText();
-            auto expr = visitExpression(context->expression());
-            return createNode<AssignmentExpressionNode>(context, idName, std::move(expr));
-        }
-        return visitRelationalExpression(context->relationalExpression());
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context) {
@@ -206,15 +246,28 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context) {
-        auto left = visitPrimaryExpression(context->primaryExpression(0));
+        auto left = visitUnaryExpression(context->unaryExpression(0));
         
-        for (size_t i = 1; i < context->primaryExpression().size(); ++i) {
+        for (size_t i = 1; i < context->unaryExpression().size(); ++i) {
             std::string op = context->children[2 * i - 1]->getText();
-            auto right = visitPrimaryExpression(context->primaryExpression(i));
+            auto right = visitUnaryExpression(context->unaryExpression(i));
             left = createNode<BinaryExpressionNode>(context, left, right, op);
         }
         
         return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *context) {
+        if (context->primaryExpression()) {
+            return visitPrimaryExpression(context->primaryExpression());
+        } else if (context->NOT()) {
+            auto expr = visitUnaryExpression(context->unaryExpression());
+            return createNode<UnaryExpressionNode>(context, "!", std::move(expr));
+        } else if (context->MINUS()) {
+            auto expr = visitUnaryExpression(context->unaryExpression());
+            return createNode<UnaryExpressionNode>(context, "-", std::move(expr));
+        }
+        return nullptr;
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context) {

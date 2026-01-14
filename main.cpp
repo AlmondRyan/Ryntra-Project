@@ -43,6 +43,10 @@ int main() {
     // 5. Test Result Discarding (should do a warning)
     f + 10;
 
+    // 6. Test boolean declaration
+    bool g1 = true;
+    bool g2 = false;
+
     // 6. Test return statement
     return 0;
 })";

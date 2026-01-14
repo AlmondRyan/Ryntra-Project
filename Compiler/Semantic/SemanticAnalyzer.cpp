@@ -251,4 +251,12 @@ namespace Ryntra::Compiler {
         lastTypeResult = lhsType;
         return lastTypeResult;
     }
+
+    Type SemanticAnalyzer::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+        return lastTypeResult;
+    }
+
+    Type SemanticAnalyzer::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
+        return lastTypeResult;
+    }
 } // namespace Ryntra::Compiler

@@ -291,4 +291,12 @@ namespace Ryntra::Compiler {
         lastValue = nullptr;
         return {TypeKind::Void, ""};
     }
+
+    Type IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
+        return {TypeKind::Void, ""};
+    }
+
+    Type IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+        return {TypeKind::Void, ""};
+    }
 } // namespace Ryntra::Compiler

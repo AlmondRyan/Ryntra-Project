@@ -24,6 +24,9 @@ namespace Ryntra::Compiler {
 
         Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) override;
         Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
+
+        Type visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) override;
+        Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
     private:
         SymbolTable symbolTable;
         TypeKind currentExpectedReturningType = TypeKind::Void;

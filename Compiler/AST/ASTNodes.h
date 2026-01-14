@@ -9,6 +9,7 @@
 namespace Ryntra::Compiler {
     // Forward Declaration
     class IASTVisitor;
+    class UnaryExpressionNode;
 
     /**
      * @brief AST (Abstract Syntax Tree) Node Bass Class
@@ -133,6 +134,40 @@ namespace Ryntra::Compiler {
 
     private:
         std::string value;
+    };
+
+    /**
+     * @brief The Boolean Literal Node.
+     * @details Represents the Boolean Constant Node in AST.
+     */
+    class BooleanLiteralNode : public LiteralNode {
+    public:
+        /**
+         * @brief The Constructor.
+         * @param val The value of the node.
+         */
+        BooleanLiteralNode(bool val) : value(val) {}
+
+        /**
+         * @brief Get the value.
+         * @return The boolean value.
+         */
+        bool getValue() const { return value; }
+
+        /**
+         * @brief Get the string representation.
+         * @return The string representation.
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+    private:
+        bool value;
     };
 
     /**
@@ -704,6 +739,51 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IASTNode> left;  ///< The left operand of the binary expression
         std::shared_ptr<IASTNode> right; ///< The right operand of the binary expression
         std::string               operand;
+    };
+
+    /**
+     * @brief The Unary Expression Node representing unary operations.
+     * @details This class represents expressions that contain one operand and an operator,
+     * such as logical NOT or arithmetic negation.
+     * Examples include expressions like `!flag`, `-count`.
+     */
+    class UnaryExpressionNode : public IASTNode {
+    public:
+        /**
+         * @brief Constructor that creates a unary expression node.
+         * @param opr The operator symbol (e.g., "!", "-").
+         * @param expr The operand of the unary expression.
+         */
+        UnaryExpressionNode(std::string opr, std::shared_ptr<IASTNode> expr)
+            : operand(std::move(opr)), expression(std::move(expr)) {}
+
+        /**
+         * @brief Get the string representation of the Unary Expression Node.
+         * @return A string representation of the form "UnaryExpression(op expression)".
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+        /**
+         * @brief Get the operator of the unary expression.
+         * @return The operator string.
+         */
+        std::string getOp() const { return operand; }
+
+        /**
+         * @brief Get the expression of the unary expression.
+         * @return The operand expression node.
+         */
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
+
+    private:
+        std::string               operand;
+        std::shared_ptr<IASTNode> expression;
     };
 
     class IfStatementNode : public StatementNode {

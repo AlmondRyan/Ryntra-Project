@@ -10,6 +10,10 @@ namespace Ryntra::Compiler {
         visitor->visitStringLiteral(std::static_pointer_cast<StringLiteralNode>(shared_from_this()));
     }
 
+    void BooleanLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitBooleanLiteral(std::static_pointer_cast<BooleanLiteralNode>(shared_from_this()));
+    }
+
     void IdentifierNode::accept(IASTVisitor *visitor) {
         visitor->visitIdentifier(std::static_pointer_cast<IdentifierNode>(shared_from_this()));
     }
@@ -68,6 +72,10 @@ namespace Ryntra::Compiler {
 
     std::string StringLiteralNode::toString() const {
         return "StringLiteral(" + value + ")";
+    }
+
+    std::string BooleanLiteralNode::toString() const {
+        return "BooleanLiteral(" + std::string(value ? "true" : "false") + ")";
     }
 
     std::string IdentifierNode::toString() const {
@@ -148,12 +156,23 @@ namespace Ryntra::Compiler {
         visitor->visitAssignmentExpression(std::static_pointer_cast<AssignmentExpressionNode>(shared_from_this()));
     }
 
+    std::string UnaryExpressionNode::toString() const {
+        return "UnaryExpression(" + operand + " " + expression->toString() + ")";
+    }
+
+    void UnaryExpressionNode::accept(IASTVisitor *visitor) {
+        visitor->visitUnaryExpression(std::static_pointer_cast<UnaryExpressionNode>(shared_from_this()));
+    }
+
     std::string AssignmentExpressionNode::toString() const {
         return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
     }
 
     std::string ReturnStatementNode::toString() const {
-        return "ReturnStatement(" + returnValue->toString() + ")";
+        if (returnValue) {
+            return "ReturnStatement(" + returnValue->toString() + ")";
+        }
+        return "ReturnStatement(void)";
     }
 
     std::string FunctionCallStatementNode::toString() const {
@@ -161,7 +180,10 @@ namespace Ryntra::Compiler {
     }
 
     std::string ExpressionStatementNode::toString() const {
-        return "ExpressionStatement(" + expression->toString() + ")";
+        if (expression) {
+            return "ExpressionStatement(" + expression->toString() + ")";
+        }
+        return "ExpressionStatement(null)";
     }
 
     std::string ParameterNode::toString() const {

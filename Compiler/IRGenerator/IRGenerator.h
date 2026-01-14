@@ -29,6 +29,9 @@ namespace Ryntra::Compiler {
         Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
 
         [[nodiscard]] std::string getIR() const;
+
+        Type visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) override;
+        Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
     private:
         std::unique_ptr<llvm::LLVMContext> context;
         std::unique_ptr<llvm::Module> module;
