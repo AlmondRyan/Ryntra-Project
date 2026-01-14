@@ -47,7 +47,16 @@ int main() {
     bool g1 = true;
     bool g2 = false;
 
-    // 6. Test return statement
+    // 7. Test if statement
+    if (a == 20) {
+        __builtin_print("a is 20");
+    } else if (a == 10) {
+        __builtin_print("omg this is not possible);
+    } else {
+        __builtin_print("why");
+    }
+
+    // 8. Test return statement
     return 0;
 })";
     try {

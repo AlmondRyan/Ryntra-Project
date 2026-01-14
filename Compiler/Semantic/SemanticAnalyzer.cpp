@@ -11,7 +11,7 @@ namespace Ryntra::Compiler {
             functionSymbol.returnType = {mapStringToType(i->getReturnType()), ""};
             for (const auto &paramNode : i->getParameters()) {
                 TypeKind pk = mapStringToType(paramNode->getType());
-                Symbol s({pk, ""}, paramNode->getName(), SymbolKind::Parameter);
+                Symbol   s({pk, ""}, paramNode->getName(), SymbolKind::Parameter);
                 functionSymbol.parameters.push_back(s);
             }
 
@@ -28,14 +28,12 @@ namespace Ryntra::Compiler {
         if (mainFunc == std::nullopt) {
             ErrorHandler::getInstance().makeError(
                 "There's no main function.",
-                SourceLocation(node->getLocation().line, node->getLocation().column)
-            );
+                SourceLocation(node->getLocation().line, node->getLocation().column));
         } else {
             if (mainFunc->returnType.kind != TypeKind::Int) {
                 ErrorHandler::getInstance().makeError(
                     "Function main() should return int.",
-                    SourceLocation(node->getLocation().line, node->getLocation().column)
-                );
+                    SourceLocation(node->getLocation().line, node->getLocation().column));
             }
         }
     }
@@ -67,7 +65,14 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
-        evaluate(node->getCondition());
+        Type condType = evaluate(node->getCondition());
+        if (condType.kind != TypeKind::Boolean) {
+            ErrorHandler::getInstance().makeError(
+                "If condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+        }
+
         visit(node->getThenBody());
         if (node->getElseBody()) {
             visit(node->getElseBody());
@@ -80,8 +85,7 @@ namespace Ryntra::Compiler {
             if (std::dynamic_pointer_cast<BinaryExpressionNode>(expr)) {
                 ErrorHandler::getInstance().makeWarning(
                     "Expression result discarded.",
-                    SourceLocation(node->getLocation())
-                );
+                    SourceLocation(node->getLocation()));
             }
 
             visit(node->getExpression());
@@ -90,10 +94,10 @@ namespace Ryntra::Compiler {
 
     Type SemanticAnalyzer::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
-        auto funcSymbol = symbolTable.lookupFunction(funcName);
+        auto        funcSymbol = symbolTable.lookupFunction(funcName);
         if (funcSymbol == std::nullopt) {
             ErrorHandler::getInstance().makeError("Undefined function: " + funcName,
-                SourceLocation(node->getLocation().line, node->getLocation().column));
+                                                  SourceLocation(node->getLocation().line, node->getLocation().column));
             lastTypeResult = {TypeKind::Void, ""};
             return lastTypeResult;
         }
@@ -104,9 +108,8 @@ namespace Ryntra::Compiler {
         if (args.size() != params.size()) {
             ErrorHandler::getInstance().makeError(
                 "Function " + funcName + " requires " + std::to_string(params.size()) +
-                " arguments, but got " + std::to_string(args.size()),
-                SourceLocation(node->getLocation().line, node->getLocation().column)
-            );
+                    " arguments, but got " + std::to_string(args.size()),
+                SourceLocation(node->getLocation().line, node->getLocation().column));
         }
 
         for (auto i = 0; i < args.size(); i++) {
@@ -115,9 +118,8 @@ namespace Ryntra::Compiler {
                 if (argType.kind != params[i].type.kind) {
                     ErrorHandler::getInstance().makeError(
                         "Function " + funcName + " requires " + mapTypeToString(params[i].type.kind) + " but got " +
-                        mapTypeToString(argType.kind),
-                        SourceLocation(node->getLocation().line, node->getLocation().column)
-                    );
+                            mapTypeToString(argType.kind),
+                        SourceLocation(node->getLocation().line, node->getLocation().column));
                 }
             }
         }
@@ -132,12 +134,11 @@ namespace Ryntra::Compiler {
 
     Type SemanticAnalyzer::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
         std::string name = node->getName();
-        auto symbol = symbolTable.lookupSymbolInScopes(name);
+        auto        symbol = symbolTable.lookupSymbolInScopes(name);
         if (symbol == std::nullopt) {
             ErrorHandler::getInstance().makeError(
                 "Undefined identifier: " + name,
-                SourceLocation(node->getLocation())
-            );
+                SourceLocation(node->getLocation()));
             lastTypeResult = {TypeKind::Void, ""};
             return lastTypeResult;
         }
@@ -159,13 +160,12 @@ namespace Ryntra::Compiler {
             if (tk.kind != currentExpectedReturningType) {
                 ErrorHandler::getInstance().makeError(
                     "Mismatch returning type: expect " + mapTypeToString(currentExpectedReturningType) + " but got " + mapTypeToString(tk.kind),
-                    SourceLocation(node->getLocation())
-                );
+                    SourceLocation(node->getLocation()));
             }
         } else {
             if (currentExpectedReturningType != TypeKind::Void) {
                 ErrorHandler::getInstance().makeError("Function expect " + mapTypeToString(currentExpectedReturningType) + " returning value but got empty.",
-                    SourceLocation(node->getLocation()));
+                                                      SourceLocation(node->getLocation()));
             }
         }
     }
@@ -177,47 +177,71 @@ namespace Ryntra::Compiler {
 
     void SemanticAnalyzer::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
         std::string varName = node->getVarName();
+        // std::cout << "VarType: " << node->getVarType() << std::endl;
+
         TypeKind declaredType = mapStringToType(node->getVarType());
-        
+
         auto initialValue = node->getInitialValue();
         if (initialValue) {
             Type initValueType = evaluate(initialValue);
-            
+
             if (declaredType != initValueType.kind) {
                 ErrorHandler::getInstance().makeError(
                     "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType.kind) + ".",
-                    SourceLocation(node->getLocation())
-                );
+                    SourceLocation(node->getLocation()));
             }
         }
 
         Symbol variableSymbol = {
             {declaredType, ""},
             varName,
-            SymbolKind::Variable
-        };
+            SymbolKind::Variable};
 
         if (!symbolTable.addSymbolToCurrentScope(variableSymbol)) {
             ErrorHandler::getInstance().makeError(
                 "Variable '" + varName + "' is already defined in this scope.",
-                SourceLocation(node->getLocation())
-            );
+                SourceLocation(node->getLocation()));
         }
     }
 
     Type SemanticAnalyzer::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
-        Type lhs = evaluate(node->getLeft());
-        Type rhs = evaluate(node->getRight());
+        Type        lhs = evaluate(node->getLeft());
+        Type        rhs = evaluate(node->getRight());
         std::string op = node->getOp();
 
-        if (lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int) {
+        // if (lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int) {
+        //     lastTypeResult = {TypeKind::Int, ""};
+        // } else if ()
+        // else {
+        //     ErrorHandler::getInstance().makeError(
+        //         "Invalid operation between binary operator. Expected " + mapTypeToString(lhs.kind) +
+        //         " but got " + mapTypeToString(rhs.kind) + ".",
+        //         SourceLocation(node->getLocation())
+        //     );
+        //     lastTypeResult = {TypeKind::Void, ""};
+        // }
+        if (op == "+" || op == "-" || op == "*" || op == "/") {
+            if (!(lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int)) {
+                ErrorHandler::getInstance().makeError(
+                    "Binary Arithmical Operator only use between arithmetic type.",
+                    SourceLocation(node->getLocation()));
+            }
             lastTypeResult = {TypeKind::Int, ""};
+        } else if (op == "&&" || op == "||") {
+            if (!(lhs.kind == TypeKind::Boolean && rhs.kind == TypeKind::Boolean)) {
+                ErrorHandler::getInstance().makeError(
+                    "Logical Operator only use in boolean type.",
+                    SourceLocation(node->getLocation()));
+            }
+            lastTypeResult = {TypeKind::Boolean, ""};
+        } else if (op == "==" || op == "!=" || op == ">" || op == "<" || op == ">=" || op == "<=") {
+            if (lhs.kind != rhs.kind) {
+                ErrorHandler::getInstance().makeError(
+                    "Cannot compare between different types.",
+                    SourceLocation(node->getLocation()));
+            }
+            lastTypeResult = {TypeKind::Boolean, ""};
         } else {
-            ErrorHandler::getInstance().makeError(
-                "Invalid operation between binary operator. Expected " + mapTypeToString(lhs.kind) +
-                " but got " + mapTypeToString(rhs.kind) + ".",
-                SourceLocation(node->getLocation())
-            );
             lastTypeResult = {TypeKind::Void, ""};
         }
 
@@ -227,12 +251,11 @@ namespace Ryntra::Compiler {
     Type SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         auto idName = node->getIdentifier();
         auto symbol = symbolTable.lookupSymbolInScopes(idName);
-        
+
         if (symbol == std::nullopt) {
             ErrorHandler::getInstance().makeError(
                 "Undefined variable '" + idName + "' in current scope.",
-                SourceLocation(node->getLocation())
-            );
+                SourceLocation(node->getLocation()));
             lastTypeResult = {TypeKind::Void, ""};
             return lastTypeResult;
         }
@@ -243,9 +266,8 @@ namespace Ryntra::Compiler {
         if (lhsType.kind != rhsType.kind) {
             ErrorHandler::getInstance().makeError(
                 "Cannot assign " + mapTypeToString(rhsType.kind) +
-                " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType.kind),
-                SourceLocation(node->getLocation())
-            );
+                    " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType.kind),
+                SourceLocation(node->getLocation()));
         }
 
         lastTypeResult = lhsType;
@@ -253,10 +275,34 @@ namespace Ryntra::Compiler {
     }
 
     Type SemanticAnalyzer::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+        lastTypeResult = {TypeKind::Boolean, ""};
         return lastTypeResult;
     }
 
     Type SemanticAnalyzer::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
+        Type        exprType = evaluate(node->getExpression());
+        std::string op = node->getOp();
+
+        if (op == "!") {
+            if (exprType.kind == TypeKind::Boolean) {
+                lastTypeResult = {TypeKind::Boolean, ""};
+            } else {
+                ErrorHandler::getInstance().makeError(
+                    "Operator ! only use in boolean type.",
+                    SourceLocation(node->getLocation()));
+                lastTypeResult = {TypeKind::Boolean, ""};
+            }
+        } else if (op == "-") {
+            if (exprType.kind == TypeKind::Int) {
+                lastTypeResult = {TypeKind::Int, ""};
+            } else {
+                ErrorHandler::getInstance().makeError(
+                    "Operator - only use in int type.",
+                    SourceLocation(node->getLocation()));
+                lastTypeResult = {TypeKind::Int, ""};
+            }
+        }
+
         return lastTypeResult;
     }
 } // namespace Ryntra::Compiler

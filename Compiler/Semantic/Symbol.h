@@ -8,6 +8,7 @@ namespace Ryntra::Compiler {
         Int,
         String,
         Void,
+        Boolean,
         Custom,
         ErrorType
     };

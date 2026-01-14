@@ -47,6 +47,7 @@ namespace Ryntra::Compiler {
             case TypeKind::Int: return "int";
             case TypeKind::String: return "string";
             case TypeKind::Void: return "void";
+            case TypeKind::Boolean: return "bool";
             case TypeKind::Custom:
             default: return "custom";
             }
@@ -56,7 +57,9 @@ namespace Ryntra::Compiler {
             if (kind == "int") return TypeKind::Int;
             if (kind == "string") return TypeKind::String;
             if (kind == "void") return TypeKind::Void;
+            if (kind == "bool") return TypeKind::Boolean;
             if (kind == "custom") return TypeKind::Custom;
+            return TypeKind::ErrorType;
         }
     };
 }

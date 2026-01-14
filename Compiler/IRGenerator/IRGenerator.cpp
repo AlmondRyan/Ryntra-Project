@@ -32,6 +32,7 @@ namespace Ryntra::Compiler {
             if (typeName == "int") return llvm::Type::getInt32Ty(context);
             if (typeName == "string") return llvm::PointerType::get(context, 0);
             if (typeName == "void") return llvm::Type::getVoidTy(context);
+            if (typeName == "bool") return llvm::Type::getInt1Ty(context);
             return llvm::Type::getVoidTy(context);
         }
     }
@@ -263,12 +264,25 @@ namespace Ryntra::Compiler {
         llvm::Value *rightValue = evaluate(node->getRight());
         std::string op = node->getOp();
 
-        if (op == "+") lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
-        if (op == "-") lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
-        if (op == "*") lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
-        if (op == "/") lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+        if (op == "+") {
+            lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
+            return {TypeKind::Int, ""};
+        }
+        if (op == "-") {
+            lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
+            return {TypeKind::Int, ""};
+        }
+        if (op == "*") {
+            lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
+            return {TypeKind::Int, ""};
+        }
+        if (op == "/") {
+            lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            return {TypeKind::Int, ""};
+        }
 
-        return {TypeKind::Int, ""};
+        lastValue = nullptr;
+        return {TypeKind::Void, ""};
     }
 
     Type IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
@@ -293,10 +307,31 @@ namespace Ryntra::Compiler {
     }
 
     Type IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
-        return {TypeKind::Void, ""};
+        llvm::Value* value = evaluate(node->getExpression());
+        std::string op = node->getOp();
+
+        if (!value) {
+            lastValue = nullptr;
+            return {TypeKind::Void, ""};
+        }
+
+        if (op == "!") {
+            lastValue = builder->CreateNot(value, "nottmp");
+            return {TypeKind::Boolean, ""};
+        }
+
+        if (op == "-") {
+            llvm::Value* zero = llvm::ConstantInt::get(*context, llvm::APInt(32, 0));
+            lastValue = builder->CreateSub(zero, value, "negtmp");
+            return {TypeKind::Int, ""};
+        }
+
+        lastValue = value;
+        return {TypeKind::Custom, ""};
     }
 
     Type IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
-        return {TypeKind::Void, ""};
+        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(1, node->getValue() ? 1 : 0));
+        return {TypeKind::Boolean, ""};
     }
 } // namespace Ryntra::Compiler
