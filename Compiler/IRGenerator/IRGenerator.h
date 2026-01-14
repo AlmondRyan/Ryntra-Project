@@ -14,6 +14,7 @@ namespace Ryntra::Compiler {
         void visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) override;
         void visitBlock(std::shared_ptr<BlockNode> node) override;
         void visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) override;
+        void visitIfStatement(std::shared_ptr<IfStatementNode> node) override;
         Type visitFunctionCall(std::shared_ptr<FunctionCallNode> node) override;
         void visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) override;
         Type visitIdentifier(std::shared_ptr<IdentifierNode> node) override;

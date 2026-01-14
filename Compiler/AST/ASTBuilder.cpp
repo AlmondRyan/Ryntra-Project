@@ -75,6 +75,9 @@ namespace Ryntra::Compiler {
             auto assignExpr = visitAssignment(context->assignment());
             return createNode<ExpressionStatementNode>(context, std::move(assignExpr));
         }
+        else if (context->ifStatement()) {
+            return visitIfStatement(context->ifStatement());
+        }
         else {
             return createNode<EmptyStatementNode>(context);
         }
@@ -98,6 +101,24 @@ namespace Ryntra::Compiler {
             returnValue = visitExpression(context->expression());
         }
         return createNode<ReturnStatementNode>(context, std::move(returnValue));
+    }
+
+    std::shared_ptr<IfStatementNode> ASTBuilder::visitIfStatement(antlr::RyntraParser::IfStatementContext *context) {
+        auto condition = visitExpression(context->expression());
+        auto thenBody = visitBlock(context->block());
+        std::shared_ptr<IASTNode> elseBody = nullptr;
+        if (context->elseClause()) {
+            elseBody = visitElseClause(context->elseClause());
+        }
+        return createNode<IfStatementNode>(context, std::move(condition), std::move(thenBody), std::move(elseBody));
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitElseClause(antlr::RyntraParser::ElseClauseContext *context) {
+        if (context->ifStatement()) {
+            return visitIfStatement(context->ifStatement());
+        } else {
+            return visitBlock(context->block());
+        }
     }
 
     std::shared_ptr<FunctionCallNode> ASTBuilder::visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context) {

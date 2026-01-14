@@ -21,6 +21,7 @@ namespace Ryntra::Compiler {
         virtual Type visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) = 0;
         virtual Type visitStringLiteral(std::shared_ptr<StringLiteralNode> node) = 0;
         virtual void visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) = 0;
+        virtual void visitIfStatement(std::shared_ptr<IfStatementNode> node) = 0;
         virtual Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) = 0;
         virtual Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) = 0;
     };

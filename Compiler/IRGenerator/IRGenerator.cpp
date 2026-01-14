@@ -101,6 +101,10 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
     }
 
+    void IRGenerator::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
+        // TODO: Implement IR Generation for If Statement
+    }
+
     void IRGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
         visit(node->getExpression());
     }

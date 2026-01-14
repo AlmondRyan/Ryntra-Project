@@ -14,6 +14,8 @@ namespace Ryntra::Compiler {
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context);
         std::shared_ptr<ReturnStatementNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context);
         std::shared_ptr<IASTNode> visitLiteral(antlr::RyntraParser::LiteralContext *context);
+        std::shared_ptr<IfStatementNode> visitIfStatement(antlr::RyntraParser::IfStatementContext *context);
+        std::shared_ptr<IASTNode> visitElseClause(antlr::RyntraParser::ElseClauseContext *context);
         std::vector<std::shared_ptr<IASTNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *context);
         std::shared_ptr<IASTNode> visitExpression(antlr::RyntraParser::ExpressionContext *context);
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context);

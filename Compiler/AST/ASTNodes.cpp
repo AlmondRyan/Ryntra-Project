@@ -167,4 +167,17 @@ namespace Ryntra::Compiler {
     std::string ParameterNode::toString() const {
         return "Parameter(" + type + " " + name + ")";
     }
+
+    std::string IfStatementNode::toString() const {
+        std::string result = "IfStatement(" + condition->toString() + ", " + thenBody->toString();
+        if (elseBody) {
+            result += ", " + elseBody->toString();
+        }
+        result += ")";
+        return result;
+    }
+
+    void IfStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitIfStatement(std::static_pointer_cast<IfStatementNode>(shared_from_this()));
+    }
 } // namespace Ryntra::Compiler

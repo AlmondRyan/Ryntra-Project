@@ -706,4 +706,22 @@ namespace Ryntra::Compiler {
         std::string               operand;
     };
 
+    class IfStatementNode : public StatementNode {
+    public:
+        IfStatementNode(std::shared_ptr<IASTNode> cond, std::shared_ptr<BlockNode> then, std::shared_ptr<IASTNode> els = nullptr)
+            : condition(std::move(cond)), thenBody(std::move(then)), elseBody(std::move(els)) {}
+
+        std::string toString() const override;
+
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode>  getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getThenBody() const { return thenBody; }
+        std::shared_ptr<IASTNode>  getElseBody() const { return elseBody; }
+
+    private:
+        std::shared_ptr<IASTNode>  condition;
+        std::shared_ptr<BlockNode> thenBody;
+        std::shared_ptr<IASTNode>  elseBody; ///< This could be nullptr if there's no else
+    };
 } // namespace Ryntra::Compiler

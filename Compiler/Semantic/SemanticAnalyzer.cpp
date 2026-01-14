@@ -66,6 +66,14 @@ namespace Ryntra::Compiler {
     void SemanticAnalyzer::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
     }
 
+    void SemanticAnalyzer::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
+        evaluate(node->getCondition());
+        visit(node->getThenBody());
+        if (node->getElseBody()) {
+            visit(node->getElseBody());
+        }
+    }
+
     void SemanticAnalyzer::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
         if (node->getExpression()) {
             auto expr = node->getExpression();
