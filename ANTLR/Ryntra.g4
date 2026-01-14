@@ -11,6 +11,7 @@ ELSE: 'else';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
+WHILE: 'while';
 
 // Operators
 PLUS: '+';
@@ -73,6 +74,7 @@ statement:
     | returnStatement SEMICOLON
     | assignment SEMICOLON
     | ifStatement
+    | whileStatement
     | SEMICOLON
     ;
 
@@ -82,6 +84,10 @@ returnStatement
 
 ifStatement
     : IF LPAREN expression RPAREN block elseClause?
+    ;
+
+whileStatement
+    : WHILE LPAREN expression RPAREN block
     ;
 
 elseClause

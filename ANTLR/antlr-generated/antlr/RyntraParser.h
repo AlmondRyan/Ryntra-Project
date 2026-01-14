@@ -14,21 +14,21 @@ class  RyntraParser : public antlr4::Parser {
 public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
-    FALSE = 8, PLUS = 9, MINUS = 10, MULT = 11, DIV = 12, ASSIGN = 13, GREATER = 14, 
-    LESS = 15, COND_EQUAL = 16, GREATER_EQ = 17, LESS_EQ = 18, LOGIC_AND = 19, 
-    LOGIC_OR = 20, NOT = 21, SEMICOLON = 22, LPAREN = 23, RPAREN = 24, LBRACE = 25, 
-    RBRACE = 26, COMMA = 27, STRING_LITERAL = 28, IDENTIFIER = 29, INTEGER_LITERAL = 30, 
-    LINE_COMMENT = 31, WS = 32
+    FALSE = 8, WHILE = 9, PLUS = 10, MINUS = 11, MULT = 12, DIV = 13, ASSIGN = 14, 
+    GREATER = 15, LESS = 16, COND_EQUAL = 17, GREATER_EQ = 18, LESS_EQ = 19, 
+    LOGIC_AND = 20, LOGIC_OR = 21, NOT = 22, SEMICOLON = 23, LPAREN = 24, 
+    RPAREN = 25, LBRACE = 26, RBRACE = 27, COMMA = 28, STRING_LITERAL = 29, 
+    IDENTIFIER = 30, INTEGER_LITERAL = 31, LINE_COMMENT = 32, WS = 33
   };
 
   enum {
     RuleProgram = 0, RuleFunctionDefinition = 1, RuleParameterList = 2, 
     RuleBlock = 3, RuleVariableDeclaration = 4, RuleStatement = 5, RuleReturnStatement = 6, 
-    RuleIfStatement = 7, RuleElseClause = 8, RuleFunctionCall = 9, RuleArgumentList = 10, 
-    RuleAssignment = 11, RuleExpression = 12, RuleLogicalOrExpression = 13, 
-    RuleLogicalAndExpression = 14, RuleEqualityExpression = 15, RuleRelationalExpression = 16, 
-    RuleAdditiveExpression = 17, RuleMultiplicativeExpression = 18, RuleUnaryExpression = 19, 
-    RulePrimaryExpression = 20, RuleLiteral = 21
+    RuleIfStatement = 7, RuleWhileStatement = 8, RuleElseClause = 9, RuleFunctionCall = 10, 
+    RuleArgumentList = 11, RuleAssignment = 12, RuleExpression = 13, RuleLogicalOrExpression = 14, 
+    RuleLogicalAndExpression = 15, RuleEqualityExpression = 16, RuleRelationalExpression = 17, 
+    RuleAdditiveExpression = 18, RuleMultiplicativeExpression = 19, RuleUnaryExpression = 20, 
+    RulePrimaryExpression = 21, RuleLiteral = 22
   };
 
   explicit RyntraParser(antlr4::TokenStream *input);
@@ -56,6 +56,7 @@ public:
   class StatementContext;
   class ReturnStatementContext;
   class IfStatementContext;
+  class WhileStatementContext;
   class ElseClauseContext;
   class FunctionCallContext;
   class ArgumentListContext;
@@ -177,6 +178,7 @@ public:
     ReturnStatementContext *returnStatement();
     AssignmentContext *assignment();
     IfStatementContext *ifStatement();
+    WhileStatementContext *whileStatement();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -222,6 +224,25 @@ public:
   };
 
   IfStatementContext* ifStatement();
+
+  class  WhileStatementContext : public antlr4::ParserRuleContext {
+  public:
+    WhileStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *WHILE();
+    antlr4::tree::TerminalNode *LPAREN();
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *RPAREN();
+    BlockContext *block();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  WhileStatementContext* whileStatement();
 
   class  ElseClauseContext : public antlr4::ParserRuleContext {
   public:

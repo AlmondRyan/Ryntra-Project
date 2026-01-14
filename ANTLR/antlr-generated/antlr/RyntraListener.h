@@ -40,6 +40,9 @@ public:
   virtual void enterIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
   virtual void exitIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
 
+  virtual void enterWhileStatement(RyntraParser::WhileStatementContext *ctx) = 0;
+  virtual void exitWhileStatement(RyntraParser::WhileStatementContext *ctx) = 0;
+
   virtual void enterElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
   virtual void exitElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
 

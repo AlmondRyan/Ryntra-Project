@@ -304,4 +304,15 @@ namespace Ryntra::Compiler {
 
         return lastTypeResult;
     }
+
+    void SemanticAnalyzer::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
+        Type condType = evaluate(node->getCondition());
+        if (condType.kind != TypeKind::Boolean) {
+            ErrorHandler::getInstance().makeError(
+                "While condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+        }
+        visit(node->getBody());
+    }
 } // namespace Ryntra::Compiler

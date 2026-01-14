@@ -49,6 +49,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitWhileStatement(RyntraParser::WhileStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitElseClause(RyntraParser::ElseClauseContext *ctx) override {
     return visitChildren(ctx);
   }

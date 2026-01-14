@@ -36,6 +36,8 @@ public:
 
     virtual std::any visitIfStatement(RyntraParser::IfStatementContext *context) = 0;
 
+    virtual std::any visitWhileStatement(RyntraParser::WhileStatementContext *context) = 0;
+
     virtual std::any visitElseClause(RyntraParser::ElseClauseContext *context) = 0;
 
     virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *context) = 0;

@@ -42,6 +42,9 @@ public:
   virtual void enterIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
   virtual void exitIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
 
+  virtual void enterWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
+  virtual void exitWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
+
   virtual void enterElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
   virtual void exitElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
 
