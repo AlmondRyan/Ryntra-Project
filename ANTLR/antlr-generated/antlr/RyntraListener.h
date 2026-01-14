@@ -37,6 +37,12 @@ public:
   virtual void enterReturnStatement(RyntraParser::ReturnStatementContext *ctx) = 0;
   virtual void exitReturnStatement(RyntraParser::ReturnStatementContext *ctx) = 0;
 
+  virtual void enterIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
+  virtual void exitIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
+
+  virtual void enterElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
+  virtual void exitElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
+
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
 
@@ -51,6 +57,9 @@ public:
 
   virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
   virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) = 0;
+
+  virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
+  virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
 
   virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;
   virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;

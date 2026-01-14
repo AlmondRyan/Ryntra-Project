@@ -34,6 +34,10 @@ public:
 
     virtual std::any visitReturnStatement(RyntraParser::ReturnStatementContext *context) = 0;
 
+    virtual std::any visitIfStatement(RyntraParser::IfStatementContext *context) = 0;
+
+    virtual std::any visitElseClause(RyntraParser::ElseClauseContext *context) = 0;
+
     virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *context) = 0;
 
     virtual std::any visitArgumentList(RyntraParser::ArgumentListContext *context) = 0;
@@ -43,6 +47,8 @@ public:
     virtual std::any visitExpression(RyntraParser::ExpressionContext *context) = 0;
 
     virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *context) = 0;
+
+    virtual std::any visitRelationalExpression(RyntraParser::RelationalExpressionContext *context) = 0;
 
     virtual std::any visitAdditiveExpression(RyntraParser::AdditiveExpressionContext *context) = 0;
 

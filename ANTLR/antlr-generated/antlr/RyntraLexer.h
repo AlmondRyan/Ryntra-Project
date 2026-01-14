@@ -13,10 +13,11 @@ namespace Ryntra::antlr {
 class  RyntraLexer : public antlr4::Lexer {
 public:
   enum {
-    INT = 1, RETURN = 2, PLUS = 3, MINUS = 4, MULT = 5, DIV = 6, ASSIGN = 7, 
-    SEMICOLON = 8, LPAREN = 9, RPAREN = 10, LBRACE = 11, RBRACE = 12, COMMA = 13, 
-    STRING_LITERAL = 14, IDENTIFIER = 15, INTEGER_LITERAL = 16, LINE_COMMENT = 17, 
-    WS = 18
+    INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, PLUS = 6, MINUS = 7, 
+    MULT = 8, DIV = 9, ASSIGN = 10, GREATER = 11, LESS = 12, COND_EQUAL = 13, 
+    GREATER_EQ = 14, LESS_EQ = 15, SEMICOLON = 16, LPAREN = 17, RPAREN = 18, 
+    LBRACE = 19, RBRACE = 20, COMMA = 21, STRING_LITERAL = 22, IDENTIFIER = 23, 
+    INTEGER_LITERAL = 24, LINE_COMMENT = 25, WS = 26
   };
 
   explicit RyntraLexer(antlr4::CharStream *input);

@@ -39,6 +39,12 @@ public:
   virtual void enterReturnStatement(RyntraParser::ReturnStatementContext * /*ctx*/) override { }
   virtual void exitReturnStatement(RyntraParser::ReturnStatementContext * /*ctx*/) override { }
 
+  virtual void enterIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
+  virtual void exitIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
+
+  virtual void enterElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+  virtual void exitElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
 
@@ -53,6 +59,9 @@ public:
 
   virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
   virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
+
+  virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
+  virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
 
   virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
   virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }

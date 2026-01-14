@@ -45,6 +45,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitIfStatement(RyntraParser::IfStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitElseClause(RyntraParser::ElseClauseContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -62,6 +70,10 @@ public:
   }
 
   virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
