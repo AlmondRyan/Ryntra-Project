@@ -489,8 +489,9 @@ namespace Ryntra::Compiler {
 
         if (!leftValue || !rightValue) return;
 
-        // Handle type promotion for arithmetic operations
+        // Handle type promotion for arithmetic and bitwise operations
         if (op == "+" || op == "-" || op == "*" || op == "/" || 
+            op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" ||
             op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==") {
             
             llvm::Type* leftType = leftValue->getType();
@@ -520,8 +521,29 @@ namespace Ryntra::Compiler {
             lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
             return;
         }
-        if (op == "/") {
+        if ("/" == op) {
             lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            return;
+        }
+
+        if (op == "&") {
+            lastValue = builder->CreateAnd(leftValue, rightValue, "andtmp");
+            return;
+        }
+        if (op == "|") {
+            lastValue = builder->CreateOr(leftValue, rightValue, "ortmp");
+            return;
+        }
+        if (op == "^") {
+            lastValue = builder->CreateXor(leftValue, rightValue, "xortmp");
+            return;
+        }
+        if (op == "<<") {
+            lastValue = builder->CreateShl(leftValue, rightValue, "shltmp");
+            return;
+        }
+        if (op == ">>") {
+            lastValue = builder->CreateAShr(leftValue, rightValue, "ashrtmp");
             return;
         }
 
@@ -597,6 +619,11 @@ namespace Ryntra::Compiler {
 
         if (op == "!") {
             lastValue = builder->CreateNot(value, "nottmp");
+            return;
+        }
+
+        if (op == "~") {
+            lastValue = builder->CreateNot(value, "bitnot");
             return;
         }
 

@@ -97,11 +97,27 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAndExpression(RyntraParser::AndExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual std::any visitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitShiftExpression(RyntraParser::ShiftExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 

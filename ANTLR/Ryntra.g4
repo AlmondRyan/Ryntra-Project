@@ -141,7 +141,19 @@ logicalOrExpression
     ;
 
 logicalAndExpression
-    : equalityExpression (LOGIC_AND equalityExpression)*
+    : inclusiveOrExpression (LOGIC_AND inclusiveOrExpression)*
+    ;
+
+inclusiveOrExpression
+    : exclusiveOrExpression (BIT_OR exclusiveOrExpression)*
+    ;
+
+exclusiveOrExpression
+    : andExpression (BIT_XOR andExpression)*
+    ;
+
+andExpression
+    : equalityExpression (BIT_AND equalityExpression)*
     ;
 
 equalityExpression
@@ -149,7 +161,11 @@ equalityExpression
     ;
 
 relationalExpression
-    : additiveExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ) additiveExpression)*
+    : shiftExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ) shiftExpression)*
+    ;
+
+shiftExpression
+    : additiveExpression ((LSHIFT | RSHIFT) additiveExpression)*
     ;
 
 additiveExpression
@@ -163,6 +179,7 @@ multiplicativeExpression
 unaryExpression
     : postfixExpression
     | NOT unaryExpression
+    | BIT_NOT unaryExpression
     | MINUS unaryExpression
     ;
 
@@ -178,6 +195,13 @@ primaryExpression
     | IDENTIFIER
     | LPAREN expression RPAREN
     ;
+
+BIT_AND: '&';
+BIT_OR: '|';
+BIT_XOR: '^';
+BIT_NOT: '~';
+LSHIFT: '<<';
+RSHIFT: '>>';
 
 literal:
     STRING_LITERAL

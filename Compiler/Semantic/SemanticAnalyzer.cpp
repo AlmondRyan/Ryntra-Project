@@ -237,10 +237,11 @@ namespace Ryntra::Compiler {
             return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
         };
 
-        if (op == "+" || op == "-" || op == "*" || op == "/") {
+        if (op == "+" || op == "-" || op == "*" || op == "/" ||
+            op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>") {
             if (!(isInteger(lhs.kind) && isInteger(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
-                    "Binary Arithmical Operator only use between arithmetic type.",
+                    "Binary Arithmical or Bitwise Operator only use between arithmetic type.",
                     SourceLocation(node->getLocation()));
             }
             
@@ -318,11 +319,11 @@ namespace Ryntra::Compiler {
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Boolean, ""};
             }
-        } else if (op == "-") {
+        } else if (op == "-" || op == "~") {
             if (exprType.kind == TypeKind::Int || exprType.kind == TypeKind::Long || exprType.kind == TypeKind::LongLong) {
                 lastTypeResult = exprType;
             } else {
-                ErrorHandler::getInstance().makeError("Operator - only use in integer type.",
+                ErrorHandler::getInstance().makeError("Operator " + op + " only use in integer type.",
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Int, ""};
             }

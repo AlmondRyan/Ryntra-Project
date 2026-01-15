@@ -172,6 +172,42 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitLogicalAndExpression(antlr::RyntraParser::LogicalAndExpressionContext *context) {
+        auto left = visitInclusiveOrExpression(context->inclusiveOrExpression(0));
+        
+        for (size_t i = 1; i < context->inclusiveOrExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitInclusiveOrExpression(context->inclusiveOrExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitInclusiveOrExpression(antlr::RyntraParser::InclusiveOrExpressionContext *context) {
+        auto left = visitExclusiveOrExpression(context->exclusiveOrExpression(0));
+        
+        for (size_t i = 1; i < context->exclusiveOrExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitExclusiveOrExpression(context->exclusiveOrExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitExclusiveOrExpression(antlr::RyntraParser::ExclusiveOrExpressionContext *context) {
+        auto left = visitAndExpression(context->andExpression(0));
+        
+        for (size_t i = 1; i < context->andExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitAndExpression(context->andExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitAndExpression(antlr::RyntraParser::AndExpressionContext *context) {
         auto left = visitEqualityExpression(context->equalityExpression(0));
         
         for (size_t i = 1; i < context->equalityExpression().size(); ++i) {
@@ -237,6 +273,18 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context) {
+        auto left = visitShiftExpression(context->shiftExpression(0));
+        
+        for (size_t i = 1; i < context->shiftExpression().size(); ++i) {
+            std::string op = context->children[2 * i - 1]->getText();
+            auto right = visitShiftExpression(context->shiftExpression(i));
+            left = createNode<BinaryExpressionNode>(context, left, right, op);
+        }
+        
+        return left;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *context) {
         auto left = visitAdditiveExpression(context->additiveExpression(0));
         
         for (size_t i = 1; i < context->additiveExpression().size(); ++i) {
@@ -284,6 +332,9 @@ namespace Ryntra::Compiler {
         } else if (context->NOT()) {
             auto expr = visitUnaryExpression(context->unaryExpression());
             return createNode<UnaryExpressionNode>(context, "!", std::move(expr));
+        } else if (context->BIT_NOT()) {
+            auto expr = visitUnaryExpression(context->unaryExpression());
+            return createNode<UnaryExpressionNode>(context, "~", std::move(expr));
         } else if (context->MINUS()) {
             auto expr = visitUnaryExpression(context->unaryExpression());
             return createNode<UnaryExpressionNode>(context, "-", std::move(expr));
