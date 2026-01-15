@@ -12,10 +12,13 @@ BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
 WHILE: 'while';
+FOR: 'for';
 
 // Operators
 PLUS: '+';
 MINUS: '-';
+INC: '++';
+DEC: '--';
 MULT: '*';
 DIV: '/';
 ASSIGN: '=';
@@ -75,6 +78,7 @@ statement:
     | assignment SEMICOLON
     | ifStatement
     | whileStatement
+    | forStatement
     | SEMICOLON
     ;
 
@@ -86,12 +90,18 @@ ifStatement
     : IF LPAREN expression RPAREN block elseClause?
     ;
 
+elseClause
+    : ELSE (ifStatement | block)
+    ;
+
 whileStatement
     : WHILE LPAREN expression RPAREN block
     ;
 
-elseClause
-    : ELSE (ifStatement | block)
+forStatement
+    : FOR LPAREN (variableDeclaration | assignment | expression)? SEMICOLON
+      expression? SEMICOLON
+      (assignment | expression)? RPAREN block
     ;
 
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
@@ -128,9 +138,15 @@ multiplicativeExpression
     ;
 
 unaryExpression
-    : primaryExpression
+    : postfixExpression
     | NOT unaryExpression
     | MINUS unaryExpression
+    ;
+
+postfixExpression
+    : primaryExpression
+    | IDENTIFIER INC
+    | IDENTIFIER DEC
     ;
 
 primaryExpression

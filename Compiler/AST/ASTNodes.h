@@ -252,6 +252,22 @@ namespace Ryntra::Compiler {
         std::vector<std::shared_ptr<IASTNode>> arguments;
     };
 
+    class PostfixExpressionNode : public IASTNode {
+    public:
+        PostfixExpressionNode(const std::string& name, const std::string& op)
+            : varName(name), op(op) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor* visitor) override;
+
+        const std::string& getVarName() const { return varName; }
+        const std::string& getOp() const { return op; }
+
+    private:
+        std::string varName;
+        std::string op;
+    };
+
     /**
      * @brief The Statement Node, inherited from IASTNode.
      * @details Design this class as an empty class can be really helpful
@@ -817,6 +833,26 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode> getBody() const { return body; }
     private:
         std::shared_ptr<IASTNode> condition;
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class ForStatementNode : public StatementNode {
+    public:
+        ForStatementNode(std::shared_ptr<IASTNode> init, std::shared_ptr<IASTNode> cond, std::shared_ptr<IASTNode> inc, std::shared_ptr<BlockNode> body)
+            : init(std::move(init)), condition(std::move(cond)), increment(std::move(inc)), body(std::move(body)) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode> getInit() const { return init; }
+        std::shared_ptr<IASTNode> getCondition() const { return condition; }
+        std::shared_ptr<IASTNode> getIncrement() const { return increment; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+
+    private:
+        std::shared_ptr<IASTNode> init;
+        std::shared_ptr<IASTNode> condition;
+        std::shared_ptr<IASTNode> increment;
         std::shared_ptr<BlockNode> body;
     };
 } // namespace Ryntra::Compiler

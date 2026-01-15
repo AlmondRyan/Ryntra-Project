@@ -58,6 +58,14 @@ namespace Ryntra::Compiler {
         visitor->visitProgram(std::static_pointer_cast<ProgramNode>(shared_from_this()));
     }
 
+    void PostfixExpressionNode::accept(IASTVisitor* visitor) {
+        visitor->visitPostfixExpression(std::static_pointer_cast<PostfixExpressionNode>(shared_from_this()));
+    }
+
+    std::string PostfixExpressionNode::toString() const {
+        return "PostfixExpression(" + varName + " " + op + ")";
+    }
+
     int IntegerLiteralNode::getValue() const {
         return value;
     }
@@ -210,5 +218,18 @@ namespace Ryntra::Compiler {
 
     void WhileStatementNode::accept(IASTVisitor *visitor) {
         visitor->visitWhileStatement(std::static_pointer_cast<WhileStatementNode>(shared_from_this()));
+    }
+
+    std::string ForStatementNode::toString() const {
+        std::string result = "ForStatement(";
+        result += (init ? init->toString() : "null") + ", ";
+        result += (condition ? condition->toString() : "null") + ", ";
+        result += (increment ? increment->toString() : "null") + ", ";
+        result += body->toString() + ")";
+        return result;
+    }
+
+    void ForStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitForStatement(std::static_pointer_cast<ForStatementNode>(shared_from_this()));
     }
 } // namespace Ryntra::Compiler

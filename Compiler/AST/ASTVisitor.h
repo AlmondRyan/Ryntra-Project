@@ -24,8 +24,10 @@ namespace Ryntra::Compiler {
         virtual void visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) = 0;
         virtual void visitIfStatement(std::shared_ptr<IfStatementNode> node) = 0;
         virtual Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) = 0;
+        virtual Type visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) = 0;
         virtual Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) = 0;
         virtual Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) = 0;
         virtual void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) = 0;
+        virtual void visitForStatement(std::shared_ptr<ForStatementNode> node) = 0;
     };
 }

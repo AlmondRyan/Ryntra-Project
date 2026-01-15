@@ -84,6 +84,9 @@ namespace Ryntra::Compiler {
         else if (context->whileStatement()) {
             return visitWhileStatement(context->whileStatement());
         }
+        else if (context->forStatement()) {
+            return visitForStatement(context->forStatement());
+        }
         else {
             return createNode<EmptyStatementNode>(context);
         }
@@ -261,14 +264,25 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *context) {
-        if (context->primaryExpression()) {
-            return visitPrimaryExpression(context->primaryExpression());
+        if (context->postfixExpression()) {
+            return visitPostfixExpression(context->postfixExpression());
         } else if (context->NOT()) {
             auto expr = visitUnaryExpression(context->unaryExpression());
             return createNode<UnaryExpressionNode>(context, "!", std::move(expr));
         } else if (context->MINUS()) {
             auto expr = visitUnaryExpression(context->unaryExpression());
             return createNode<UnaryExpressionNode>(context, "-", std::move(expr));
+        }
+        return nullptr;
+    }
+
+    std::shared_ptr<IASTNode> ASTBuilder::visitPostfixExpression(antlr::RyntraParser::PostfixExpressionContext *context) {
+        if (context->primaryExpression()) {
+            return visitPrimaryExpression(context->primaryExpression());
+        } else if (context->INC()) {
+            return createNode<PostfixExpressionNode>(context, context->IDENTIFIER()->getText(), "++");
+        } else if (context->DEC()) {
+            return createNode<PostfixExpressionNode>(context, context->IDENTIFIER()->getText(), "--");
         }
         return nullptr;
     }
@@ -294,5 +308,42 @@ namespace Ryntra::Compiler {
         auto condition = visitExpression(context->expression());
         auto body = visitBlock(context->block());
         return createNode<WhileStatementNode>(context, std::move(condition), std::move(body));
+    }
+
+    std::shared_ptr<ForStatementNode> ASTBuilder::visitForStatement(antlr::RyntraParser::ForStatementContext *context) {
+        std::shared_ptr<IASTNode> init = nullptr;
+        std::shared_ptr<IASTNode> cond = nullptr;
+        std::shared_ptr<IASTNode> inc = nullptr;
+
+        size_t semicolonCount = 0;
+        for (auto child : context->children) {
+            if (child->getText() == ";") {
+                semicolonCount++;
+                continue;
+            }
+            
+            if (semicolonCount == 0) { // Init part
+                if (auto varDecl = dynamic_cast<antlr::RyntraParser::VariableDeclarationContext*>(child)) {
+                    init = visitVariableDeclaration(varDecl);
+                } else if (auto assign = dynamic_cast<antlr::RyntraParser::AssignmentContext*>(child)) {
+                    init = visitAssignment(assign);
+                } else if (auto expr = dynamic_cast<antlr::RyntraParser::ExpressionContext*>(child)) {
+                    init = visitExpression(expr);
+                }
+            } else if (semicolonCount == 1) { // Condition part
+                if (auto expr = dynamic_cast<antlr::RyntraParser::ExpressionContext*>(child)) {
+                    cond = visitExpression(expr);
+                }
+            } else if (semicolonCount == 2) { // Increment part
+                if (auto assign = dynamic_cast<antlr::RyntraParser::AssignmentContext*>(child)) {
+                    inc = visitAssignment(assign);
+                } else if (auto expr = dynamic_cast<antlr::RyntraParser::ExpressionContext*>(child)) {
+                    inc = visitExpression(expr);
+                }
+            }
+        }
+
+        auto body = visitBlock(context->block());
+        return createNode<ForStatementNode>(context, std::move(init), std::move(cond), std::move(inc), std::move(body));
     }
 } // namespace Ryntra::Compiler

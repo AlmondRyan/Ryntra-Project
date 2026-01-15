@@ -26,9 +26,11 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IASTNode> visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context);
         std::shared_ptr<IASTNode> visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context);
         std::shared_ptr<IASTNode> visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context);
+        std::shared_ptr<IASTNode> visitPostfixExpression(antlr::RyntraParser::PostfixExpressionContext *context);
         std::shared_ptr<IASTNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *context);
         std::shared_ptr<IASTNode> visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context);
-        std::shared_ptr<WhileStatementNode> visitWhileStatement(antlr::RyntraParser::WhileStatementContext *context);
+        std::shared_ptr<WhileStatementNode>     visitWhileStatement(antlr::RyntraParser::WhileStatementContext *context);
+        std::shared_ptr<ForStatementNode>       visitForStatement(antlr::RyntraParser::ForStatementContext *context);
     private:
         /**
          * @brief Get the source location from ANTLR4 Parser Context.

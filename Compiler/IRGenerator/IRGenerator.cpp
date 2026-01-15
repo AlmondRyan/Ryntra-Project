@@ -470,4 +470,78 @@ namespace Ryntra::Compiler {
         func->insert(func->end(), afterLoopBB);
         builder->SetInsertPoint(afterLoopBB);
     }
+
+    void IRGenerator::visitForStatement(std::shared_ptr<ForStatementNode> node) {
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        // For loop can have variable declarations in its initializer
+        symbolTable.enterScope();
+
+        // 1. Initializer
+        if (node->getInit()) {
+            visit(node->getInit());
+        }
+
+        // 2. Create blocks
+        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "for.cond", func);
+        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "for.body");
+        llvm::BasicBlock* loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
+        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
+
+        // Jump from current block (after init) to condition check
+        builder->CreateBr(loopCondBB);
+
+        // 3. Condition check block
+        builder->SetInsertPoint(loopCondBB);
+        if (node->getCondition()) {
+            llvm::Value* condValue = evaluate(node->getCondition());
+            if (!condValue) return;
+            builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
+        } else {
+            // No condition means 'true' in C-like languages
+            builder->CreateBr(loopBodyBB);
+        }
+
+        // 4. Body block
+        func->insert(func->end(), loopBodyBB);
+        builder->SetInsertPoint(loopBodyBB);
+        visit(node->getBody());
+        
+        // After body, jump to increment block
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(loopIncBB);
+        }
+
+        // 5. Increment block
+        func->insert(func->end(), loopIncBB);
+        builder->SetInsertPoint(loopIncBB);
+        if (node->getIncrement()) {
+            visit(node->getIncrement());
+        }
+        // After increment, jump back to condition check
+        builder->CreateBr(loopCondBB);
+
+        // 6. End block
+        func->insert(func->end(), afterLoopBB);
+        builder->SetInsertPoint(afterLoopBB);
+
+        symbolTable.exitScope();
+    }
+
+    Type IRGenerator::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
+        llvm::Value* ptr = namedValues[node->getVarName()];
+        if (!ptr) return {TypeKind::ErrorType, ""};
+
+        llvm::Value* oldVal = builder->CreateLoad(llvm::Type::getInt32Ty(*context), ptr, node->getVarName() + ".load");
+        llvm::Value* newVal;
+        if (node->getOp() == "++") {
+            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1), "inc");
+        } else {
+            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1), "dec");
+        }
+        builder->CreateStore(newVal, ptr);
+
+        lastValue = oldVal;
+        return {TypeKind::Int, ""};
+    }
 } // namespace Ryntra::Compiler

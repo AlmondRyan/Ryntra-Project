@@ -36,9 +36,11 @@ public:
 
     virtual std::any visitIfStatement(RyntraParser::IfStatementContext *context) = 0;
 
+    virtual std::any visitElseClause(RyntraParser::ElseClauseContext *context) = 0;
+
     virtual std::any visitWhileStatement(RyntraParser::WhileStatementContext *context) = 0;
 
-    virtual std::any visitElseClause(RyntraParser::ElseClauseContext *context) = 0;
+    virtual std::any visitForStatement(RyntraParser::ForStatementContext *context) = 0;
 
     virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *context) = 0;
 
@@ -61,6 +63,8 @@ public:
     virtual std::any visitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *context) = 0;
 
     virtual std::any visitUnaryExpression(RyntraParser::UnaryExpressionContext *context) = 0;
+
+    virtual std::any visitPostfixExpression(RyntraParser::PostfixExpressionContext *context) = 0;
 
     virtual std::any visitPrimaryExpression(RyntraParser::PrimaryExpressionContext *context) = 0;
 

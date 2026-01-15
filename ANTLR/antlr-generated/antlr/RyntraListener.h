@@ -40,11 +40,14 @@ public:
   virtual void enterIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
   virtual void exitIfStatement(RyntraParser::IfStatementContext *ctx) = 0;
 
+  virtual void enterElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
+  virtual void exitElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
+
   virtual void enterWhileStatement(RyntraParser::WhileStatementContext *ctx) = 0;
   virtual void exitWhileStatement(RyntraParser::WhileStatementContext *ctx) = 0;
 
-  virtual void enterElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
-  virtual void exitElseClause(RyntraParser::ElseClauseContext *ctx) = 0;
+  virtual void enterForStatement(RyntraParser::ForStatementContext *ctx) = 0;
+  virtual void exitForStatement(RyntraParser::ForStatementContext *ctx) = 0;
 
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
@@ -78,6 +81,9 @@ public:
 
   virtual void enterUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) = 0;
   virtual void exitUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) = 0;
+
+  virtual void enterPostfixExpression(RyntraParser::PostfixExpressionContext *ctx) = 0;
+  virtual void exitPostfixExpression(RyntraParser::PostfixExpressionContext *ctx) = 0;
 
   virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;
   virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext *ctx) = 0;

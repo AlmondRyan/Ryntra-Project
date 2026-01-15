@@ -34,6 +34,8 @@ namespace Ryntra::Compiler {
         Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
 
         void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) override;
+        void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
+        Type visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
     private:
         std::unique_ptr<llvm::LLVMContext>   context;
         std::unique_ptr<llvm::Module>        module;

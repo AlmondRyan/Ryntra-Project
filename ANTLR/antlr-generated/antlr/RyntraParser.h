@@ -14,21 +14,23 @@ class  RyntraParser : public antlr4::Parser {
 public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
-    FALSE = 8, WHILE = 9, PLUS = 10, MINUS = 11, MULT = 12, DIV = 13, ASSIGN = 14, 
-    GREATER = 15, LESS = 16, COND_EQUAL = 17, GREATER_EQ = 18, LESS_EQ = 19, 
-    LOGIC_AND = 20, LOGIC_OR = 21, NOT = 22, SEMICOLON = 23, LPAREN = 24, 
-    RPAREN = 25, LBRACE = 26, RBRACE = 27, COMMA = 28, STRING_LITERAL = 29, 
-    IDENTIFIER = 30, INTEGER_LITERAL = 31, LINE_COMMENT = 32, WS = 33
+    FALSE = 8, WHILE = 9, FOR = 10, PLUS = 11, MINUS = 12, INC = 13, DEC = 14, 
+    MULT = 15, DIV = 16, ASSIGN = 17, GREATER = 18, LESS = 19, COND_EQUAL = 20, 
+    GREATER_EQ = 21, LESS_EQ = 22, LOGIC_AND = 23, LOGIC_OR = 24, NOT = 25, 
+    SEMICOLON = 26, LPAREN = 27, RPAREN = 28, LBRACE = 29, RBRACE = 30, 
+    COMMA = 31, STRING_LITERAL = 32, IDENTIFIER = 33, INTEGER_LITERAL = 34, 
+    LINE_COMMENT = 35, WS = 36
   };
 
   enum {
     RuleProgram = 0, RuleFunctionDefinition = 1, RuleParameterList = 2, 
     RuleBlock = 3, RuleVariableDeclaration = 4, RuleStatement = 5, RuleReturnStatement = 6, 
-    RuleIfStatement = 7, RuleWhileStatement = 8, RuleElseClause = 9, RuleFunctionCall = 10, 
-    RuleArgumentList = 11, RuleAssignment = 12, RuleExpression = 13, RuleLogicalOrExpression = 14, 
-    RuleLogicalAndExpression = 15, RuleEqualityExpression = 16, RuleRelationalExpression = 17, 
-    RuleAdditiveExpression = 18, RuleMultiplicativeExpression = 19, RuleUnaryExpression = 20, 
-    RulePrimaryExpression = 21, RuleLiteral = 22
+    RuleIfStatement = 7, RuleElseClause = 8, RuleWhileStatement = 9, RuleForStatement = 10, 
+    RuleFunctionCall = 11, RuleArgumentList = 12, RuleAssignment = 13, RuleExpression = 14, 
+    RuleLogicalOrExpression = 15, RuleLogicalAndExpression = 16, RuleEqualityExpression = 17, 
+    RuleRelationalExpression = 18, RuleAdditiveExpression = 19, RuleMultiplicativeExpression = 20, 
+    RuleUnaryExpression = 21, RulePostfixExpression = 22, RulePrimaryExpression = 23, 
+    RuleLiteral = 24
   };
 
   explicit RyntraParser(antlr4::TokenStream *input);
@@ -56,8 +58,9 @@ public:
   class StatementContext;
   class ReturnStatementContext;
   class IfStatementContext;
-  class WhileStatementContext;
   class ElseClauseContext;
+  class WhileStatementContext;
+  class ForStatementContext;
   class FunctionCallContext;
   class ArgumentListContext;
   class AssignmentContext;
@@ -69,6 +72,7 @@ public:
   class AdditiveExpressionContext;
   class MultiplicativeExpressionContext;
   class UnaryExpressionContext;
+  class PostfixExpressionContext;
   class PrimaryExpressionContext;
   class LiteralContext; 
 
@@ -179,6 +183,7 @@ public:
     AssignmentContext *assignment();
     IfStatementContext *ifStatement();
     WhileStatementContext *whileStatement();
+    ForStatementContext *forStatement();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -225,6 +230,23 @@ public:
 
   IfStatementContext* ifStatement();
 
+  class  ElseClauseContext : public antlr4::ParserRuleContext {
+  public:
+    ElseClauseContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ELSE();
+    IfStatementContext *ifStatement();
+    BlockContext *block();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  ElseClauseContext* elseClause();
+
   class  WhileStatementContext : public antlr4::ParserRuleContext {
   public:
     WhileStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -244,13 +266,21 @@ public:
 
   WhileStatementContext* whileStatement();
 
-  class  ElseClauseContext : public antlr4::ParserRuleContext {
+  class  ForStatementContext : public antlr4::ParserRuleContext {
   public:
-    ElseClauseContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    ForStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *ELSE();
-    IfStatementContext *ifStatement();
+    antlr4::tree::TerminalNode *FOR();
+    antlr4::tree::TerminalNode *LPAREN();
+    std::vector<antlr4::tree::TerminalNode *> SEMICOLON();
+    antlr4::tree::TerminalNode* SEMICOLON(size_t i);
+    antlr4::tree::TerminalNode *RPAREN();
     BlockContext *block();
+    VariableDeclarationContext *variableDeclaration();
+    std::vector<AssignmentContext *> assignment();
+    AssignmentContext* assignment(size_t i);
+    std::vector<ExpressionContext *> expression();
+    ExpressionContext* expression(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -259,7 +289,7 @@ public:
    
   };
 
-  ElseClauseContext* elseClause();
+  ForStatementContext* forStatement();
 
   class  FunctionCallContext : public antlr4::ParserRuleContext {
   public:
@@ -451,7 +481,7 @@ public:
   public:
     UnaryExpressionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    PrimaryExpressionContext *primaryExpression();
+    PostfixExpressionContext *postfixExpression();
     antlr4::tree::TerminalNode *NOT();
     UnaryExpressionContext *unaryExpression();
     antlr4::tree::TerminalNode *MINUS();
@@ -464,6 +494,24 @@ public:
   };
 
   UnaryExpressionContext* unaryExpression();
+
+  class  PostfixExpressionContext : public antlr4::ParserRuleContext {
+  public:
+    PostfixExpressionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    PrimaryExpressionContext *primaryExpression();
+    antlr4::tree::TerminalNode *IDENTIFIER();
+    antlr4::tree::TerminalNode *INC();
+    antlr4::tree::TerminalNode *DEC();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  PostfixExpressionContext* postfixExpression();
 
   class  PrimaryExpressionContext : public antlr4::ParserRuleContext {
   public:

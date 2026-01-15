@@ -42,11 +42,14 @@ public:
   virtual void enterIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
   virtual void exitIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
 
+  virtual void enterElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+  virtual void exitElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+
   virtual void enterWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
   virtual void exitWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
 
-  virtual void enterElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
-  virtual void exitElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+  virtual void enterForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
+  virtual void exitForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
 
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
@@ -80,6 +83,9 @@ public:
 
   virtual void enterUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
   virtual void exitUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
+
+  virtual void enterPostfixExpression(RyntraParser::PostfixExpressionContext * /*ctx*/) override { }
+  virtual void exitPostfixExpression(RyntraParser::PostfixExpressionContext * /*ctx*/) override { }
 
   virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
   virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }

@@ -315,4 +315,53 @@ namespace Ryntra::Compiler {
         }
         visit(node->getBody());
     }
+
+    void SemanticAnalyzer::visitForStatement(std::shared_ptr<ForStatementNode> node) {
+        // For loop creates a new scope for its initializer
+        symbolTable.enterScope();
+
+        if (node->getInit()) {
+            visit(node->getInit());
+        }
+
+        if (node->getCondition()) {
+            Type condType = evaluate(node->getCondition());
+            if (condType.kind != TypeKind::Boolean) {
+                ErrorHandler::getInstance().makeError(
+                    "For condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
+                    SourceLocation(node->getLocation())
+                );
+            }
+        }
+
+        if (node->getIncrement()) {
+            visit(node->getIncrement());
+        }
+
+        // Body will enter its own scope via visitBlock, which is fine
+        visit(node->getBody());
+
+        symbolTable.exitScope();
+    }
+
+    Type SemanticAnalyzer::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
+        auto symbol = symbolTable.lookupSymbolInScopes(node->getVarName());
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined identifier: " + node->getVarName(),
+                SourceLocation(node->getLocation())
+            );
+            return lastTypeResult = {TypeKind::ErrorType, ""};
+        }
+
+        if (symbol->type.kind != TypeKind::Int) {
+            ErrorHandler::getInstance().makeError(
+                "Increment/Decrement operator can only be applied to int, but got " + mapTypeToString(symbol->type.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+            return lastTypeResult = {TypeKind::ErrorType, ""};
+        }
+
+        return lastTypeResult = {TypeKind::Int, ""};
+    }
 } // namespace Ryntra::Compiler
