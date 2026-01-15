@@ -1,5 +1,6 @@
 #pragma once
 #include "SourceLocation/SourceLocation.h"
+#include "Semantic/Symbol.h"
 
 #include <memory>
 #include <string>
@@ -71,8 +72,9 @@ namespace Ryntra::Compiler {
         /**
          * @brief The Constructor.
          * @param val The value of the Integer Node.
+         * @param kind The inferred type kind of the literal.
          */
-        IntegerLiteralNode(long long val) : value(val) {
+        IntegerLiteralNode(long long val, TypeKind kind = TypeKind::Int) : value(val), typeKind(kind) {
         }
 
         /**
@@ -80,6 +82,12 @@ namespace Ryntra::Compiler {
          * @return The long long that contains the value.
          */
         long long getValue() const;
+
+        /**
+         * @brief Get the inferred type kind.
+         * @return The TypeKind.
+         */
+        TypeKind getTypeKind() const { return typeKind; }
 
         /**
          * @brief The string representation of the Integer Literal Node.
@@ -96,6 +104,7 @@ namespace Ryntra::Compiler {
 
     private:
         long long value;
+        TypeKind typeKind;
     };
 
     /**

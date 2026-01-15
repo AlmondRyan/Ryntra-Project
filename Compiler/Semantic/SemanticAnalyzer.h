@@ -48,7 +48,10 @@ namespace Ryntra::Compiler {
         TypeKind currentExpectedReturningType = TypeKind::Void;
         Type lastTypeResult = {TypeKind::Void, ""};
         std::unordered_map<std::shared_ptr<IASTNode>, Type> nodeTypes;
-        int loopDepth = 0;
+        int  loopDepth = 0;
+
+        bool isCompatible(TypeKind expected, TypeKind actual);
+        bool isInteger(TypeKind kind);
 
         void visit(std::shared_ptr<IASTNode> node) {
             if (node) node->accept(this);

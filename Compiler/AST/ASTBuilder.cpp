@@ -205,8 +205,26 @@ namespace Ryntra::Compiler {
             return createNode<StringLiteralNode>(context, str);
         }
         else if (context->INTEGER_LITERAL()) {
-            long long value = std::stoll(context->INTEGER_LITERAL()->getText());
-            return createNode<IntegerLiteralNode>(context, value);
+            std::string text = context->INTEGER_LITERAL()->getText();
+            TypeKind kind = TypeKind::Int;
+            long long value = 0;
+
+            if (text.back() == 'L' || text.back() == 'l') {
+                if (text.size() >= 2 && (text[text.size() - 2] == 'L' || text[text.size() - 2] == 'l')) {
+                    kind = TypeKind::LongLong;
+                    value = std::stoll(text.substr(0, text.size() - 2));
+                } else {
+                    kind = TypeKind::Long;
+                    value = std::stoll(text.substr(0, text.size() - 1));
+                }
+            } else {
+                value = std::stoll(text);
+                // Even without suffix, if it's too large for int, we should promote it
+                if (value > 2147483647LL || value < -2147483648LL) {
+                    kind = TypeKind::Long; // Default to Long for large literals without suffix
+                }
+            }
+            return createNode<IntegerLiteralNode>(context, value, kind);
         }
         else if (context->TRUE()) {
             return createNode<BooleanLiteralNode>(context, true);

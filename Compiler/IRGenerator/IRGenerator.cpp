@@ -74,7 +74,11 @@ namespace Ryntra::Compiler {
             
             // Create alloca for parameter
             llvm::AllocaInst* alloca = builder->CreateAlloca(arg.getType(), nullptr, paramNode->getName() + ".addr");
-            builder->CreateStore(&arg, alloca);
+            unsigned align = (arg.getType()->getIntegerBitWidth() == 64) ? 8 : 4;
+            alloca->setAlignment(llvm::Align(align));
+            
+            auto store = builder->CreateStore(&arg, alloca);
+            store->setAlignment(llvm::Align(align));
             
             // Add to IR generator's local symbol map
             namedValues[paramNode->getName()] = alloca;
@@ -272,15 +276,27 @@ namespace Ryntra::Compiler {
             lastValue = nullptr;
             return;
         }
-        lastValue = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getName());
+        llvm::Type* type = ((llvm::AllocaInst*)v)->getAllocatedType();
+        auto load = builder->CreateLoad(type, v, node->getName());
+        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        load->setAlignment(llvm::Align(align));
+        lastValue = load;
     }
 
     void IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
         long long val = node->getValue();
-        if (val > 2147483647LL || val < -2147483648LL) {
+        TypeKind kind = node->getTypeKind();
+
+        if (kind == TypeKind::Long || kind == TypeKind::LongLong) {
             lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, val, true));
         } else {
-            lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, val, true));
+            // Even if it's marked as Int, check if it actually fits. 
+            // This handles cases where ASTBuilder might have promoted it but it's not explicitly suffixed.
+            if (val > 2147483647LL || val < -2147483648LL) {
+                lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, val, true));
+            } else {
+                lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, val, true));
+            }
         }
     }
 
@@ -316,6 +332,8 @@ namespace Ryntra::Compiler {
 
         llvm::Type* type = mapType(*context, node->getVarType());
         llvm::AllocaInst* alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
+        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        alloca->setAlignment(llvm::Align(align));
 
         if (val) {
             // Handle type conversion (e.g. int to long)
@@ -328,7 +346,8 @@ namespace Ryntra::Compiler {
                     val = builder->CreateTrunc(val, type, "trunc");
                 }
             }
-            builder->CreateStore(val, alloca);
+            auto store = builder->CreateStore(val, alloca);
+            store->setAlignment(llvm::Align(align));
         }
 
         namedValues[node->getVarName()] = alloca;
@@ -478,7 +497,9 @@ namespace Ryntra::Compiler {
                     val = builder->CreateTrunc(val, targetType, "trunc");
                 }
             }
-            builder->CreateStore(val, alloca);
+            auto store = builder->CreateStore(val, alloca);
+            unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
+            store->setAlignment(llvm::Align(align));
             lastValue = val;
             return;
         }
@@ -621,15 +642,20 @@ namespace Ryntra::Compiler {
             return;
         }
 
-        llvm::Value* oldVal = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getVarName() + ".load");
+        llvm::Type* type = ((llvm::AllocaInst*)v)->getAllocatedType();
+        auto load = builder->CreateLoad(type, v, node->getVarName() + ".load");
+        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        load->setAlignment(llvm::Align(align));
+        
+        llvm::Value* oldVal = load;
         llvm::Value* newVal;
-        llvm::Type* type = oldVal->getType();
         if (node->getOp() == "++") {
             newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(type, 1), "inc");
         } else {
             newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(type, 1), "dec");
         }
-        builder->CreateStore(newVal, v);
+        auto store = builder->CreateStore(newVal, v);
+        store->setAlignment(llvm::Align(align));
         lastValue = oldVal;
     }
 

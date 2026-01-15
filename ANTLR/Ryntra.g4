@@ -45,7 +45,7 @@ COMMA: ',';
 // Literals
 STRING_LITERAL: '"' ( ~["\\\r\n] | '\\' ["\\bfnrt] )* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
-INTEGER_LITERAL: '0' | [1-9] [0-9]*;
+INTEGER_LITERAL: ('0' | [1-9] [0-9]*) ([lL] | [lL][lL])?;
 
 // Comments and Whitespaces
 LINE_COMMENT: '//' ~[\r\n]* -> skip;

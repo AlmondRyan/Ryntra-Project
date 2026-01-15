@@ -38,6 +38,26 @@ namespace Ryntra::Compiler {
         }
     }
 
+    bool SemanticAnalyzer::isInteger(TypeKind kind) {
+        return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
+    }
+
+    bool SemanticAnalyzer::isCompatible(TypeKind expected, TypeKind actual) {
+        if (expected == actual) return true;
+        if (isInteger(expected) && isInteger(actual)) {
+            // Allow promotion: actual <= expected
+            // We can define an order: Int < Long < LongLong
+            auto rank = [](TypeKind k) {
+                if (k == TypeKind::Int) return 1;
+                if (k == TypeKind::Long) return 2;
+                if (k == TypeKind::LongLong) return 3;
+                return 0;
+            };
+            return rank(actual) <= rank(expected);
+        }
+        return false;
+    }
+
     void SemanticAnalyzer::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
         // Get current expecting type, which is The function return type
         currentExpectedReturningType = mapStringToType(node->getReturnType());
@@ -127,7 +147,7 @@ namespace Ryntra::Compiler {
         for (auto i = 0; i < (int)args.size(); i++) {
             Type argType = evaluate(args[i]);
             if (i < (int)params.size()) {
-                if (argType.kind != params[i].type.kind) {
+                if (!isCompatible(params[i].type.kind, argType.kind)) {
                     ErrorHandler::getInstance().makeError(
                         "Function " + funcName + " requires " + mapTypeToString(params[i].type.kind) + " but got " +
                             mapTypeToString(argType.kind),
@@ -160,7 +180,7 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        lastTypeResult = {TypeKind::Int, ""};
+        lastTypeResult = {node->getTypeKind(), ""};
         nodeTypes[node] = lastTypeResult;
     }
 
@@ -169,17 +189,10 @@ namespace Ryntra::Compiler {
 
     void SemanticAnalyzer::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
         Type tk = evaluate(node->getReturnValue());
-        if (tk.kind != TypeKind::Void || node->getReturnValue()) {
-            if (tk.kind != currentExpectedReturningType) {
-                ErrorHandler::getInstance().makeError(
-                    "Mismatch returning type: expect " + mapTypeToString(currentExpectedReturningType) + " but got " + mapTypeToString(tk.kind),
-                    SourceLocation(node->getLocation()));
-            }
-        } else {
-            if (currentExpectedReturningType != TypeKind::Void) {
-                ErrorHandler::getInstance().makeError("Function expect " + mapTypeToString(currentExpectedReturningType) + " returning value but got empty.",
-                                                      SourceLocation(node->getLocation()));
-            }
+        if (!isCompatible(currentExpectedReturningType, tk.kind)) {
+            ErrorHandler::getInstance().makeError(
+                "Mismatched return type. Expect " + mapTypeToString(currentExpectedReturningType) + " but got " + mapTypeToString(tk.kind) + ".",
+                SourceLocation(node->getLocation()));
         }
     }
 
@@ -196,7 +209,7 @@ namespace Ryntra::Compiler {
         if (initialValue) {
             Type initValueType = evaluate(initialValue);
 
-            if (declaredType != initValueType.kind) {
+            if (!isCompatible(declaredType, initValueType.kind)) {
                 ErrorHandler::getInstance().makeError(
                     "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType.kind) + ".",
                     SourceLocation(node->getLocation()));
@@ -247,7 +260,7 @@ namespace Ryntra::Compiler {
             }
             lastTypeResult = {TypeKind::Boolean, ""};
         } else if (op == "==" || op == "!=" || op == ">" || op == "<" || op == ">=" || op == "<=") {
-            if (lhs.kind != rhs.kind) {
+            if (lhs.kind != rhs.kind && !(isInteger(lhs.kind) && isInteger(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
                     "Cannot compare between different types.",
                     SourceLocation(node->getLocation()));
@@ -276,7 +289,7 @@ namespace Ryntra::Compiler {
         Type rhsType = evaluate(node->getExpression());
         Type lhsType = symbol->type;
 
-        if (lhsType.kind != rhsType.kind) {
+        if (!isCompatible(lhsType.kind, rhsType.kind)) {
             ErrorHandler::getInstance().makeError(
                 "Cannot assign " + mapTypeToString(rhsType.kind) +
                     " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType.kind),
