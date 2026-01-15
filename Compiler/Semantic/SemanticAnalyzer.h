@@ -2,6 +2,7 @@
 
 #include "AST/ASTVisitor.h"
 #include "SymbolTable.h"
+#include <unordered_map>
 
 namespace Ryntra::Compiler {
     class SemanticAnalyzer : public IASTVisitor {
@@ -12,29 +13,38 @@ namespace Ryntra::Compiler {
         void visitBlock(std::shared_ptr<BlockNode> node) override;
         void visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) override;
         void visitIfStatement(std::shared_ptr<IfStatementNode> node) override;
-        Type visitFunctionCall(std::shared_ptr<FunctionCallNode> node) override;
+        void visitFunctionCall(std::shared_ptr<FunctionCallNode> node) override;
         void visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) override;
-        Type visitIdentifier(std::shared_ptr<IdentifierNode> node) override;
-        Type visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) override;
+        void visitIdentifier(std::shared_ptr<IdentifierNode> node) override;
+        void visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) override;
         void visitParameter(std::shared_ptr<ParameterNode> node) override;
         void visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) override;
-        Type visitStringLiteral(std::shared_ptr<StringLiteralNode> node) override;
+        void visitStringLiteral(std::shared_ptr<StringLiteralNode> node) override;
         void visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) override;
         void visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) override;
 
-        Type visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) override;
-        Type visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
+        void visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) override;
+        void visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) override;
 
-        Type visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) override;
-        Type visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
+        void visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) override;
+        void visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) override;
 
         void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) override;
         void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
-        Type visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
+        void visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
+
+        Type getType(std::shared_ptr<IASTNode> node) {
+            if (nodeTypes.find(node) != nodeTypes.end()) {
+                return nodeTypes[node];
+            }
+            return {TypeKind::Void, ""};
+        }
+
     private:
         SymbolTable symbolTable;
         TypeKind currentExpectedReturningType = TypeKind::Void;
         Type lastTypeResult = {TypeKind::Void, ""};
+        std::unordered_map<std::shared_ptr<IASTNode>, Type> nodeTypes;
 
         void visit(std::shared_ptr<IASTNode> node) {
             if (node) node->accept(this);

@@ -144,7 +144,7 @@ namespace Ryntra::Compiler {
         visit(node->getExpression());
     }
 
-    Type IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+    void IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
         
         // 1. Symbol Table Lookup
@@ -199,7 +199,7 @@ namespace Ryntra::Compiler {
                              builder->CreateCall(freeFunc, {strPtr});
                          }
                      }
-                     return {TypeKind::Int, ""};
+                     return;
                 }
             } else if (funcName == "__builtin_intToString") {
                 // Declare rcrt_builtin_intToString if not exists: char* rcrt_builtin_intToString(int)
@@ -223,7 +223,7 @@ namespace Ryntra::Compiler {
                 }
                 
                 lastValue = builder->CreateCall(toStringFunc, args);
-                return {TypeKind::String, ""};
+                return;
             } else {
                 // Non-builtin function lookup in Module
                 llvm::Function* callee = module->getFunction(funcName);
@@ -236,31 +236,28 @@ namespace Ryntra::Compiler {
                         }
                     }
                     lastValue = builder->CreateCall(callee, args);
-                    return {TypeKind::Custom, ""}; // Need actual return type here, but TypeKind::Custom is a placeholder
+                    return;
                 }
             }
         }
         lastValue = nullptr;
-        return {TypeKind::Void, ""};
     }
 
     void IRGenerator::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
         visit(node->getFunctionCall());
     }
 
-    Type IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
+    void IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
         llvm::Value* v = namedValues[node->getName()];
         if (!v) {
             lastValue = nullptr;
-            return {TypeKind::Void, ""};
+            return;
         }
         lastValue = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getName());
-        return {TypeKind::Custom, ""}; // Placeholder
     }
 
-    Type IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
+    void IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
         lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, node->getValue()));
-        return {TypeKind::Int, ""};
     }
 
     void IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
@@ -275,9 +272,8 @@ namespace Ryntra::Compiler {
         }
     }
 
-    Type IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
+    void IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
         lastValue = builder->CreateGlobalStringPtr(node->getValue());
-        return {TypeKind::String, ""};
     }
 
     void IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
@@ -293,7 +289,7 @@ namespace Ryntra::Compiler {
         namedValues[node->getVarName()] = alloca;
     }
 
-    Type IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
+    void IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
         std::string op = node->getOp();
 
         // Handle logical AND/OR with short-circuiting
@@ -318,7 +314,7 @@ namespace Ryntra::Compiler {
             phi->addIncoming(rhsValue, rhsEndBB);
             
             lastValue = phi;
-            return {TypeKind::Boolean, ""};
+            return;
         }
 
         if (op == "||") {
@@ -342,7 +338,7 @@ namespace Ryntra::Compiler {
             phi->addIncoming(rhsValue, rhsEndBB);
             
             lastValue = phi;
-            return {TypeKind::Boolean, ""};
+            return;
         }
 
         llvm::Value *leftValue = evaluate(node->getLeft());
@@ -350,99 +346,94 @@ namespace Ryntra::Compiler {
 
         if (op == "+") {
             lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
-            return {TypeKind::Int, ""};
+            return;
         }
         if (op == "-") {
             lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
-            return {TypeKind::Int, ""};
+            return;
         }
         if (op == "*") {
             lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
-            return {TypeKind::Int, ""};
+            return;
         }
         if (op == "/") {
             lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
-            return {TypeKind::Int, ""};
+            return;
         }
 
         // Comparison operators
         if (op == "==") {
             lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
         if (op == "!=") {
             lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
         if (op == "<") {
             lastValue = builder->CreateICmpSLT(leftValue, rightValue, "lttmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
         if (op == "<=") {
             lastValue = builder->CreateICmpSLE(leftValue, rightValue, "letmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
         if (op == ">") {
             lastValue = builder->CreateICmpSGT(leftValue, rightValue, "gttmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
         if (op == ">=") {
             lastValue = builder->CreateICmpSGE(leftValue, rightValue, "getmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
 
         lastValue = nullptr;
-        return {TypeKind::Void, ""};
     }
 
-    Type IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+    void IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         std::string idName = node->getIdentifier();
         llvm::Value* alloca = namedValues[idName];
         
         if (!alloca) {
-            // This should be handled by semantic analyzer
             lastValue = nullptr;
-            return {TypeKind::Void, ""};
+            return;
         }
 
         llvm::Value* val = evaluate(node->getExpression());
         if (val) {
             builder->CreateStore(val, alloca);
             lastValue = val;
-            return {TypeKind::Custom, ""}; // Placeholder
+            return;
         }
 
         lastValue = nullptr;
-        return {TypeKind::Void, ""};
     }
 
-    Type IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
+    void IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
         llvm::Value* value = evaluate(node->getExpression());
         std::string op = node->getOp();
 
         if (!value) {
             lastValue = nullptr;
-            return {TypeKind::Void, ""};
+            return;
         }
 
         if (op == "!") {
             lastValue = builder->CreateNot(value, "nottmp");
-            return {TypeKind::Boolean, ""};
+            return;
         }
 
         if (op == "-") {
             llvm::Value* zero = llvm::ConstantInt::get(*context, llvm::APInt(32, 0));
             lastValue = builder->CreateSub(zero, value, "negtmp");
-            return {TypeKind::Int, ""};
+            return;
         }
 
         lastValue = value;
-        return {TypeKind::Custom, ""};
     }
 
-    Type IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+    void IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
         lastValue = llvm::ConstantInt::get(*context, llvm::APInt(1, node->getValue() ? 1 : 0));
-        return {TypeKind::Boolean, ""};
     }
 
     void IRGenerator::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
@@ -474,7 +465,6 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitForStatement(std::shared_ptr<ForStatementNode> node) {
         llvm::Function* func = builder->GetInsertBlock()->getParent();
 
-        // For loop can have variable declarations in its initializer
         symbolTable.enterScope();
 
         // 1. Initializer
@@ -488,7 +478,6 @@ namespace Ryntra::Compiler {
         llvm::BasicBlock* loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
         llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
 
-        // Jump from current block (after init) to condition check
         builder->CreateBr(loopCondBB);
 
         // 3. Condition check block
@@ -498,7 +487,6 @@ namespace Ryntra::Compiler {
             if (!condValue) return;
             builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
         } else {
-            // No condition means 'true' in C-like languages
             builder->CreateBr(loopBodyBB);
         }
 
@@ -507,7 +495,6 @@ namespace Ryntra::Compiler {
         builder->SetInsertPoint(loopBodyBB);
         visit(node->getBody());
         
-        // After body, jump to increment block
         if (!builder->GetInsertBlock()->getTerminator()) {
             builder->CreateBr(loopIncBB);
         }
@@ -518,7 +505,6 @@ namespace Ryntra::Compiler {
         if (node->getIncrement()) {
             visit(node->getIncrement());
         }
-        // After increment, jump back to condition check
         builder->CreateBr(loopCondBB);
 
         // 6. End block
@@ -528,20 +514,21 @@ namespace Ryntra::Compiler {
         symbolTable.exitScope();
     }
 
-    Type IRGenerator::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
-        llvm::Value* ptr = namedValues[node->getVarName()];
-        if (!ptr) return {TypeKind::ErrorType, ""};
+    void IRGenerator::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
+        llvm::Value* v = namedValues[node->getVarName()];
+        if (!v) {
+            lastValue = nullptr;
+            return;
+        }
 
-        llvm::Value* oldVal = builder->CreateLoad(llvm::Type::getInt32Ty(*context), ptr, node->getVarName() + ".load");
+        llvm::Value* oldVal = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getVarName() + ".load");
         llvm::Value* newVal;
         if (node->getOp() == "++") {
-            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1), "inc");
+            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "inc");
         } else {
-            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1), "dec");
+            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "dec");
         }
-        builder->CreateStore(newVal, ptr);
-
+        builder->CreateStore(newVal, v);
         lastValue = oldVal;
-        return {TypeKind::Int, ""};
     }
 } // namespace Ryntra::Compiler
