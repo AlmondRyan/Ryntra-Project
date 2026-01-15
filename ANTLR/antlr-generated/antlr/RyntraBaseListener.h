@@ -51,6 +51,12 @@ public:
   virtual void enterForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
   virtual void exitForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
 
+  virtual void enterBreakStatement(RyntraParser::BreakStatementContext * /*ctx*/) override { }
+  virtual void exitBreakStatement(RyntraParser::BreakStatementContext * /*ctx*/) override { }
+
+  virtual void enterContinueStatement(RyntraParser::ContinueStatementContext * /*ctx*/) override { }
+  virtual void exitContinueStatement(RyntraParser::ContinueStatementContext * /*ctx*/) override { }
+
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
 

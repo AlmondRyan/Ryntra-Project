@@ -42,6 +42,10 @@ public:
 
     virtual std::any visitForStatement(RyntraParser::ForStatementContext *context) = 0;
 
+    virtual std::any visitBreakStatement(RyntraParser::BreakStatementContext *context) = 0;
+
+    virtual std::any visitContinueStatement(RyntraParser::ContinueStatementContext *context) = 0;
+
     virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *context) = 0;
 
     virtual std::any visitArgumentList(RyntraParser::ArgumentListContext *context) = 0;

@@ -14,12 +14,12 @@ class  RyntraLexer : public antlr4::Lexer {
 public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
-    FALSE = 8, WHILE = 9, FOR = 10, PLUS = 11, MINUS = 12, INC = 13, DEC = 14, 
-    MULT = 15, DIV = 16, ASSIGN = 17, GREATER = 18, LESS = 19, COND_EQUAL = 20, 
-    GREATER_EQ = 21, LESS_EQ = 22, LOGIC_AND = 23, LOGIC_OR = 24, NOT = 25, 
-    SEMICOLON = 26, LPAREN = 27, RPAREN = 28, LBRACE = 29, RBRACE = 30, 
-    COMMA = 31, STRING_LITERAL = 32, IDENTIFIER = 33, INTEGER_LITERAL = 34, 
-    LINE_COMMENT = 35, WS = 36
+    FALSE = 8, WHILE = 9, FOR = 10, BREAK = 11, CONTINUE = 12, PLUS = 13, 
+    MINUS = 14, INC = 15, DEC = 16, MULT = 17, DIV = 18, ASSIGN = 19, GREATER = 20, 
+    LESS = 21, COND_EQUAL = 22, GREATER_EQ = 23, LESS_EQ = 24, LOGIC_AND = 25, 
+    LOGIC_OR = 26, NOT = 27, SEMICOLON = 28, LPAREN = 29, RPAREN = 30, LBRACE = 31, 
+    RBRACE = 32, COMMA = 33, STRING_LITERAL = 34, IDENTIFIER = 35, INTEGER_LITERAL = 36, 
+    LINE_COMMENT = 37, WS = 38
   };
 
   explicit RyntraLexer(antlr4::CharStream *input);

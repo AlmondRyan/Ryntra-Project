@@ -49,6 +49,12 @@ public:
   virtual void enterForStatement(RyntraParser::ForStatementContext *ctx) = 0;
   virtual void exitForStatement(RyntraParser::ForStatementContext *ctx) = 0;
 
+  virtual void enterBreakStatement(RyntraParser::BreakStatementContext *ctx) = 0;
+  virtual void exitBreakStatement(RyntraParser::BreakStatementContext *ctx) = 0;
+
+  virtual void enterContinueStatement(RyntraParser::ContinueStatementContext *ctx) = 0;
+  virtual void exitContinueStatement(RyntraParser::ContinueStatementContext *ctx) = 0;
+
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext *ctx) = 0;
 

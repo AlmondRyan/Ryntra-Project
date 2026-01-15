@@ -14,23 +14,23 @@ class  RyntraParser : public antlr4::Parser {
 public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
-    FALSE = 8, WHILE = 9, FOR = 10, PLUS = 11, MINUS = 12, INC = 13, DEC = 14, 
-    MULT = 15, DIV = 16, ASSIGN = 17, GREATER = 18, LESS = 19, COND_EQUAL = 20, 
-    GREATER_EQ = 21, LESS_EQ = 22, LOGIC_AND = 23, LOGIC_OR = 24, NOT = 25, 
-    SEMICOLON = 26, LPAREN = 27, RPAREN = 28, LBRACE = 29, RBRACE = 30, 
-    COMMA = 31, STRING_LITERAL = 32, IDENTIFIER = 33, INTEGER_LITERAL = 34, 
-    LINE_COMMENT = 35, WS = 36
+    FALSE = 8, WHILE = 9, FOR = 10, BREAK = 11, CONTINUE = 12, PLUS = 13, 
+    MINUS = 14, INC = 15, DEC = 16, MULT = 17, DIV = 18, ASSIGN = 19, GREATER = 20, 
+    LESS = 21, COND_EQUAL = 22, GREATER_EQ = 23, LESS_EQ = 24, LOGIC_AND = 25, 
+    LOGIC_OR = 26, NOT = 27, SEMICOLON = 28, LPAREN = 29, RPAREN = 30, LBRACE = 31, 
+    RBRACE = 32, COMMA = 33, STRING_LITERAL = 34, IDENTIFIER = 35, INTEGER_LITERAL = 36, 
+    LINE_COMMENT = 37, WS = 38
   };
 
   enum {
     RuleProgram = 0, RuleFunctionDefinition = 1, RuleParameterList = 2, 
     RuleBlock = 3, RuleVariableDeclaration = 4, RuleStatement = 5, RuleReturnStatement = 6, 
     RuleIfStatement = 7, RuleElseClause = 8, RuleWhileStatement = 9, RuleForStatement = 10, 
-    RuleFunctionCall = 11, RuleArgumentList = 12, RuleAssignment = 13, RuleExpression = 14, 
-    RuleLogicalOrExpression = 15, RuleLogicalAndExpression = 16, RuleEqualityExpression = 17, 
-    RuleRelationalExpression = 18, RuleAdditiveExpression = 19, RuleMultiplicativeExpression = 20, 
-    RuleUnaryExpression = 21, RulePostfixExpression = 22, RulePrimaryExpression = 23, 
-    RuleLiteral = 24
+    RuleBreakStatement = 11, RuleContinueStatement = 12, RuleFunctionCall = 13, 
+    RuleArgumentList = 14, RuleAssignment = 15, RuleExpression = 16, RuleLogicalOrExpression = 17, 
+    RuleLogicalAndExpression = 18, RuleEqualityExpression = 19, RuleRelationalExpression = 20, 
+    RuleAdditiveExpression = 21, RuleMultiplicativeExpression = 22, RuleUnaryExpression = 23, 
+    RulePostfixExpression = 24, RulePrimaryExpression = 25, RuleLiteral = 26
   };
 
   explicit RyntraParser(antlr4::TokenStream *input);
@@ -61,6 +61,8 @@ public:
   class ElseClauseContext;
   class WhileStatementContext;
   class ForStatementContext;
+  class BreakStatementContext;
+  class ContinueStatementContext;
   class FunctionCallContext;
   class ArgumentListContext;
   class AssignmentContext;
@@ -184,6 +186,8 @@ public:
     IfStatementContext *ifStatement();
     WhileStatementContext *whileStatement();
     ForStatementContext *forStatement();
+    BreakStatementContext *breakStatement();
+    ContinueStatementContext *continueStatement();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -290,6 +294,36 @@ public:
   };
 
   ForStatementContext* forStatement();
+
+  class  BreakStatementContext : public antlr4::ParserRuleContext {
+  public:
+    BreakStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *BREAK();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  BreakStatementContext* breakStatement();
+
+  class  ContinueStatementContext : public antlr4::ParserRuleContext {
+  public:
+    ContinueStatementContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *CONTINUE();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  ContinueStatementContext* continueStatement();
 
   class  FunctionCallContext : public antlr4::ParserRuleContext {
   public:

@@ -61,6 +61,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitBreakStatement(RyntraParser::BreakStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitContinueStatement(RyntraParser::ContinueStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitFunctionCall(RyntraParser::FunctionCallContext *ctx) override {
     return visitChildren(ctx);
   }

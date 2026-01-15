@@ -13,6 +13,8 @@ TRUE: 'true';
 FALSE: 'false';
 WHILE: 'while';
 FOR: 'for';
+BREAK: 'break';
+CONTINUE: 'continue';
 
 // Operators
 PLUS: '+';
@@ -79,6 +81,8 @@ statement:
     | ifStatement
     | whileStatement
     | forStatement
+    | breakStatement SEMICOLON
+    | continueStatement SEMICOLON
     | SEMICOLON
     ;
 
@@ -102,6 +106,14 @@ forStatement
     : FOR LPAREN (variableDeclaration | assignment | expression)? SEMICOLON
       expression? SEMICOLON
       (assignment | expression)? RPAREN block
+    ;
+
+breakStatement
+    : BREAK
+    ;
+
+continueStatement
+    : CONTINUE
     ;
 
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
