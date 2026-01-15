@@ -30,6 +30,9 @@ public:
   virtual void enterBlock(RyntraParser::BlockContext * /*ctx*/) override { }
   virtual void exitBlock(RyntraParser::BlockContext * /*ctx*/) override { }
 
+  virtual void enterTypeSpecifier(RyntraParser::TypeSpecifierContext * /*ctx*/) override { }
+  virtual void exitTypeSpecifier(RyntraParser::TypeSpecifierContext * /*ctx*/) override { }
+
   virtual void enterVariableDeclaration(RyntraParser::VariableDeclarationContext * /*ctx*/) override { }
   virtual void exitVariableDeclaration(RyntraParser::VariableDeclarationContext * /*ctx*/) override { }
 
@@ -38,6 +41,24 @@ public:
 
   virtual void enterReturnStatement(RyntraParser::ReturnStatementContext * /*ctx*/) override { }
   virtual void exitReturnStatement(RyntraParser::ReturnStatementContext * /*ctx*/) override { }
+
+  virtual void enterIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
+  virtual void exitIfStatement(RyntraParser::IfStatementContext * /*ctx*/) override { }
+
+  virtual void enterElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+  virtual void exitElseClause(RyntraParser::ElseClauseContext * /*ctx*/) override { }
+
+  virtual void enterWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
+  virtual void exitWhileStatement(RyntraParser::WhileStatementContext * /*ctx*/) override { }
+
+  virtual void enterForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
+  virtual void exitForStatement(RyntraParser::ForStatementContext * /*ctx*/) override { }
+
+  virtual void enterBreakStatement(RyntraParser::BreakStatementContext * /*ctx*/) override { }
+  virtual void exitBreakStatement(RyntraParser::BreakStatementContext * /*ctx*/) override { }
+
+  virtual void enterContinueStatement(RyntraParser::ContinueStatementContext * /*ctx*/) override { }
+  virtual void exitContinueStatement(RyntraParser::ContinueStatementContext * /*ctx*/) override { }
 
   virtual void enterFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
   virtual void exitFunctionCall(RyntraParser::FunctionCallContext * /*ctx*/) override { }
@@ -51,14 +72,29 @@ public:
   virtual void enterExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
   virtual void exitExpression(RyntraParser::ExpressionContext * /*ctx*/) override { }
 
-  virtual void enterAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
-  virtual void exitAssignmentExpression(RyntraParser::AssignmentExpressionContext * /*ctx*/) override { }
+  virtual void enterLogicalOrExpression(RyntraParser::LogicalOrExpressionContext * /*ctx*/) override { }
+  virtual void exitLogicalOrExpression(RyntraParser::LogicalOrExpressionContext * /*ctx*/) override { }
+
+  virtual void enterLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
+  virtual void exitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
+
+  virtual void enterEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
+  virtual void exitEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
+
+  virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
+  virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
 
   virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
   virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
 
   virtual void enterMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
   virtual void exitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext * /*ctx*/) override { }
+
+  virtual void enterUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
+  virtual void exitUnaryExpression(RyntraParser::UnaryExpressionContext * /*ctx*/) override { }
+
+  virtual void enterPostfixExpression(RyntraParser::PostfixExpressionContext * /*ctx*/) override { }
+  virtual void exitPostfixExpression(RyntraParser::PostfixExpressionContext * /*ctx*/) override { }
 
   virtual void enterPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }
   virtual void exitPrimaryExpression(RyntraParser::PrimaryExpressionContext * /*ctx*/) override { }

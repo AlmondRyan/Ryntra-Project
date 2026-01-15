@@ -1,5 +1,7 @@
 #include <iostream>
+#include <fstream>
 #include <memory>
+
 #include "antlr4-runtime.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
@@ -10,43 +12,17 @@
 #include "Semantic/SemanticAnalyzer.h"
 
 int main() {
-    std::string src = R"(int main() {
-    // 1. Test __builtin_print()
-    __builtin_print("Hello world!");
+    // Read Source File
+    std::ifstream inFileStream("Test.rynt");
+    std::string src;
+    if (inFileStream) {
+        std::ostringstream ss;
+        ss << inFileStream.rdbuf();
+        src = ss.str();
+    }
 
-    // 2. Test variable declaration & assignment
-    int a = 10;
-    int b = a;
-    a = 20;
-
-    // 3. Test __builtin_intToString()
-    __builtin_print(__builtin_intToString(a));
-    __builtin_print(__builtin_intToString(b));
-
-    // 4. Test Binary Operator
-    int c = a + b;
-    __builtin_print(" ");
-    __builtin_print(__builtin_intToString(c));
-
-    int d = a - b;
-    __builtin_print(" ");
-    __builtin_print(__builtin_intToString(d));
-
-    int e = a * b;
-    __builtin_print(" ");
-    __builtin_print(__builtin_intToString(e));
-
-    int f = a / b;
-    __builtin_print(" ");
-    __builtin_print(__builtin_intToString(f));
-
-    // 5. Test Result Discarding (should do a warning)
-    f + 10;
-
-    // 6. Test return statement
-    return 0;
-})";
     try {
+        // 1. Initialize ANTLR
         antlr4::ANTLRInputStream input(src);
         Ryntra::antlr::RyntraLexer lexer(&input);
         antlr4::CommonTokenStream tokens(&lexer);
@@ -59,18 +35,22 @@ int main() {
             std::cout << "Syntax errors found in input" << std::endl;
             return 1;
         }
-        
+
+        // 2. Build AST
         Ryntra::Compiler::ASTBuilder astBuilder;
         auto programNode = astBuilder.visitProgram(programContext);
         
         std::cout << ">>> Generated AST:" << std::endl;
         std::cout << programNode->toString() << std::endl;
 
+        // 3. Semantic Analysis
         Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
         semanticAnalyzer.visitProgram(programNode);
 
+        // 4. Get Semantic Errors
         Ryntra::Compiler::ErrorHandler::getInstance().print();
 
+        // If there's no errors but only warnings, continue IR Generating without terminate
         if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
             for (auto i : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
                 if (i.type == Ryntra::Compiler::ET_WARNING) {
@@ -82,11 +62,13 @@ int main() {
             }
         }
 
+        // 5. IR Generating
         Ryntra::Compiler::IRGenerator irGenerator;
         irGenerator.visitProgram(programNode);
         auto ir = irGenerator.getIR();
         std::cout << ir << std::endl;
 
+        // 6. Write IR into .ll file
         std::ofstream out("output.ll");
         if (out.is_open()) {
             out << ir;

@@ -10,6 +10,10 @@ namespace Ryntra::Compiler {
         visitor->visitStringLiteral(std::static_pointer_cast<StringLiteralNode>(shared_from_this()));
     }
 
+    void BooleanLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitBooleanLiteral(std::static_pointer_cast<BooleanLiteralNode>(shared_from_this()));
+    }
+
     void IdentifierNode::accept(IASTVisitor *visitor) {
         visitor->visitIdentifier(std::static_pointer_cast<IdentifierNode>(shared_from_this()));
     }
@@ -54,6 +58,14 @@ namespace Ryntra::Compiler {
         visitor->visitProgram(std::static_pointer_cast<ProgramNode>(shared_from_this()));
     }
 
+    void PostfixExpressionNode::accept(IASTVisitor* visitor) {
+        visitor->visitPostfixExpression(std::static_pointer_cast<PostfixExpressionNode>(shared_from_this()));
+    }
+
+    std::string PostfixExpressionNode::toString() const {
+        return "PostfixExpression(" + varName + " " + op + ")";
+    }
+
     int IntegerLiteralNode::getValue() const {
         return value;
     }
@@ -68,6 +80,10 @@ namespace Ryntra::Compiler {
 
     std::string StringLiteralNode::toString() const {
         return "StringLiteral(" + value + ")";
+    }
+
+    std::string BooleanLiteralNode::toString() const {
+        return "BooleanLiteral(" + std::string(value ? "true" : "false") + ")";
     }
 
     std::string IdentifierNode::toString() const {
@@ -148,12 +164,23 @@ namespace Ryntra::Compiler {
         visitor->visitAssignmentExpression(std::static_pointer_cast<AssignmentExpressionNode>(shared_from_this()));
     }
 
+    std::string UnaryExpressionNode::toString() const {
+        return "UnaryExpression(" + operand + " " + expression->toString() + ")";
+    }
+
+    void UnaryExpressionNode::accept(IASTVisitor *visitor) {
+        visitor->visitUnaryExpression(std::static_pointer_cast<UnaryExpressionNode>(shared_from_this()));
+    }
+
     std::string AssignmentExpressionNode::toString() const {
         return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
     }
 
     std::string ReturnStatementNode::toString() const {
-        return "ReturnStatement(" + returnValue->toString() + ")";
+        if (returnValue) {
+            return "ReturnStatement(" + returnValue->toString() + ")";
+        }
+        return "ReturnStatement(void)";
     }
 
     std::string FunctionCallStatementNode::toString() const {
@@ -161,10 +188,64 @@ namespace Ryntra::Compiler {
     }
 
     std::string ExpressionStatementNode::toString() const {
-        return "ExpressionStatement(" + expression->toString() + ")";
+        if (expression) {
+            return "ExpressionStatement(" + expression->toString() + ")";
+        }
+        return "ExpressionStatement(null)";
     }
 
     std::string ParameterNode::toString() const {
         return "Parameter(" + type + " " + name + ")";
+    }
+
+    std::string IfStatementNode::toString() const {
+        std::string result = "IfStatement(" + condition->toString() + ", " + thenBody->toString();
+        if (elseBody) {
+            result += ", " + elseBody->toString();
+        }
+        result += ")";
+        return result;
+    }
+
+    void IfStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitIfStatement(std::static_pointer_cast<IfStatementNode>(shared_from_this()));
+    }
+
+    std::string WhileStatementNode::toString() const {
+        std::string result = "WhileStatement(" + condition->toString() + ", " + body->toString() + ")";
+        return result;
+    }
+
+    void WhileStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitWhileStatement(std::static_pointer_cast<WhileStatementNode>(shared_from_this()));
+    }
+
+    std::string ForStatementNode::toString() const {
+        std::string result = "ForStatement(";
+        result += (init ? init->toString() : "null") + ", ";
+        result += (condition ? condition->toString() : "null") + ", ";
+        result += (increment ? increment->toString() : "null") + ", ";
+        result += body->toString() + ")";
+        return result;
+    }
+
+    void ForStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitForStatement(std::static_pointer_cast<ForStatementNode>(shared_from_this()));
+    }
+
+    std::string BreakStatementNode::toString() const {
+        return "BreakStatement()";
+    }
+
+    std::string ContinueStatementNode::toString() const {
+        return "ContinueStatement()";
+    }
+
+    void BreakStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitBreakStatement(std::static_pointer_cast<BreakStatementNode>(shared_from_this()));
+    }
+
+    void ContinueStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitContinueStatement(std::static_pointer_cast<ContinueStatementNode>(shared_from_this()));
     }
 } // namespace Ryntra::Compiler

@@ -32,6 +32,7 @@ namespace Ryntra::Compiler {
             if (typeName == "int") return llvm::Type::getInt32Ty(context);
             if (typeName == "string") return llvm::PointerType::get(context, 0);
             if (typeName == "void") return llvm::Type::getVoidTy(context);
+            if (typeName == "bool") return llvm::Type::getInt1Ty(context);
             return llvm::Type::getVoidTy(context);
         }
     }
@@ -101,11 +102,49 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) {
     }
 
+    void IRGenerator::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
+        llvm::Value* condValue = evaluate(node->getCondition());
+        if (!condValue) return;
+
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*context, "then", func);
+        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(*context, "else");
+        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "ifcont");
+
+        if (node->getElseBody()) {
+            builder->CreateCondBr(condValue, thenBB, elseBB);
+        } else {
+            builder->CreateCondBr(condValue, thenBB, mergeBB);
+        }
+
+        // Emit then block
+        builder->SetInsertPoint(thenBB);
+        visit(node->getThenBody());
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(mergeBB);
+        }
+
+        // Emit else block
+        if (node->getElseBody()) {
+            func->insert(func->end(), elseBB);
+            builder->SetInsertPoint(elseBB);
+            visit(node->getElseBody());
+            if (!builder->GetInsertBlock()->getTerminator()) {
+                builder->CreateBr(mergeBB);
+            }
+        }
+
+        // Emit merge block
+        func->insert(func->end(), mergeBB);
+        builder->SetInsertPoint(mergeBB);
+    }
+
     void IRGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
         visit(node->getExpression());
     }
 
-    Type IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
+    void IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
         
         // 1. Symbol Table Lookup
@@ -160,7 +199,7 @@ namespace Ryntra::Compiler {
                              builder->CreateCall(freeFunc, {strPtr});
                          }
                      }
-                     return {TypeKind::Int, ""};
+                     return;
                 }
             } else if (funcName == "__builtin_intToString") {
                 // Declare rcrt_builtin_intToString if not exists: char* rcrt_builtin_intToString(int)
@@ -184,7 +223,7 @@ namespace Ryntra::Compiler {
                 }
                 
                 lastValue = builder->CreateCall(toStringFunc, args);
-                return {TypeKind::String, ""};
+                return;
             } else {
                 // Non-builtin function lookup in Module
                 llvm::Function* callee = module->getFunction(funcName);
@@ -197,31 +236,28 @@ namespace Ryntra::Compiler {
                         }
                     }
                     lastValue = builder->CreateCall(callee, args);
-                    return {TypeKind::Custom, ""}; // Need actual return type here, but TypeKind::Custom is a placeholder
+                    return;
                 }
             }
         }
         lastValue = nullptr;
-        return {TypeKind::Void, ""};
     }
 
     void IRGenerator::visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) {
         visit(node->getFunctionCall());
     }
 
-    Type IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
+    void IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
         llvm::Value* v = namedValues[node->getName()];
         if (!v) {
             lastValue = nullptr;
-            return {TypeKind::Void, ""};
+            return;
         }
         lastValue = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getName());
-        return {TypeKind::Custom, ""}; // Placeholder
     }
 
-    Type IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
+    void IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
         lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, node->getValue()));
-        return {TypeKind::Int, ""};
     }
 
     void IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
@@ -236,9 +272,8 @@ namespace Ryntra::Compiler {
         }
     }
 
-    Type IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
+    void IRGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {
         lastValue = builder->CreateGlobalStringPtr(node->getValue());
-        return {TypeKind::String, ""};
     }
 
     void IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
@@ -254,37 +289,291 @@ namespace Ryntra::Compiler {
         namedValues[node->getVarName()] = alloca;
     }
 
-    Type IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
-        llvm::Value *leftValue = evaluate(node->getLeft());
-        llvm::Value *rightValue = evaluate(node->getRight());
+    void IRGenerator::visitBinaryExpression(std::shared_ptr<BinaryExpressionNode> node) {
         std::string op = node->getOp();
 
-        if (op == "+") lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
-        if (op == "-") lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
-        if (op == "*") lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
-        if (op == "/") lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+        // Handle logical AND/OR with short-circuiting
+        if (op == "&&") {
+            llvm::Value* lhsValue = evaluate(node->getLeft());
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            
+            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "and.rhs", func);
+            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "and.merge", func);
+            
+            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            builder->CreateCondBr(lhsValue, rhsBB, mergeBB);
+            
+            builder->SetInsertPoint(rhsBB);
+            llvm::Value* rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            builder->CreateBr(mergeBB);
+            
+            builder->SetInsertPoint(mergeBB);
+            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "andtmp");
+            phi->addIncoming(llvm::ConstantInt::getFalse(*context), entryBB);
+            phi->addIncoming(rhsValue, rhsEndBB);
+            
+            lastValue = phi;
+            return;
+        }
 
-        return {TypeKind::Int, ""};
+        if (op == "||") {
+            llvm::Value* lhsValue = evaluate(node->getLeft());
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            
+            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "or.rhs", func);
+            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "or.merge", func);
+            
+            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            builder->CreateCondBr(lhsValue, mergeBB, rhsBB);
+            
+            builder->SetInsertPoint(rhsBB);
+            llvm::Value* rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            builder->CreateBr(mergeBB);
+            
+            builder->SetInsertPoint(mergeBB);
+            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "ortmp");
+            phi->addIncoming(llvm::ConstantInt::getTrue(*context), entryBB);
+            phi->addIncoming(rhsValue, rhsEndBB);
+            
+            lastValue = phi;
+            return;
+        }
+
+        llvm::Value *leftValue = evaluate(node->getLeft());
+        llvm::Value *rightValue = evaluate(node->getRight());
+
+        if (op == "+") {
+            lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
+            return;
+        }
+        if (op == "-") {
+            lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
+            return;
+        }
+        if (op == "*") {
+            lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
+            return;
+        }
+        if (op == "/") {
+            lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            return;
+        }
+
+        // Comparison operators
+        if (op == "==") {
+            lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
+            return;
+        }
+        if (op == "!=") {
+            lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
+            return;
+        }
+        if (op == "<") {
+            lastValue = builder->CreateICmpSLT(leftValue, rightValue, "lttmp");
+            return;
+        }
+        if (op == "<=") {
+            lastValue = builder->CreateICmpSLE(leftValue, rightValue, "letmp");
+            return;
+        }
+        if (op == ">") {
+            lastValue = builder->CreateICmpSGT(leftValue, rightValue, "gttmp");
+            return;
+        }
+        if (op == ">=") {
+            lastValue = builder->CreateICmpSGE(leftValue, rightValue, "getmp");
+            return;
+        }
+
+        lastValue = nullptr;
     }
 
-    Type IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
+    void IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         std::string idName = node->getIdentifier();
         llvm::Value* alloca = namedValues[idName];
         
         if (!alloca) {
-            // This should be handled by semantic analyzer
             lastValue = nullptr;
-            return {TypeKind::Void, ""};
+            return;
         }
 
         llvm::Value* val = evaluate(node->getExpression());
         if (val) {
             builder->CreateStore(val, alloca);
             lastValue = val;
-            return {TypeKind::Custom, ""}; // Placeholder
+            return;
         }
 
         lastValue = nullptr;
-        return {TypeKind::Void, ""};
+    }
+
+    void IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
+        llvm::Value* value = evaluate(node->getExpression());
+        std::string op = node->getOp();
+
+        if (!value) {
+            lastValue = nullptr;
+            return;
+        }
+
+        if (op == "!") {
+            lastValue = builder->CreateNot(value, "nottmp");
+            return;
+        }
+
+        if (op == "-") {
+            llvm::Value* zero = llvm::ConstantInt::get(*context, llvm::APInt(32, 0));
+            lastValue = builder->CreateSub(zero, value, "negtmp");
+            return;
+        }
+
+        lastValue = value;
+    }
+
+    void IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(1, node->getValue() ? 1 : 0));
+    }
+
+    void IRGenerator::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "while.cond", func);
+        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "while.body");
+        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "while.end");
+
+        // Break target is after loop, Continue target is condition check
+        breakTargets.push_back(afterLoopBB);
+        continueTargets.push_back(loopCondBB);
+
+        builder->CreateBr(loopCondBB);
+
+        builder->SetInsertPoint(loopCondBB);
+        llvm::Value* condValue = evaluate(node->getCondition());
+        if (!condValue) {
+            breakTargets.pop_back();
+            continueTargets.pop_back();
+            return;
+        }
+        builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
+
+        func->insert(func->end(), loopBodyBB);
+        builder->SetInsertPoint(loopBodyBB);
+        visit(node->getBody());
+        
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(loopCondBB);
+        }
+
+        func->insert(func->end(), afterLoopBB);
+        builder->SetInsertPoint(afterLoopBB);
+
+        breakTargets.pop_back();
+        continueTargets.pop_back();
+    }
+
+    void IRGenerator::visitForStatement(std::shared_ptr<ForStatementNode> node) {
+        llvm::Function* func = builder->GetInsertBlock()->getParent();
+
+        symbolTable.enterScope();
+
+        // 1. Initializer
+        if (node->getInit()) {
+            visit(node->getInit());
+        }
+
+        // 2. Create blocks
+        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "for.cond", func);
+        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "for.body");
+        llvm::BasicBlock* loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
+        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
+
+        // Break target is after loop, Continue target is increment block
+        breakTargets.push_back(afterLoopBB);
+        continueTargets.push_back(loopIncBB);
+
+        builder->CreateBr(loopCondBB);
+
+        // 3. Condition check block
+        builder->SetInsertPoint(loopCondBB);
+        if (node->getCondition()) {
+            llvm::Value* condValue = evaluate(node->getCondition());
+            if (!condValue) {
+                breakTargets.pop_back();
+                continueTargets.pop_back();
+                symbolTable.exitScope();
+                return;
+            }
+            builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
+        } else {
+            builder->CreateBr(loopBodyBB);
+        }
+
+        // 4. Body block
+        func->insert(func->end(), loopBodyBB);
+        builder->SetInsertPoint(loopBodyBB);
+        visit(node->getBody());
+        
+        if (!builder->GetInsertBlock()->getTerminator()) {
+            builder->CreateBr(loopIncBB);
+        }
+
+        // 5. Increment block
+        func->insert(func->end(), loopIncBB);
+        builder->SetInsertPoint(loopIncBB);
+        if (node->getIncrement()) {
+            visit(node->getIncrement());
+        }
+        builder->CreateBr(loopCondBB);
+
+        // 6. End block
+        func->insert(func->end(), afterLoopBB);
+        builder->SetInsertPoint(afterLoopBB);
+
+        breakTargets.pop_back();
+        continueTargets.pop_back();
+
+        symbolTable.exitScope();
+    }
+
+    void IRGenerator::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
+        llvm::Value* v = namedValues[node->getVarName()];
+        if (!v) {
+            lastValue = nullptr;
+            return;
+        }
+
+        llvm::Value* oldVal = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getVarName() + ".load");
+        llvm::Value* newVal;
+        if (node->getOp() == "++") {
+            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "inc");
+        } else {
+            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "dec");
+        }
+        builder->CreateStore(newVal, v);
+        lastValue = oldVal;
+    }
+
+    void IRGenerator::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
+        if (!breakTargets.empty()) {
+            builder->CreateBr(breakTargets.back());
+            
+            // Create a dead block to satisfy LLVM IR structure after terminator
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "break.dead", func);
+            builder->SetInsertPoint(deadBB);
+        }
+    }
+
+    void IRGenerator::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
+        if (!continueTargets.empty()) {
+            builder->CreateBr(continueTargets.back());
+            
+            // Create a dead block to satisfy LLVM IR structure after terminator
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "continue.dead", func);
+            builder->SetInsertPoint(deadBB);
+        }
     }
 } // namespace Ryntra::Compiler

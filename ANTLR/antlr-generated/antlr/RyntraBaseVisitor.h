@@ -33,6 +33,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitTypeSpecifier(RyntraParser::TypeSpecifierContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -42,6 +46,30 @@ public:
   }
 
   virtual std::any visitReturnStatement(RyntraParser::ReturnStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitIfStatement(RyntraParser::IfStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitElseClause(RyntraParser::ElseClauseContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitWhileStatement(RyntraParser::WhileStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitForStatement(RyntraParser::ForStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitBreakStatement(RyntraParser::BreakStatementContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitContinueStatement(RyntraParser::ContinueStatementContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -61,7 +89,19 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitAssignmentExpression(RyntraParser::AssignmentExpressionContext *ctx) override {
+  virtual std::any visitLogicalOrExpression(RyntraParser::LogicalOrExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -70,6 +110,14 @@ public:
   }
 
   virtual std::any visitMultiplicativeExpression(RyntraParser::MultiplicativeExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitUnaryExpression(RyntraParser::UnaryExpressionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitPostfixExpression(RyntraParser::PostfixExpressionContext *ctx) override {
     return visitChildren(ctx);
   }
 

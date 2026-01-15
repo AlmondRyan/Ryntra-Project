@@ -9,6 +9,7 @@
 namespace Ryntra::Compiler {
     // Forward Declaration
     class IASTVisitor;
+    class UnaryExpressionNode;
 
     /**
      * @brief AST (Abstract Syntax Tree) Node Bass Class
@@ -136,6 +137,40 @@ namespace Ryntra::Compiler {
     };
 
     /**
+     * @brief The Boolean Literal Node.
+     * @details Represents the Boolean Constant Node in AST.
+     */
+    class BooleanLiteralNode : public LiteralNode {
+    public:
+        /**
+         * @brief The Constructor.
+         * @param val The value of the node.
+         */
+        BooleanLiteralNode(bool val) : value(val) {}
+
+        /**
+         * @brief Get the value.
+         * @return The boolean value.
+         */
+        bool getValue() const { return value; }
+
+        /**
+         * @brief Get the string representation.
+         * @return The string representation.
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+    private:
+        bool value;
+    };
+
+    /**
      * @brief The Identifier Node.
      * @details Represents the Identifier in AST. The Identifier is the
      * "name" of the fields. Such as the name of the variable.
@@ -158,7 +193,7 @@ namespace Ryntra::Compiler {
          * @brief Get the name of the identifier.
          * @return The name of the Identifier.
          */
-        const std::string &getName() const { return name; }
+        const std::string getName() const { return name; }
 
         /**
          * @brief Accepts the visiting from the visitor.
@@ -215,6 +250,22 @@ namespace Ryntra::Compiler {
     private:
         std::string                            functionName;
         std::vector<std::shared_ptr<IASTNode>> arguments;
+    };
+
+    class PostfixExpressionNode : public IASTNode {
+    public:
+        PostfixExpressionNode(const std::string& name, const std::string& op)
+            : varName(name), op(op) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor* visitor) override;
+
+        const std::string& getVarName() const { return varName; }
+        const std::string& getOp() const { return op; }
+
+    private:
+        std::string varName;
+        std::string op;
     };
 
     /**
@@ -706,4 +757,114 @@ namespace Ryntra::Compiler {
         std::string               operand;
     };
 
+    /**
+     * @brief The Unary Expression Node representing unary operations.
+     * @details This class represents expressions that contain one operand and an operator,
+     * such as logical NOT or arithmetic negation.
+     * Examples include expressions like `!flag`, `-count`.
+     */
+    class UnaryExpressionNode : public IASTNode {
+    public:
+        /**
+         * @brief Constructor that creates a unary expression node.
+         * @param opr The operator symbol (e.g., "!", "-").
+         * @param expr The operand of the unary expression.
+         */
+        UnaryExpressionNode(std::string opr, std::shared_ptr<IASTNode> expr)
+            : operand(std::move(opr)), expression(std::move(expr)) {}
+
+        /**
+         * @brief Get the string representation of the Unary Expression Node.
+         * @return A string representation of the form "UnaryExpression(op expression)".
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+        /**
+         * @brief Get the operator of the unary expression.
+         * @return The operator string.
+         */
+        std::string getOp() const { return operand; }
+
+        /**
+         * @brief Get the expression of the unary expression.
+         * @return The operand expression node.
+         */
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
+
+    private:
+        std::string               operand;
+        std::shared_ptr<IASTNode> expression;
+    };
+
+    class IfStatementNode : public StatementNode {
+    public:
+        IfStatementNode(std::shared_ptr<IASTNode> cond, std::shared_ptr<BlockNode> then, std::shared_ptr<IASTNode> els = nullptr)
+            : condition(std::move(cond)), thenBody(std::move(then)), elseBody(std::move(els)) {}
+
+        std::string toString() const override;
+
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode>  getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getThenBody() const { return thenBody; }
+        std::shared_ptr<IASTNode>  getElseBody() const { return elseBody; }
+
+    private:
+        std::shared_ptr<IASTNode>  condition;
+        std::shared_ptr<BlockNode> thenBody;
+        std::shared_ptr<IASTNode>  elseBody; ///< This could be nullptr if there's no else
+    };
+
+    class WhileStatementNode : public StatementNode {
+    public:
+        WhileStatementNode(std::shared_ptr<IASTNode> cond, std::shared_ptr<BlockNode> body)
+            : condition(std::move(cond)), body(std::move(body)) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+    private:
+        std::shared_ptr<IASTNode> condition;
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class ForStatementNode : public StatementNode {
+    public:
+        ForStatementNode(std::shared_ptr<IASTNode> init, std::shared_ptr<IASTNode> cond, std::shared_ptr<IASTNode> inc, std::shared_ptr<BlockNode> body)
+            : init(std::move(init)), condition(std::move(cond)), increment(std::move(inc)), body(std::move(body)) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode> getInit() const { return init; }
+        std::shared_ptr<IASTNode> getCondition() const { return condition; }
+        std::shared_ptr<IASTNode> getIncrement() const { return increment; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+
+    private:
+        std::shared_ptr<IASTNode> init;
+        std::shared_ptr<IASTNode> condition;
+        std::shared_ptr<IASTNode> increment;
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class BreakStatementNode : public StatementNode {
+    public:
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+    };
+
+    class ContinueStatementNode : public StatementNode {
+    public:
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+    };
 } // namespace Ryntra::Compiler

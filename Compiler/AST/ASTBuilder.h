@@ -14,14 +14,25 @@ namespace Ryntra::Compiler {
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context);
         std::shared_ptr<ReturnStatementNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context);
         std::shared_ptr<IASTNode> visitLiteral(antlr::RyntraParser::LiteralContext *context);
+        std::shared_ptr<IfStatementNode> visitIfStatement(antlr::RyntraParser::IfStatementContext *context);
+        std::shared_ptr<IASTNode> visitElseClause(antlr::RyntraParser::ElseClauseContext *context);
         std::vector<std::shared_ptr<IASTNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *context);
         std::shared_ptr<IASTNode> visitExpression(antlr::RyntraParser::ExpressionContext *context);
+        std::shared_ptr<IASTNode> visitLogicalOrExpression(antlr::RyntraParser::LogicalOrExpressionContext *context);
+        std::shared_ptr<IASTNode> visitLogicalAndExpression(antlr::RyntraParser::LogicalAndExpressionContext *context);
+        std::shared_ptr<IASTNode> visitEqualityExpression(antlr::RyntraParser::EqualityExpressionContext *context);
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context);
-        std::shared_ptr<IASTNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *context);
         std::shared_ptr<AssignmentExpressionNode> visitAssignment(antlr::RyntraParser::AssignmentContext *context);
+        std::shared_ptr<IASTNode> visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context);
         std::shared_ptr<IASTNode> visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context);
         std::shared_ptr<IASTNode> visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context);
+        std::shared_ptr<IASTNode> visitPostfixExpression(antlr::RyntraParser::PostfixExpressionContext *context);
+        std::shared_ptr<IASTNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *context);
         std::shared_ptr<IASTNode> visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context);
+        std::shared_ptr<WhileStatementNode>     visitWhileStatement(antlr::RyntraParser::WhileStatementContext *context);
+        std::shared_ptr<ForStatementNode>       visitForStatement(antlr::RyntraParser::ForStatementContext *context);
+        std::shared_ptr<BreakStatementNode> visitBreakStatement(antlr::RyntraParser::BreakStatementContext *context);
+        std::shared_ptr<ContinueStatementNode> visitContinueStatement(antlr::RyntraParser::ContinueStatementContext *context);
     private:
         /**
          * @brief Get the source location from ANTLR4 Parser Context.
@@ -45,6 +56,23 @@ namespace Ryntra::Compiler {
             auto node = std::make_shared<Tp>(std::forward<Args>(args)...);
             node->setLocation(getLoc(ctx));
             return node;
+        }
+
+        std::string unescape(std::string input) {
+            std::string result;
+            for (size_t i = 0; i < input.length(); ++i) {
+                if (input[i] == '\\' && i + 1 < input.length()) {
+                    char next = input[++i];
+                    if (next == 'n') result += '\n';
+                    else if (next == 't') result += '\t';
+                    else if (next == '\\') result += '\\';
+                    else if (next == '"') result += '"';
+                    else result += next;
+                } else {
+                    result += input[i];
+                }
+            }
+            return result; // 必须返回结果！
         }
     };
 } // namespace Ryntra::Compiler
