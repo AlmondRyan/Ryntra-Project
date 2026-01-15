@@ -30,6 +30,8 @@ namespace Ryntra::Compiler {
     namespace {
         llvm::Type* mapType(llvm::LLVMContext& context, const std::string& typeName) {
             if (typeName == "int") return llvm::Type::getInt32Ty(context);
+            if (typeName == "long") return llvm::Type::getInt64Ty(context);
+            if (typeName == "long long") return llvm::Type::getInt64Ty(context);
             if (typeName == "string") return llvm::PointerType::get(context, 0);
             if (typeName == "void") return llvm::Type::getVoidTy(context);
             if (typeName == "bool") return llvm::Type::getInt1Ty(context);
@@ -89,6 +91,8 @@ namespace Ryntra::Compiler {
                 builder->CreateRetVoid();
             } else if (node->getReturnType() == "int") {
                 builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(32, 0)));
+            } else if (node->getReturnType() == "long" || node->getReturnType() == "long long") {
+                builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
             }
         }
     }
@@ -229,11 +233,26 @@ namespace Ryntra::Compiler {
                 llvm::Function* callee = module->getFunction(funcName);
                 if (callee) {
                     std::vector<llvm::Value*> args;
+                    unsigned idx = 0;
                     for (auto argNode : node->getArguments()) {
                         llvm::Value* val = evaluate(argNode);
                         if (val) {
+                            // Handle argument type conversion
+                            if (idx < callee->arg_size()) {
+                                llvm::Type* targetType = callee->getFunctionType()->getParamType(idx);
+                                if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                                    unsigned targetWidth = targetType->getIntegerBitWidth();
+                                    if (valWidth < targetWidth) {
+                                        val = builder->CreateSExt(val, targetType, "sext");
+                                    } else if (valWidth > targetWidth) {
+                                        val = builder->CreateTrunc(val, targetType, "trunc");
+                                    }
+                                }
+                            }
                             args.push_back(val);
                         }
+                        idx++;
                     }
                     lastValue = builder->CreateCall(callee, args);
                     return;
@@ -257,7 +276,12 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
-        lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, node->getValue()));
+        long long val = node->getValue();
+        if (val > 2147483647LL || val < -2147483648LL) {
+            lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, val, true));
+        } else {
+            lastValue = llvm::ConstantInt::get(*context, llvm::APInt(32, val, true));
+        }
     }
 
     void IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
@@ -266,6 +290,17 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
         llvm::Value* val = evaluate(node->getReturnValue());
         if (val) {
+            // Handle type conversion to function return type
+            llvm::Type* retType = builder->GetInsertBlock()->getParent()->getReturnType();
+            if (val->getType()->isIntegerTy() && retType->isIntegerTy()) {
+                unsigned valWidth = val->getType()->getIntegerBitWidth();
+                unsigned targetWidth = retType->getIntegerBitWidth();
+                if (valWidth < targetWidth) {
+                    val = builder->CreateSExt(val, retType, "sext");
+                } else if (valWidth > targetWidth) {
+                    val = builder->CreateTrunc(val, retType, "trunc");
+                }
+            }
             builder->CreateRet(val);
         } else {
             builder->CreateRetVoid();
@@ -283,6 +318,16 @@ namespace Ryntra::Compiler {
         llvm::AllocaInst* alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
 
         if (val) {
+            // Handle type conversion (e.g. int to long)
+            if (val->getType()->isIntegerTy() && type->isIntegerTy()) {
+                unsigned valWidth = val->getType()->getIntegerBitWidth();
+                unsigned targetWidth = type->getIntegerBitWidth();
+                if (valWidth < targetWidth) {
+                    val = builder->CreateSExt(val, type, "sext");
+                } else if (valWidth > targetWidth) {
+                    val = builder->CreateTrunc(val, type, "trunc");
+                }
+            }
             builder->CreateStore(val, alloca);
         }
 
@@ -344,8 +389,29 @@ namespace Ryntra::Compiler {
         llvm::Value *leftValue = evaluate(node->getLeft());
         llvm::Value *rightValue = evaluate(node->getRight());
 
+        if (!leftValue || !rightValue) return;
+
+        // Handle type promotion for arithmetic operations
+        if (op == "+" || op == "-" || op == "*" || op == "/" || 
+            op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==") {
+            
+            llvm::Type* leftType = leftValue->getType();
+            llvm::Type* rightType = rightValue->getType();
+
+            if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
+                unsigned leftWidth = leftType->getIntegerBitWidth();
+                unsigned rightWidth = rightType->getIntegerBitWidth();
+
+                if (leftWidth < rightWidth) {
+                    leftValue = builder->CreateSExt(leftValue, rightType, "sext");
+                } else if (rightWidth < leftWidth) {
+                    rightValue = builder->CreateSExt(rightValue, leftType, "sext");
+                }
+            }
+        }
+
         if (op == "+") {
-            lastValue = builder->CreateAdd(leftValue, rightValue, "addTemp");
+            lastValue = builder->CreateAdd(leftValue, rightValue, "addtmp");
             return;
         }
         if (op == "-") {
@@ -401,6 +467,17 @@ namespace Ryntra::Compiler {
 
         llvm::Value* val = evaluate(node->getExpression());
         if (val) {
+            // Handle type conversion
+            llvm::Type* targetType = ((llvm::AllocaInst*)alloca)->getAllocatedType();
+            if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                unsigned valWidth = val->getType()->getIntegerBitWidth();
+                unsigned targetWidth = targetType->getIntegerBitWidth();
+                if (valWidth < targetWidth) {
+                    val = builder->CreateSExt(val, targetType, "sext");
+                } else if (valWidth > targetWidth) {
+                    val = builder->CreateTrunc(val, targetType, "trunc");
+                }
+            }
             builder->CreateStore(val, alloca);
             lastValue = val;
             return;
@@ -424,7 +501,7 @@ namespace Ryntra::Compiler {
         }
 
         if (op == "-") {
-            llvm::Value* zero = llvm::ConstantInt::get(*context, llvm::APInt(32, 0));
+            llvm::Value* zero = llvm::ConstantInt::get(value->getType(), 0);
             lastValue = builder->CreateSub(zero, value, "negtmp");
             return;
         }
@@ -546,10 +623,11 @@ namespace Ryntra::Compiler {
 
         llvm::Value* oldVal = builder->CreateLoad(((llvm::AllocaInst*)v)->getAllocatedType(), v, node->getVarName() + ".load");
         llvm::Value* newVal;
+        llvm::Type* type = oldVal->getType();
         if (node->getOp() == "++") {
-            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "inc");
+            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(type, 1), "inc");
         } else {
-            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(*context, llvm::APInt(32, 1)), "dec");
+            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(type, 1), "dec");
         }
         builder->CreateStore(newVal, v);
         lastValue = oldVal;

@@ -63,6 +63,8 @@ namespace Ryntra::Compiler {
         std::string mapTypeToString(TypeKind kind) {
             switch (kind) {
             case TypeKind::Int: return "int";
+            case TypeKind::Long: return "long";
+            case TypeKind::LongLong: return "long long";
             case TypeKind::String: return "string";
             case TypeKind::Void: return "void";
             case TypeKind::Boolean: return "bool";
@@ -73,6 +75,8 @@ namespace Ryntra::Compiler {
 
         TypeKind mapStringToType(std::string kind) {
             if (kind == "int") return TypeKind::Int;
+            if (kind == "long") return TypeKind::Long;
+            if (kind == "long long") return TypeKind::LongLong;
             if (kind == "string") return TypeKind::String;
             if (kind == "void") return TypeKind::Void;
             if (kind == "bool") return TypeKind::Boolean;

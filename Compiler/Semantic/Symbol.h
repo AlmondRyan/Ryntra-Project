@@ -6,6 +6,8 @@
 namespace Ryntra::Compiler {
     enum class TypeKind {
         Int,
+        Long,
+        LongLong,
         String,
         Void,
         Boolean,

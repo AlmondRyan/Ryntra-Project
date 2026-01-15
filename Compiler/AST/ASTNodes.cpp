@@ -66,7 +66,7 @@ namespace Ryntra::Compiler {
         return "PostfixExpression(" + varName + " " + op + ")";
     }
 
-    int IntegerLiteralNode::getValue() const {
+    long long IntegerLiteralNode::getValue() const {
         return value;
     }
 

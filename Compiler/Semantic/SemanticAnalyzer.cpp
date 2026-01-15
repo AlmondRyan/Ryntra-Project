@@ -220,13 +220,25 @@ namespace Ryntra::Compiler {
         Type        rhs = evaluate(node->getRight());
         std::string op = node->getOp();
 
+        auto isInteger = [](TypeKind kind) {
+            return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
+        };
+
         if (op == "+" || op == "-" || op == "*" || op == "/") {
-            if (!(lhs.kind == TypeKind::Int && rhs.kind == TypeKind::Int)) {
+            if (!(isInteger(lhs.kind) && isInteger(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
                     "Binary Arithmical Operator only use between arithmetic type.",
                     SourceLocation(node->getLocation()));
             }
-            lastTypeResult = {TypeKind::Int, ""};
+            
+            // Type promotion: if any is LongLong, result is LongLong. If any is Long, result is Long. Otherwise Int.
+            if (lhs.kind == TypeKind::LongLong || rhs.kind == TypeKind::LongLong) {
+                lastTypeResult = {TypeKind::LongLong, ""};
+            } else if (lhs.kind == TypeKind::Long || rhs.kind == TypeKind::Long) {
+                lastTypeResult = {TypeKind::Long, ""};
+            } else {
+                lastTypeResult = {TypeKind::Int, ""};
+            }
         } else if (op == "&&" || op == "||") {
             if (!(lhs.kind == TypeKind::Boolean && rhs.kind == TypeKind::Boolean)) {
                 ErrorHandler::getInstance().makeError(
@@ -294,10 +306,10 @@ namespace Ryntra::Compiler {
                 lastTypeResult = {TypeKind::Boolean, ""};
             }
         } else if (op == "-") {
-            if (exprType.kind == TypeKind::Int) {
-                lastTypeResult = {TypeKind::Int, ""};
+            if (exprType.kind == TypeKind::Int || exprType.kind == TypeKind::Long || exprType.kind == TypeKind::LongLong) {
+                lastTypeResult = exprType;
             } else {
-                ErrorHandler::getInstance().makeError("Operator - only use in int type.",
+                ErrorHandler::getInstance().makeError("Operator - only use in integer type.",
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Int, ""};
             }
@@ -363,9 +375,9 @@ namespace Ryntra::Compiler {
             return;
         }
 
-        if (symbol->type.kind != TypeKind::Int) {
+        if (!(symbol->type.kind == TypeKind::Int || symbol->type.kind == TypeKind::Long || symbol->type.kind == TypeKind::LongLong)) {
             ErrorHandler::getInstance().makeError(
-                "Increment/Decrement operator can only be applied to int, but got " + mapTypeToString(symbol->type.kind) + ".",
+                "Increment/Decrement operator can only be applied to integer types, but got " + mapTypeToString(symbol->type.kind) + ".",
                 SourceLocation(node->getLocation())
             );
             lastTypeResult = {TypeKind::ErrorType, ""};
@@ -373,7 +385,7 @@ namespace Ryntra::Compiler {
             return;
         }
 
-        lastTypeResult = {TypeKind::Int, ""};
+        lastTypeResult = symbol->type;
         nodeTypes[node] = lastTypeResult;
     }
 

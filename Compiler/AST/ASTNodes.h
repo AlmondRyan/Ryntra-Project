@@ -63,7 +63,7 @@ namespace Ryntra::Compiler {
     /**
      * @brief Integer Literal Node.
      * @details Represent the Integer Constant in AST. Integer Literal
-     * is the value of a int. Such as `int i = 10;` The 10 is the Integer
+     * is the value of a long long. Such as `long long i = 10;` The 10 is the Integer
      * Literal.
      */
     class IntegerLiteralNode : public LiteralNode {
@@ -72,14 +72,14 @@ namespace Ryntra::Compiler {
          * @brief The Constructor.
          * @param val The value of the Integer Node.
          */
-        IntegerLiteralNode(int val) : value(val) {
+        IntegerLiteralNode(long long val) : value(val) {
         }
 
         /**
          * @brief Get the value.
-         * @return The int that contains the value.
+         * @return The long long that contains the value.
          */
-        int getValue() const;
+        long long getValue() const;
 
         /**
          * @brief The string representation of the Integer Literal Node.
@@ -95,7 +95,7 @@ namespace Ryntra::Compiler {
         void accept(IASTVisitor *visitor) override;
 
     private:
-        int value;
+        long long value;
     };
 
     /**

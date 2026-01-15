@@ -56,11 +56,11 @@ WS : [ \t\r\n]+ -> skip ;
 program: functionDefinition+ EOF;
 
 functionDefinition
-    : INT IDENTIFIER LPAREN parameterList? RPAREN block
+    : typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
     ;
 
 parameterList
-    : INT IDENTIFIER (COMMA INT IDENTIFIER)*
+    : typeSpecifier IDENTIFIER (COMMA typeSpecifier IDENTIFIER)*
     ;
 
 block

@@ -14,34 +14,28 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<FunctionDefinitionNode> ASTBuilder::visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *context) {
-        std::string returnType = "int"; // Default as the grammar currently only supports INT
-        if (context->INT()) returnType = context->INT()->getText();
-        
+        std::string returnType = context->typeSpecifier()->getText();
         std::string functionName = context->IDENTIFIER()->getText();
+        
         std::vector<std::shared_ptr<ParameterNode>> parameters;
         if (context->parameterList()) {
             parameters = visitParameterList(context->parameterList());
         }
 
-        auto body = visitBlock(context->block());
+        std::shared_ptr<BlockNode> body = visitBlock(context->block());
+
         return createNode<FunctionDefinitionNode>(context, returnType, functionName, std::move(parameters), std::move(body));
     }
 
     std::vector<std::shared_ptr<ParameterNode>> ASTBuilder::visitParameterList(antlr::RyntraParser::ParameterListContext *context) {
         std::vector<std::shared_ptr<ParameterNode>> parameters;
+        auto types = context->typeSpecifier();
+        auto names = context->IDENTIFIER();
 
-        auto idTokens = context->IDENTIFIER();
-        auto intTokens = context->INT();
-
-        for (size_t i = 0; i < idTokens.size(); ++i) {
-            std::string type = "int";
-            if (i < intTokens.size()) {
-                type = intTokens[i]->getText();
-            }
-            std::string name = idTokens[i]->getText();
-            parameters.push_back(
-                std::make_shared<ParameterNode>(type, name)
-            );
+        for (size_t i = 0; i < names.size(); ++i) {
+            std::string paramType = types[i]->getText();
+            std::string paramName = names[i]->getText();
+            parameters.push_back(createNode<ParameterNode>(context, paramType, paramName));
         }
 
         return parameters;
@@ -99,10 +93,7 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<VariableDeclarationNode> ASTBuilder::visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *context) {
-        std::string varType = "";
-        if (context->INT()) varType = "int";
-        else if (context->STRING()) varType = "string";
-        else if (context->BOOL()) varType = "bool";
+        std::string varType = context->typeSpecifier()->getText();
         
         std::string varName = context->IDENTIFIER()->getText();
         std::shared_ptr<IASTNode> initialValue = nullptr;
@@ -214,7 +205,7 @@ namespace Ryntra::Compiler {
             return createNode<StringLiteralNode>(context, str);
         }
         else if (context->INTEGER_LITERAL()) {
-            int value = std::stoi(context->INTEGER_LITERAL()->getText());
+            long long value = std::stoll(context->INTEGER_LITERAL()->getText());
             return createNode<IntegerLiteralNode>(context, value);
         }
         else if (context->TRUE()) {
