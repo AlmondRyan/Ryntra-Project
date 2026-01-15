@@ -307,6 +307,8 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
+        symbolTable.enterScope();
+        loopDepth++;
         Type condType = evaluate(node->getCondition());
         if (condType.kind != TypeKind::Boolean) {
             ErrorHandler::getInstance().makeError(
@@ -315,11 +317,14 @@ namespace Ryntra::Compiler {
             );
         }
         visit(node->getBody());
+        loopDepth--;
+        symbolTable.exitScope();
     }
 
     void SemanticAnalyzer::visitForStatement(std::shared_ptr<ForStatementNode> node) {
         // For loop creates a new scope for its initializer
         symbolTable.enterScope();
+        loopDepth++;
 
         if (node->getInit()) {
             visit(node->getInit());
@@ -342,6 +347,7 @@ namespace Ryntra::Compiler {
         // Body will enter its own scope via visitBlock, which is fine
         visit(node->getBody());
 
+        loopDepth--;
         symbolTable.exitScope();
     }
 
@@ -369,5 +375,19 @@ namespace Ryntra::Compiler {
 
         lastTypeResult = {TypeKind::Int, ""};
         nodeTypes[node] = lastTypeResult;
+    }
+
+    void SemanticAnalyzer::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
+        if (!(loopDepth > 0)) {
+            ErrorHandler::getInstance().makeError("Continue must use in a loop statement.",
+                SourceLocation(node->getLocation()));
+        }
+    }
+
+    void SemanticAnalyzer::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
+        if (!(loopDepth > 0)) {
+            ErrorHandler::getInstance().makeError("Break must use in a loop statement.",
+                SourceLocation(node->getLocation()));
+        }
     }
 } // namespace Ryntra::Compiler

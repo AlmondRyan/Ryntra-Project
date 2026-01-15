@@ -87,6 +87,12 @@ namespace Ryntra::Compiler {
         else if (context->forStatement()) {
             return visitForStatement(context->forStatement());
         }
+        else if (context->breakStatement()) {
+            return visitBreakStatement(context->breakStatement());
+        }
+        else if (context->continueStatement()) {
+            return visitContinueStatement(context->continueStatement());
+        }
         else {
             return createNode<EmptyStatementNode>(context);
         }
@@ -345,5 +351,13 @@ namespace Ryntra::Compiler {
 
         auto body = visitBlock(context->block());
         return createNode<ForStatementNode>(context, std::move(init), std::move(cond), std::move(inc), std::move(body));
+    }
+
+    std::shared_ptr<BreakStatementNode> ASTBuilder::visitBreakStatement(antlr::RyntraParser::BreakStatementContext *context) {
+        return createNode<BreakStatementNode>(context);
+    }
+
+    std::shared_ptr<ContinueStatementNode> ASTBuilder::visitContinueStatement(antlr::RyntraParser::ContinueStatementContext *context) {
+        return createNode<ContinueStatementNode>(context);
     }
 } // namespace Ryntra::Compiler

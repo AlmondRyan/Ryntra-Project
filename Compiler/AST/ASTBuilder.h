@@ -31,6 +31,8 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IASTNode> visitPrimaryExpression(antlr::RyntraParser::PrimaryExpressionContext *context);
         std::shared_ptr<WhileStatementNode>     visitWhileStatement(antlr::RyntraParser::WhileStatementContext *context);
         std::shared_ptr<ForStatementNode>       visitForStatement(antlr::RyntraParser::ForStatementContext *context);
+        std::shared_ptr<BreakStatementNode> visitBreakStatement(antlr::RyntraParser::BreakStatementContext *context);
+        std::shared_ptr<ContinueStatementNode> visitContinueStatement(antlr::RyntraParser::ContinueStatementContext *context);
     private:
         /**
          * @brief Get the source location from ANTLR4 Parser Context.

@@ -232,4 +232,20 @@ namespace Ryntra::Compiler {
     void ForStatementNode::accept(IASTVisitor *visitor) {
         visitor->visitForStatement(std::static_pointer_cast<ForStatementNode>(shared_from_this()));
     }
+
+    std::string BreakStatementNode::toString() const {
+        return "BreakStatement()";
+    }
+
+    std::string ContinueStatementNode::toString() const {
+        return "ContinueStatement()";
+    }
+
+    void BreakStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitBreakStatement(std::static_pointer_cast<BreakStatementNode>(shared_from_this()));
+    }
+
+    void ContinueStatementNode::accept(IASTVisitor *visitor) {
+        visitor->visitContinueStatement(std::static_pointer_cast<ContinueStatementNode>(shared_from_this()));
+    }
 } // namespace Ryntra::Compiler

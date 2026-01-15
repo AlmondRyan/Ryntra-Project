@@ -443,11 +443,19 @@ namespace Ryntra::Compiler {
         llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "while.body");
         llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "while.end");
 
+        // Break target is after loop, Continue target is condition check
+        breakTargets.push_back(afterLoopBB);
+        continueTargets.push_back(loopCondBB);
+
         builder->CreateBr(loopCondBB);
 
         builder->SetInsertPoint(loopCondBB);
         llvm::Value* condValue = evaluate(node->getCondition());
-        if (!condValue) return;
+        if (!condValue) {
+            breakTargets.pop_back();
+            continueTargets.pop_back();
+            return;
+        }
         builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
 
         func->insert(func->end(), loopBodyBB);
@@ -460,6 +468,9 @@ namespace Ryntra::Compiler {
 
         func->insert(func->end(), afterLoopBB);
         builder->SetInsertPoint(afterLoopBB);
+
+        breakTargets.pop_back();
+        continueTargets.pop_back();
     }
 
     void IRGenerator::visitForStatement(std::shared_ptr<ForStatementNode> node) {
@@ -478,13 +489,22 @@ namespace Ryntra::Compiler {
         llvm::BasicBlock* loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
         llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
 
+        // Break target is after loop, Continue target is increment block
+        breakTargets.push_back(afterLoopBB);
+        continueTargets.push_back(loopIncBB);
+
         builder->CreateBr(loopCondBB);
 
         // 3. Condition check block
         builder->SetInsertPoint(loopCondBB);
         if (node->getCondition()) {
             llvm::Value* condValue = evaluate(node->getCondition());
-            if (!condValue) return;
+            if (!condValue) {
+                breakTargets.pop_back();
+                continueTargets.pop_back();
+                symbolTable.exitScope();
+                return;
+            }
             builder->CreateCondBr(condValue, loopBodyBB, afterLoopBB);
         } else {
             builder->CreateBr(loopBodyBB);
@@ -511,6 +531,9 @@ namespace Ryntra::Compiler {
         func->insert(func->end(), afterLoopBB);
         builder->SetInsertPoint(afterLoopBB);
 
+        breakTargets.pop_back();
+        continueTargets.pop_back();
+
         symbolTable.exitScope();
     }
 
@@ -530,5 +553,27 @@ namespace Ryntra::Compiler {
         }
         builder->CreateStore(newVal, v);
         lastValue = oldVal;
+    }
+
+    void IRGenerator::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
+        if (!breakTargets.empty()) {
+            builder->CreateBr(breakTargets.back());
+            
+            // Create a dead block to satisfy LLVM IR structure after terminator
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "break.dead", func);
+            builder->SetInsertPoint(deadBB);
+        }
+    }
+
+    void IRGenerator::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
+        if (!continueTargets.empty()) {
+            builder->CreateBr(continueTargets.back());
+            
+            // Create a dead block to satisfy LLVM IR structure after terminator
+            llvm::Function* func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "continue.dead", func);
+            builder->SetInsertPoint(deadBB);
+        }
     }
 } // namespace Ryntra::Compiler

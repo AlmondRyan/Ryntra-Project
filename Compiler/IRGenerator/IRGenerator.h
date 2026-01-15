@@ -36,6 +36,10 @@ namespace Ryntra::Compiler {
         void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) override;
         void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
         void visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
+
+        void visitBreakStatement(std::shared_ptr<BreakStatementNode> node) override;
+        void visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) override;
+
     private:
         std::unique_ptr<llvm::LLVMContext>   context;
         std::unique_ptr<llvm::Module>        module;
@@ -44,6 +48,9 @@ namespace Ryntra::Compiler {
         std::map<std::string, llvm::Value *> namedValues;
 
         llvm::Value *lastValue = nullptr;
+
+        std::vector<llvm::BasicBlock*> breakTargets;
+        std::vector<llvm::BasicBlock*> continueTargets;
 
         void visit(std::shared_ptr<IASTNode> node) {
             if (node)

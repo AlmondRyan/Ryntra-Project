@@ -856,5 +856,15 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode> body;
     };
 
+    class BreakStatementNode : public StatementNode {
+    public:
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+    };
 
+    class ContinueStatementNode : public StatementNode {
+    public:
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+    };
 } // namespace Ryntra::Compiler

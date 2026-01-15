@@ -29,5 +29,7 @@ namespace Ryntra::Compiler {
         virtual void visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) = 0;
         virtual void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) = 0;
         virtual void visitForStatement(std::shared_ptr<ForStatementNode> node) = 0;
+        virtual void visitBreakStatement(std::shared_ptr<BreakStatementNode> node) = 0;
+        virtual void visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) = 0;
     };
 }

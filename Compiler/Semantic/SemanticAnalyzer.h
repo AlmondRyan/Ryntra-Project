@@ -33,6 +33,9 @@ namespace Ryntra::Compiler {
         void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
         void visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
 
+        void visitBreakStatement(std::shared_ptr<BreakStatementNode> node) override;
+        void visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) override;
+
         Type getType(std::shared_ptr<IASTNode> node) {
             if (nodeTypes.find(node) != nodeTypes.end()) {
                 return nodeTypes[node];
@@ -45,6 +48,7 @@ namespace Ryntra::Compiler {
         TypeKind currentExpectedReturningType = TypeKind::Void;
         Type lastTypeResult = {TypeKind::Void, ""};
         std::unordered_map<std::shared_ptr<IASTNode>, Type> nodeTypes;
+        int loopDepth = 0;
 
         void visit(std::shared_ptr<IASTNode> node) {
             if (node) node->accept(this);
