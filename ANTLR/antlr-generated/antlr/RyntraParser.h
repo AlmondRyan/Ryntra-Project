@@ -14,23 +14,24 @@ class  RyntraParser : public antlr4::Parser {
 public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
-    FALSE = 8, WHILE = 9, FOR = 10, BREAK = 11, CONTINUE = 12, PLUS = 13, 
-    MINUS = 14, INC = 15, DEC = 16, MULT = 17, DIV = 18, ASSIGN = 19, GREATER = 20, 
-    LESS = 21, COND_EQUAL = 22, GREATER_EQ = 23, LESS_EQ = 24, LOGIC_AND = 25, 
-    LOGIC_OR = 26, NOT = 27, SEMICOLON = 28, LPAREN = 29, RPAREN = 30, LBRACE = 31, 
-    RBRACE = 32, COMMA = 33, STRING_LITERAL = 34, IDENTIFIER = 35, INTEGER_LITERAL = 36, 
-    LINE_COMMENT = 37, WS = 38
+    FALSE = 8, WHILE = 9, FOR = 10, BREAK = 11, CONTINUE = 12, LONG = 13, 
+    PLUS = 14, MINUS = 15, INC = 16, DEC = 17, MULT = 18, DIV = 19, ASSIGN = 20, 
+    GREATER = 21, LESS = 22, COND_EQUAL = 23, GREATER_EQ = 24, LESS_EQ = 25, 
+    LOGIC_AND = 26, LOGIC_OR = 27, NOT = 28, SEMICOLON = 29, LPAREN = 30, 
+    RPAREN = 31, LBRACE = 32, RBRACE = 33, COMMA = 34, STRING_LITERAL = 35, 
+    IDENTIFIER = 36, INTEGER_LITERAL = 37, LINE_COMMENT = 38, WS = 39
   };
 
   enum {
     RuleProgram = 0, RuleFunctionDefinition = 1, RuleParameterList = 2, 
-    RuleBlock = 3, RuleVariableDeclaration = 4, RuleStatement = 5, RuleReturnStatement = 6, 
-    RuleIfStatement = 7, RuleElseClause = 8, RuleWhileStatement = 9, RuleForStatement = 10, 
-    RuleBreakStatement = 11, RuleContinueStatement = 12, RuleFunctionCall = 13, 
-    RuleArgumentList = 14, RuleAssignment = 15, RuleExpression = 16, RuleLogicalOrExpression = 17, 
-    RuleLogicalAndExpression = 18, RuleEqualityExpression = 19, RuleRelationalExpression = 20, 
-    RuleAdditiveExpression = 21, RuleMultiplicativeExpression = 22, RuleUnaryExpression = 23, 
-    RulePostfixExpression = 24, RulePrimaryExpression = 25, RuleLiteral = 26
+    RuleBlock = 3, RuleTypeSpecifier = 4, RuleVariableDeclaration = 5, RuleStatement = 6, 
+    RuleReturnStatement = 7, RuleIfStatement = 8, RuleElseClause = 9, RuleWhileStatement = 10, 
+    RuleForStatement = 11, RuleBreakStatement = 12, RuleContinueStatement = 13, 
+    RuleFunctionCall = 14, RuleArgumentList = 15, RuleAssignment = 16, RuleExpression = 17, 
+    RuleLogicalOrExpression = 18, RuleLogicalAndExpression = 19, RuleEqualityExpression = 20, 
+    RuleRelationalExpression = 21, RuleAdditiveExpression = 22, RuleMultiplicativeExpression = 23, 
+    RuleUnaryExpression = 24, RulePostfixExpression = 25, RulePrimaryExpression = 26, 
+    RuleLiteral = 27
   };
 
   explicit RyntraParser(antlr4::TokenStream *input);
@@ -54,6 +55,7 @@ public:
   class FunctionDefinitionContext;
   class ParameterListContext;
   class BlockContext;
+  class TypeSpecifierContext;
   class VariableDeclarationContext;
   class StatementContext;
   class ReturnStatementContext;
@@ -153,16 +155,33 @@ public:
 
   BlockContext* block();
 
+  class  TypeSpecifierContext : public antlr4::ParserRuleContext {
+  public:
+    TypeSpecifierContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *INT();
+    antlr4::tree::TerminalNode *STRING();
+    antlr4::tree::TerminalNode *BOOL();
+    std::vector<antlr4::tree::TerminalNode *> LONG();
+    antlr4::tree::TerminalNode* LONG(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  TypeSpecifierContext* typeSpecifier();
+
   class  VariableDeclarationContext : public antlr4::ParserRuleContext {
   public:
     VariableDeclarationContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *INT();
+    TypeSpecifierContext *typeSpecifier();
     antlr4::tree::TerminalNode *IDENTIFIER();
     antlr4::tree::TerminalNode *ASSIGN();
     ExpressionContext *expression();
-    antlr4::tree::TerminalNode *STRING();
-    antlr4::tree::TerminalNode *BOOL();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

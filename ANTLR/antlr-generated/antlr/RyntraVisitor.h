@@ -28,6 +28,8 @@ public:
 
     virtual std::any visitBlock(RyntraParser::BlockContext *context) = 0;
 
+    virtual std::any visitTypeSpecifier(RyntraParser::TypeSpecifierContext *context) = 0;
+
     virtual std::any visitVariableDeclaration(RyntraParser::VariableDeclarationContext *context) = 0;
 
     virtual std::any visitStatement(RyntraParser::StatementContext *context) = 0;

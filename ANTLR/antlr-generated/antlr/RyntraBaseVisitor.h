@@ -33,6 +33,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitTypeSpecifier(RyntraParser::TypeSpecifierContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) override {
     return visitChildren(ctx);
   }

@@ -15,6 +15,7 @@ WHILE: 'while';
 FOR: 'for';
 BREAK: 'break';
 CONTINUE: 'continue';
+LONG: 'long';
 
 // Operators
 PLUS: '+';
@@ -66,10 +67,20 @@ block
     : LBRACE statement* RBRACE
     ;
 
+typeSpecifier
+    : INT
+    | STRING
+    | BOOL
+    | LONG
+    | LONG LONG
+    ;
+
 variableDeclaration
-    : INT IDENTIFIER (ASSIGN expression)?
-    | STRING IDENTIFIER (ASSIGN expression)?
-    | BOOL IDENTIFIER (ASSIGN expression)?
+    : typeSpecifier IDENTIFIER (ASSIGN expression)?
+//    | STRING IDENTIFIER (ASSIGN expression)?
+//    | BOOL IDENTIFIER (ASSIGN expression)?
+//    | LONG IDENTIFIER (ASSIGN expression)?
+//    | LONG LONG IDENTIFIER (ASSIGN expression)?
     ;
 
 statement:

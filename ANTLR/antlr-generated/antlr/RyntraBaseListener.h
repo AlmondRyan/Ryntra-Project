@@ -30,6 +30,9 @@ public:
   virtual void enterBlock(RyntraParser::BlockContext * /*ctx*/) override { }
   virtual void exitBlock(RyntraParser::BlockContext * /*ctx*/) override { }
 
+  virtual void enterTypeSpecifier(RyntraParser::TypeSpecifierContext * /*ctx*/) override { }
+  virtual void exitTypeSpecifier(RyntraParser::TypeSpecifierContext * /*ctx*/) override { }
+
   virtual void enterVariableDeclaration(RyntraParser::VariableDeclarationContext * /*ctx*/) override { }
   virtual void exitVariableDeclaration(RyntraParser::VariableDeclarationContext * /*ctx*/) override { }
 

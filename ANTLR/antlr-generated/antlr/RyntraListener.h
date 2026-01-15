@@ -28,6 +28,9 @@ public:
   virtual void enterBlock(RyntraParser::BlockContext *ctx) = 0;
   virtual void exitBlock(RyntraParser::BlockContext *ctx) = 0;
 
+  virtual void enterTypeSpecifier(RyntraParser::TypeSpecifierContext *ctx) = 0;
+  virtual void exitTypeSpecifier(RyntraParser::TypeSpecifierContext *ctx) = 0;
+
   virtual void enterVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) = 0;
   virtual void exitVariableDeclaration(RyntraParser::VariableDeclarationContext *ctx) = 0;
 
