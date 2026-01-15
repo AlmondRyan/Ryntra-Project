@@ -175,10 +175,13 @@ namespace Ryntra::Compiler {
                 std::vector<llvm::Value*> stringsToFree; // Track temporary strings from intToString
                 
                 for (auto argNode : node->getArguments()) {
-                    // Check if this argument is a call to __builtin_intToString
+                    // Check if this argument is a call to a builtin that returns a temporary string
                     bool isTempString = false;
                     if (auto callNode = std::dynamic_pointer_cast<FunctionCallNode>(argNode)) {
-                        if (callNode->getFunctionName() == "__builtin_intToString") {
+                        std::string calleeName = callNode->getFunctionName();
+                        if (calleeName == "__builtin_intToString" || 
+                            calleeName == "__builtin_longToString" || 
+                            calleeName == "__builtin_longlongToString") {
                             isTempString = true;
                         }
                     }
@@ -232,7 +235,83 @@ namespace Ryntra::Compiler {
                 
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
-            } else {
+            } else if (funcName == "__builtin_longToString") {
+                // Declare rcrt_builtin_longToString if not exists: char* rcrt_builtin_longToString(long)
+                std::vector<llvm::Type*> argsTypes;
+                argsTypes.push_back(llvm::Type::getInt64Ty(*context));
+
+                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                    llvm::PointerType::get(*context, 0), // return char*
+                    argsTypes,
+                    false
+                );
+                
+                llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_longToString", toStringType);
+                
+                std::vector<llvm::Value*> args;
+                for (auto arg : node->getArguments()) {
+                    llvm::Value* val = evaluate(arg);
+                    if (val) {
+                        // Ensure it's i64
+                        if (val->getType()->isIntegerTy() && val->getType()->getIntegerBitWidth() < 64) {
+                            val = builder->CreateSExt(val, llvm::Type::getInt64Ty(*context), "sext");
+                        }
+                        args.push_back(val);
+                    }
+                }
+                
+                lastValue = builder->CreateCall(toStringFunc, args);
+                return;
+            } else if (funcName == "__builtin_longlongToString") {
+                // Declare rcrt_builtin_longlongToString if not exists: char* rcrt_builtin_longlongToString(long long)
+                std::vector<llvm::Type*> argsTypes;
+                argsTypes.push_back(llvm::Type::getInt64Ty(*context));
+
+                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                    llvm::PointerType::get(*context, 0), // return char*
+                    argsTypes,
+                    false
+                );
+                
+                llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_longlongToString", toStringType);
+                
+                std::vector<llvm::Value*> args;
+                for (auto arg : node->getArguments()) {
+                    llvm::Value* val = evaluate(arg);
+                    if (val) {
+                        // Ensure it's i64
+                        if (val->getType()->isIntegerTy() && val->getType()->getIntegerBitWidth() < 64) {
+                            val = builder->CreateSExt(val, llvm::Type::getInt64Ty(*context), "sext");
+                        }
+                        args.push_back(val);
+                    }
+                }
+                
+                lastValue = builder->CreateCall(toStringFunc, args);
+                 return;
+             } else if (funcName == "__builtin_free") {
+                 // Declare rcrt_builtin_free if not exists: void rcrt_builtin_free(void*)
+                 llvm::FunctionType* freeType = llvm::FunctionType::get(
+                     llvm::Type::getVoidTy(*context),
+                     {llvm::PointerType::get(*context, 0)},
+                     false
+                 );
+                 llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
+                 
+                 std::vector<llvm::Value*> args;
+                 for (auto arg : node->getArguments()) {
+                     llvm::Value* val = evaluate(arg);
+                     if (val) {
+                         args.push_back(val);
+                     }
+                 }
+                 
+                 if (!args.empty()) {
+                     builder->CreateCall(freeFunc, args[0]);
+                 }
+                 lastValue = nullptr;
+                 return;
+             } else {
                 // Non-builtin function lookup in Module
                 llvm::Function* callee = module->getFunction(funcName);
                 if (callee) {
