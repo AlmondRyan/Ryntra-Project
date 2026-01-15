@@ -173,7 +173,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string AssignmentExpressionNode::toString() const {
-        return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
+        return "AssignmentExpression(" + identifier + " " + operand + " " + expression->toString() + ")";
     }
 
     std::string ReturnStatementNode::toString() const {

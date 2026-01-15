@@ -24,7 +24,18 @@ INC: '++';
 DEC: '--';
 MULT: '*';
 DIV: '/';
+MOD: '%';
 ASSIGN: '=';
+ADD_ASSIGN: '+=';
+SUB_ASSIGN: '-=';
+MUL_ASSIGN: '*=';
+DIV_ASSIGN: '/=';
+MOD_ASSIGN: '%=';
+AND_ASSIGN: '&=';
+OR_ASSIGN: '|=';
+XOR_ASSIGN: '^=';
+LSHIFT_ASSIGN: '<<=';
+RSHIFT_ASSIGN: '>>=';
 GREATER: '>';
 LESS: '<';
 COND_EQUAL: '==';
@@ -130,7 +141,7 @@ continueStatement
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
 argumentList: expression (COMMA expression)*;
 
-assignment: IDENTIFIER ASSIGN expression;
+assignment: IDENTIFIER (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | AND_ASSIGN | OR_ASSIGN | XOR_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN) expression;
 
 expression
     : logicalOrExpression
@@ -173,7 +184,7 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : unaryExpression ((MULT | DIV) unaryExpression)*
+    : unaryExpression ((MULT | DIV | MOD) unaryExpression)*
     ;
 
 unaryExpression

@@ -635,12 +635,14 @@ namespace Ryntra::Compiler {
          * @brief Constructor that creates an assignment expression node.
          * @param id The identifier (variable name) being assigned to.
          * @param exp The expression whose value will be assigned to the identifier.
+         * @param opr The assignment operator (e.g., "=", "+=", etc.).
          */
-        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp) : identifier(std::move(id)), expression(std::move(exp)) {}
+        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp, std::string opr = "=") 
+            : identifier(std::move(id)), expression(std::move(exp)), operand(std::move(opr)) {}
 
         /**
          * @brief Get the string representation of the Assignment Expression Node.
-         * @return A string representation of the form "AssignmentExpression(identifier = expression)".
+         * @return A string representation of the form "AssignmentExpression(identifier op expression)".
          */
         std::string toString() const override;
 
@@ -662,9 +664,16 @@ namespace Ryntra::Compiler {
          */
         std::shared_ptr<IASTNode> getExpression() const { return expression; }
 
+        /**
+         * @brief Get the operator used in assignment.
+         * @return The operator string.
+         */
+        const std::string &getOp() const { return operand; }
+
     private:
         std::string               identifier; ///< The identifier (variable name) being assigned to
         std::shared_ptr<IASTNode> expression; ///< The expression providing the value for assignment
+        std::string               operand;    ///< The assignment operator (e.g., "=", "+=", etc.)
     };
 
     /**

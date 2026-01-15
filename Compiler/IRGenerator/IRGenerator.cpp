@@ -490,9 +490,8 @@ namespace Ryntra::Compiler {
         if (!leftValue || !rightValue) return;
 
         // Handle type promotion for arithmetic and bitwise operations
-        if (op == "+" || op == "-" || op == "*" || op == "/" || 
-            op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" ||
-            op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==") {
+        if (op == "*" || op == "/" || op == "%" || op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" ||
+            op == "+" || op == "-" || op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==") {
             
             llvm::Type* leftType = leftValue->getType();
             llvm::Type* rightType = rightValue->getType();
@@ -523,6 +522,10 @@ namespace Ryntra::Compiler {
         }
         if ("/" == op) {
             lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            return;
+        }
+        if (op == "%") {
+            lastValue = builder->CreateSRem(leftValue, rightValue, "remtmp");
             return;
         }
 
@@ -578,6 +581,7 @@ namespace Ryntra::Compiler {
 
     void IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         std::string idName = node->getIdentifier();
+        std::string op = node->getOp();
         llvm::Value* alloca = namedValues[idName];
         
         if (!alloca) {
@@ -589,15 +593,44 @@ namespace Ryntra::Compiler {
         if (val) {
             // Handle type conversion
             llvm::Type* targetType = ((llvm::AllocaInst*)alloca)->getAllocatedType();
-            if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
-                unsigned valWidth = val->getType()->getIntegerBitWidth();
-                unsigned targetWidth = targetType->getIntegerBitWidth();
-                if (valWidth < targetWidth) {
-                    val = builder->CreateSExt(val, targetType, "sext");
-                } else if (valWidth > targetWidth) {
-                    val = builder->CreateTrunc(val, targetType, "trunc");
+            
+            if (op != "=") {
+                // Compound assignment: Load, Op, Store
+                unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
+                llvm::Value* currentVal = builder->CreateLoad(targetType, alloca, idName + ".load");
+                ((llvm::LoadInst*)currentVal)->setAlignment(llvm::Align(align));
+
+                // Handle type promotion for the operation
+                if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                    unsigned targetWidth = targetType->getIntegerBitWidth();
+                    if (valWidth < targetWidth) {
+                        val = builder->CreateSExt(val, targetType, "sext");
+                    }
+                }
+
+                if (op == "+=") val = builder->CreateAdd(currentVal, val, "addtmp");
+                else if (op == "-=") val = builder->CreateSub(currentVal, val, "subtmp");
+                else if (op == "*=") val = builder->CreateMul(currentVal, val, "multmp");
+                else if (op == "/=") val = builder->CreateSDiv(currentVal, val, "divtmp");
+                else if (op == "%=") val = builder->CreateSRem(currentVal, val, "remtmp");
+                else if (op == "&=") val = builder->CreateAnd(currentVal, val, "andtmp");
+                else if (op == "|=") val = builder->CreateOr(currentVal, val, "ortmp");
+                else if (op == "^=") val = builder->CreateXor(currentVal, val, "xortmp");
+                else if (op == "<<=") val = builder->CreateShl(currentVal, val, "shltmp");
+                else if (op == ">>=") val = builder->CreateAShr(currentVal, val, "ashrtmp");
+            } else {
+                if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                    unsigned targetWidth = targetType->getIntegerBitWidth();
+                    if (valWidth < targetWidth) {
+                        val = builder->CreateSExt(val, targetType, "sext");
+                    } else if (valWidth > targetWidth) {
+                        val = builder->CreateTrunc(val, targetType, "trunc");
+                    }
                 }
             }
+            
             auto store = builder->CreateStore(val, alloca);
             unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
             store->setAlignment(llvm::Align(align));

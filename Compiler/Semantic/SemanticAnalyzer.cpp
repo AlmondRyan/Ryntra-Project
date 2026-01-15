@@ -237,7 +237,7 @@ namespace Ryntra::Compiler {
             return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
         };
 
-        if (op == "+" || op == "-" || op == "*" || op == "/" ||
+        if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
             op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>") {
             if (!(isInteger(lhs.kind) && isInteger(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
@@ -276,6 +276,7 @@ namespace Ryntra::Compiler {
 
     void SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         auto idName = node->getIdentifier();
+        auto op = node->getOp();
         auto symbol = symbolTable.lookupSymbolInScopes(idName);
 
         if (symbol == std::nullopt) {
@@ -289,6 +290,18 @@ namespace Ryntra::Compiler {
 
         Type rhsType = evaluate(node->getExpression());
         Type lhsType = symbol->type;
+
+        auto isInteger = [](TypeKind kind) {
+            return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
+        };
+
+        if (op != "=") {
+            if (!(isInteger(lhsType.kind) && isInteger(rhsType.kind))) {
+                ErrorHandler::getInstance().makeError(
+                    "Compound assignment operator " + op + " only use between integer types.",
+                    SourceLocation(node->getLocation()));
+            }
+        }
 
         if (!isCompatible(lhsType.kind, rhsType.kind)) {
             ErrorHandler::getInstance().makeError(

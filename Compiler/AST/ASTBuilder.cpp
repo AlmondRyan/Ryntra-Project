@@ -298,8 +298,9 @@ namespace Ryntra::Compiler {
 
     std::shared_ptr<AssignmentExpressionNode> ASTBuilder::visitAssignment(antlr::RyntraParser::AssignmentContext *context) {
         std::string idName = context->IDENTIFIER()->getText();
+        std::string op = context->children[1]->getText();
         auto expr = visitExpression(context->expression());
-        return createNode<AssignmentExpressionNode>(context, idName, std::move(expr));
+        return createNode<AssignmentExpressionNode>(context, idName, std::move(expr), op);
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context) {
