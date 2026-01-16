@@ -548,7 +548,62 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
-        llvm::Value *val = evaluate(node->getInitialValue());
+        llvm::Value *val = nullptr;
+
+        auto initialValue = node->getInitialValue();
+        if (initialValue) {
+            if (auto callNode = std::dynamic_pointer_cast<FunctionCallNode>(initialValue)) {
+                std::string funcName = callNode->getFunctionName();
+                if (funcName == "__builtin_scan") {
+                    std::string varTypeName = node->getVarType();
+
+                    if (varTypeName == "int") {
+                        llvm::FunctionType *scanType = llvm::FunctionType::get(
+                            llvm::Type::getInt32Ty(*context),
+                            {},
+                            false);
+                        llvm::FunctionCallee scanFunc = module->getOrInsertFunction("rcrt_builtin_scan_int", scanType);
+                        val = builder->CreateCall(scanFunc, {});
+                    } else if (varTypeName == "long" || varTypeName == "long long") {
+                        llvm::FunctionType *scanType = llvm::FunctionType::get(
+                            llvm::Type::getInt64Ty(*context),
+                            {},
+                            false);
+                        llvm::FunctionCallee scanFunc = module->getOrInsertFunction("rcrt_builtin_scan_long", scanType);
+                        val = builder->CreateCall(scanFunc, {});
+                    } else if (varTypeName == "float") {
+                        llvm::FunctionType *scanType = llvm::FunctionType::get(
+                            llvm::Type::getFloatTy(*context),
+                            {},
+                            false);
+                        llvm::FunctionCallee scanFunc = module->getOrInsertFunction("rcrt_builtin_scan_float", scanType);
+                        val = builder->CreateCall(scanFunc, {});
+                    } else if (varTypeName == "double") {
+                        llvm::FunctionType *scanType = llvm::FunctionType::get(
+                            llvm::Type::getDoubleTy(*context),
+                            {},
+                            false);
+                        llvm::FunctionCallee scanFunc = module->getOrInsertFunction("rcrt_builtin_scan_double", scanType);
+                        val = builder->CreateCall(scanFunc, {});
+                    } else if (varTypeName == "bool") {
+                        llvm::FunctionType *scanType = llvm::FunctionType::get(
+                            llvm::Type::getInt32Ty(*context),
+                            {},
+                            false);
+                        llvm::FunctionCallee scanFunc = module->getOrInsertFunction("rcrt_builtin_scan_bool", scanType);
+                        llvm::Value *intVal = builder->CreateCall(scanFunc, {});
+                        llvm::Value *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+                        val = builder->CreateICmpNE(intVal, zero, "tobool");
+                    } else {
+                        val = evaluate(initialValue);
+                    }
+                } else {
+                    val = evaluate(initialValue);
+                }
+            } else {
+                val = evaluate(initialValue);
+            }
+        }
 
         llvm::Type       *type = mapType(*context, node->getVarType());
         llvm::AllocaInst *alloca = builder->CreateAlloca(type, nullptr, node->getVarName());

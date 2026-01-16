@@ -161,6 +161,15 @@ namespace Ryntra::Compiler {
         const auto &args = node->getArguments();
         const auto &params = funcSymbol->parameters;
 
+        if (funcName == "__builtin_scan") {
+            ErrorHandler::getInstance().makeError(
+                "__builtin_scan can only be used as a variable initializer like '[type] name = __builtin_scan()'.",
+                SourceLocation(node->getLocation().line, node->getLocation().column));
+            lastTypeResult = {TypeKind::ErrorType, ""};
+            nodeTypes[node] = lastTypeResult;
+            return;
+        }
+
         if (args.size() != params.size()) {
             ErrorHandler::getInstance().makeError(
                 "Function " + funcName + " requires " + std::to_string(params.size()) +
@@ -236,12 +245,44 @@ namespace Ryntra::Compiler {
 
         auto initialValue = node->getInitialValue();
         if (initialValue) {
-            Type initValueType = evaluate(initialValue);
+            bool handledBuiltinScan = false;
 
-            if (!isCompatible(declaredType, initValueType.kind)) {
-                ErrorHandler::getInstance().makeError(
-                    "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType.kind) + ".",
-                    SourceLocation(node->getLocation()));
+            if (auto callNode = std::dynamic_pointer_cast<FunctionCallNode>(initialValue)) {
+                std::string funcName = callNode->getFunctionName();
+                if (funcName == "__builtin_scan") {
+                    handledBuiltinScan = true;
+
+                    const auto &args = callNode->getArguments();
+                    if (!args.empty()) {
+                        ErrorHandler::getInstance().makeError(
+                            "__builtin_scan does not accept any arguments.",
+                            SourceLocation(callNode->getLocation()));
+                    }
+
+                    bool supportedType =
+                        isInteger(declaredType) ||
+                        isFloatingPoint(declaredType) ||
+                        declaredType == TypeKind::Boolean;
+
+                    if (!supportedType) {
+                        ErrorHandler::getInstance().makeError(
+                            "Type " + mapTypeToString(declaredType) + " cannot be initialized by __builtin_scan.",
+                            SourceLocation(node->getLocation()));
+                    }
+
+                    lastTypeResult = {declaredType, ""};
+                    nodeTypes[callNode] = lastTypeResult;
+                }
+            }
+
+            if (!handledBuiltinScan) {
+                Type initValueType = evaluate(initialValue);
+
+                if (!isCompatible(declaredType, initValueType.kind)) {
+                    ErrorHandler::getInstance().makeError(
+                        "Mismatched value type. Expect " + mapTypeToString(declaredType) + " but got " + mapTypeToString(initValueType.kind) + ".",
+                        SourceLocation(node->getLocation()));
+                }
             }
         }
 

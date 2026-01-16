@@ -112,6 +112,11 @@ namespace Ryntra::Compiler {
             Symbol doubleParams({TypeKind::Int, ""}, "size", SymbolKind::Parameter);
             sBuiltinDoubleToString.parameters.push_back(doubleParams);
             functions.emplace(sBuiltinDoubleToString.name, sBuiltinDoubleToString);
+
+            FunctionSymbol sBuiltinScan;
+            sBuiltinScan.name = "__builtin_scan";
+            sBuiltinScan.returnType = {TypeKind::ErrorType, ""};
+            functions.emplace(sBuiltinScan.name, sBuiltinScan);
         }
     public:
         void enterScope() {
