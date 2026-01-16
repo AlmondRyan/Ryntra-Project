@@ -39,6 +39,7 @@ RSHIFT_ASSIGN: '>>=';
 GREATER: '>';
 LESS: '<';
 COND_EQUAL: '==';
+NOT_EQUAL: '!=';
 GREATER_EQ: '>=';
 LESS_EQ: '<=';
 LOGIC_AND: '&&';
@@ -168,7 +169,7 @@ andExpression
     ;
 
 equalityExpression
-    : relationalExpression ((COND_EQUAL) relationalExpression)*
+    : relationalExpression ((COND_EQUAL | NOT_EQUAL) relationalExpression)*
     ;
 
 relationalExpression
