@@ -17,6 +17,7 @@ namespace Ryntra::Compiler {
         void visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) override;
         void visitIdentifier(std::shared_ptr<IdentifierNode> node) override;
         void visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) override;
+        void visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) override;
         void visitParameter(std::shared_ptr<ParameterNode> node) override;
         void visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) override;
         void visitStringLiteral(std::shared_ptr<StringLiteralNode> node) override;
@@ -52,6 +53,8 @@ namespace Ryntra::Compiler {
 
         bool isCompatible(TypeKind expected, TypeKind actual);
         bool isInteger(TypeKind kind);
+        bool isFloatingPoint(TypeKind kind);
+        bool isNumeric(TypeKind kind);
 
         void visit(std::shared_ptr<IASTNode> node) {
             if (node) node->accept(this);
@@ -68,6 +71,8 @@ namespace Ryntra::Compiler {
             case TypeKind::Int: return "int";
             case TypeKind::Long: return "long";
             case TypeKind::LongLong: return "long long";
+            case TypeKind::Float: return "float";
+            case TypeKind::Double: return "double";
             case TypeKind::String: return "string";
             case TypeKind::Void: return "void";
             case TypeKind::Boolean: return "bool";
@@ -80,6 +85,8 @@ namespace Ryntra::Compiler {
             if (kind == "int") return TypeKind::Int;
             if (kind == "long") return TypeKind::Long;
             if (kind == "long long") return TypeKind::LongLong;
+            if (kind == "float") return TypeKind::Float;
+            if (kind == "double") return TypeKind::Double;
             if (kind == "string") return TypeKind::String;
             if (kind == "void") return TypeKind::Void;
             if (kind == "bool") return TypeKind::Boolean;

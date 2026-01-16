@@ -33,3 +33,25 @@ char *rcrt_builtin_longlongToString(long long value) {
     snprintf(buf, (size_t)len + 1, "%lld", value);
     return buf;
 }
+
+char *rcrt_builtin_floatToString(float value) {
+    int len = snprintf(NULL, 0, "%f", value);
+    if (len < 0) return NULL;
+
+    char *buf = malloc((size_t)len + 1);
+    if (!buf) return NULL;
+
+    snprintf(buf, (size_t)len + 1, "%f", value);
+    return buf;
+}
+
+char *rcrt_builtin_doubleToString(double value) {
+    int len = snprintf(NULL, 0, "%lf", value);
+    if (len < 0) return NULL;
+
+    char *buf = malloc((size_t)len + 1);
+    if (!buf) return NULL;
+
+    snprintf(buf, (size_t)len + 1, "%lf", value);
+    return buf;
+}

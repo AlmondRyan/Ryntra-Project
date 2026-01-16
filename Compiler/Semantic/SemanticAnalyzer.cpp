@@ -42,6 +42,14 @@ namespace Ryntra::Compiler {
         return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
     }
 
+    bool SemanticAnalyzer::isFloatingPoint(TypeKind kind) {
+        return kind == TypeKind::Float || kind == TypeKind::Double;
+    }
+
+    bool SemanticAnalyzer::isNumeric(TypeKind kind) {
+        return isInteger(kind) || isFloatingPoint(kind);
+    }
+
     bool SemanticAnalyzer::isCompatible(TypeKind expected, TypeKind actual) {
         if (expected == actual) return true;
         if (isInteger(expected) && isInteger(actual)) {
@@ -55,6 +63,22 @@ namespace Ryntra::Compiler {
             };
             return rank(actual) <= rank(expected);
         }
+        
+        // Float < Double
+        if (isFloatingPoint(expected) && isFloatingPoint(actual)) {
+            auto rank = [](TypeKind k) {
+                if (k == TypeKind::Float) return 1;
+                if (k == TypeKind::Double) return 2;
+                return 0;
+            };
+            return rank(actual) <= rank(expected);
+        }
+
+        // Integer can be promoted to FloatingPoint
+        if (isFloatingPoint(expected) && isInteger(actual)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -184,6 +208,11 @@ namespace Ryntra::Compiler {
         nodeTypes[node] = lastTypeResult;
     }
 
+    void SemanticAnalyzer::visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) {
+        lastTypeResult = {node->getTypeKind(), ""};
+        nodeTypes[node] = lastTypeResult;
+    }
+
     void SemanticAnalyzer::visitParameter(std::shared_ptr<ParameterNode> node) {
     }
 
@@ -233,19 +262,33 @@ namespace Ryntra::Compiler {
         Type        rhs = evaluate(node->getRight());
         std::string op = node->getOp();
 
-        auto isInteger = [](TypeKind kind) {
-            return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
-        };
-
-        if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
-            op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>") {
-            if (!(isInteger(lhs.kind) && isInteger(rhs.kind))) {
+        if (op == "+" || op == "-" || op == "*" || op == "/") {
+            if (!(isNumeric(lhs.kind) && isNumeric(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
-                    "Binary Arithmical or Bitwise Operator only use between arithmetic type.",
+                    "Binary Arithmical Operator " + op + " only use between numeric types.",
                     SourceLocation(node->getLocation()));
             }
             
-            // Type promotion: if any is LongLong, result is LongLong. If any is Long, result is Long. Otherwise Int.
+            // Type promotion: Double > Float > LongLong > Long > Int
+            if (lhs.kind == TypeKind::Double || rhs.kind == TypeKind::Double) {
+                lastTypeResult = {TypeKind::Double, ""};
+            } else if (lhs.kind == TypeKind::Float || rhs.kind == TypeKind::Float) {
+                lastTypeResult = {TypeKind::Float, ""};
+            } else if (lhs.kind == TypeKind::LongLong || rhs.kind == TypeKind::LongLong) {
+                lastTypeResult = {TypeKind::LongLong, ""};
+            } else if (lhs.kind == TypeKind::Long || rhs.kind == TypeKind::Long) {
+                lastTypeResult = {TypeKind::Long, ""};
+            } else {
+                lastTypeResult = {TypeKind::Int, ""};
+            }
+        } else if (op == "%" || op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>") {
+            if (!(isInteger(lhs.kind) && isInteger(rhs.kind))) {
+                ErrorHandler::getInstance().makeError(
+                    "Operator " + op + " only use between integer types.",
+                    SourceLocation(node->getLocation()));
+            }
+            
+            // Type promotion for integers
             if (lhs.kind == TypeKind::LongLong || rhs.kind == TypeKind::LongLong) {
                 lastTypeResult = {TypeKind::LongLong, ""};
             } else if (lhs.kind == TypeKind::Long || rhs.kind == TypeKind::Long) {
@@ -261,7 +304,7 @@ namespace Ryntra::Compiler {
             }
             lastTypeResult = {TypeKind::Boolean, ""};
         } else if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
-            if (lhs.kind != rhs.kind && !(isInteger(lhs.kind) && isInteger(rhs.kind))) {
+            if (!(isNumeric(lhs.kind) && isNumeric(rhs.kind)) && lhs.kind != rhs.kind) {
                 ErrorHandler::getInstance().makeError(
                     "Cannot compare between different types.",
                     SourceLocation(node->getLocation()));
@@ -291,15 +334,21 @@ namespace Ryntra::Compiler {
         Type rhsType = evaluate(node->getExpression());
         Type lhsType = symbol->type;
 
-        auto isInteger = [](TypeKind kind) {
-            return kind == TypeKind::Int || kind == TypeKind::Long || kind == TypeKind::LongLong;
-        };
-
         if (op != "=") {
-            if (!(isInteger(lhsType.kind) && isInteger(rhsType.kind))) {
-                ErrorHandler::getInstance().makeError(
-                    "Compound assignment operator " + op + " only use between integer types.",
-                    SourceLocation(node->getLocation()));
+            bool isArithmetic = (op == "+=" || op == "-=" || op == "*=" || op == "/=");
+            if (isArithmetic) {
+                if (!(isNumeric(lhsType.kind) && isNumeric(rhsType.kind))) {
+                    ErrorHandler::getInstance().makeError(
+                        "Compound assignment operator " + op + " only use between numeric types.",
+                        SourceLocation(node->getLocation()));
+                }
+            } else {
+                // Bitwise or Modulo compound assignment
+                if (!(isInteger(lhsType.kind) && isInteger(rhsType.kind))) {
+                    ErrorHandler::getInstance().makeError(
+                        "Compound assignment operator " + op + " only use between integer types.",
+                        SourceLocation(node->getLocation()));
+                }
             }
         }
 
@@ -332,11 +381,19 @@ namespace Ryntra::Compiler {
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Boolean, ""};
             }
-        } else if (op == "-" || op == "~") {
-            if (exprType.kind == TypeKind::Int || exprType.kind == TypeKind::Long || exprType.kind == TypeKind::LongLong) {
+        } else if (op == "-") {
+            if (isNumeric(exprType.kind)) {
                 lastTypeResult = exprType;
             } else {
-                ErrorHandler::getInstance().makeError("Operator " + op + " only use in integer type.",
+                ErrorHandler::getInstance().makeError("Operator - only use in numeric type.",
+                    SourceLocation(node->getLocation()));
+                lastTypeResult = {TypeKind::Int, ""};
+            }
+        } else if (op == "~") {
+            if (isInteger(exprType.kind)) {
+                lastTypeResult = exprType;
+            } else {
+                ErrorHandler::getInstance().makeError("Operator ~ only use in integer type.",
                     SourceLocation(node->getLocation()));
                 lastTypeResult = {TypeKind::Int, ""};
             }
@@ -402,9 +459,9 @@ namespace Ryntra::Compiler {
             return;
         }
 
-        if (!(symbol->type.kind == TypeKind::Int || symbol->type.kind == TypeKind::Long || symbol->type.kind == TypeKind::LongLong)) {
+        if (!isNumeric(symbol->type.kind)) {
             ErrorHandler::getInstance().makeError(
-                "Increment/Decrement operator can only be applied to integer types, but got " + mapTypeToString(symbol->type.kind) + ".",
+                "Increment/Decrement operator can only be applied to numeric types, but got " + mapTypeToString(symbol->type.kind) + ".",
                 SourceLocation(node->getLocation())
             );
             lastTypeResult = {TypeKind::ErrorType, ""};

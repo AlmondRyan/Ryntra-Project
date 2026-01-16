@@ -11,6 +11,7 @@ namespace Ryntra::Compiler {
     // Forward Declaration
     class IASTVisitor;
     class UnaryExpressionNode;
+    class FloatingLiteralNode;
 
     /**
      * @brief AST (Abstract Syntax Tree) Node Bass Class
@@ -177,6 +178,48 @@ namespace Ryntra::Compiler {
 
     private:
         bool value;
+    };
+
+    /**
+     * @brief The Floating Literal Node.
+     * @details Represents the Floating Constant Node in AST.
+     */
+    class FloatingLiteralNode : public LiteralNode {
+    public:
+        /**
+         * @brief The Constructor.
+         * @param val The value of the node.
+         * @param kind The inferred type kind (Float or Double).
+         */
+        FloatingLiteralNode(double val, TypeKind kind = TypeKind::Double) : value(val), typeKind(kind) {}
+
+        /**
+         * @brief Get the value.
+         * @return The double value.
+         */
+        double getValue() const { return value; }
+
+        /**
+         * @brief Get the inferred type kind.
+         * @return The TypeKind.
+         */
+        TypeKind getTypeKind() const { return typeKind; }
+
+        /**
+         * @brief Get the string representation.
+         * @return The string representation.
+         */
+        std::string toString() const override;
+
+        /**
+         * @brief Accepts the visiting from the visitor.
+         * @param visitor The pointer that points to the visitor.
+         */
+        void accept(IASTVisitor *visitor) override;
+
+    private:
+        double value;
+        TypeKind typeKind;
     };
 
     /**

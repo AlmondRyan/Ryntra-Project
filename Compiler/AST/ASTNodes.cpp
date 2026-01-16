@@ -14,6 +14,10 @@ namespace Ryntra::Compiler {
         visitor->visitBooleanLiteral(std::static_pointer_cast<BooleanLiteralNode>(shared_from_this()));
     }
 
+    void FloatingLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitFloatingLiteral(std::static_pointer_cast<FloatingLiteralNode>(shared_from_this()));
+    }
+
     void IdentifierNode::accept(IASTVisitor *visitor) {
         visitor->visitIdentifier(std::static_pointer_cast<IdentifierNode>(shared_from_this()));
     }
@@ -84,6 +88,10 @@ namespace Ryntra::Compiler {
 
     std::string BooleanLiteralNode::toString() const {
         return "BooleanLiteral(" + std::string(value ? "true" : "false") + ")";
+    }
+
+    std::string FloatingLiteralNode::toString() const {
+        return "FloatingLiteral(" + std::to_string(value) + ")";
     }
 
     std::string IdentifierNode::toString() const {

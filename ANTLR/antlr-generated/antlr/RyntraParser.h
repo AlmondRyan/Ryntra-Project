@@ -15,15 +15,16 @@ public:
   enum {
     INT = 1, RETURN = 2, STRING = 3, IF = 4, ELSE = 5, BOOL = 6, TRUE = 7, 
     FALSE = 8, WHILE = 9, FOR = 10, BREAK = 11, CONTINUE = 12, LONG = 13, 
-    PLUS = 14, MINUS = 15, INC = 16, DEC = 17, MULT = 18, DIV = 19, MOD = 20, 
-    ASSIGN = 21, ADD_ASSIGN = 22, SUB_ASSIGN = 23, MUL_ASSIGN = 24, DIV_ASSIGN = 25, 
-    MOD_ASSIGN = 26, AND_ASSIGN = 27, OR_ASSIGN = 28, XOR_ASSIGN = 29, LSHIFT_ASSIGN = 30, 
-    RSHIFT_ASSIGN = 31, GREATER = 32, LESS = 33, COND_EQUAL = 34, NOT_EQUAL = 35, 
-    GREATER_EQ = 36, LESS_EQ = 37, LOGIC_AND = 38, LOGIC_OR = 39, NOT = 40, 
-    SEMICOLON = 41, LPAREN = 42, RPAREN = 43, LBRACE = 44, RBRACE = 45, 
-    COMMA = 46, STRING_LITERAL = 47, IDENTIFIER = 48, INTEGER_LITERAL = 49, 
-    LINE_COMMENT = 50, WS = 51, BIT_AND = 52, BIT_OR = 53, BIT_XOR = 54, 
-    BIT_NOT = 55, LSHIFT = 56, RSHIFT = 57
+    FLOAT = 14, DOUBLE = 15, PLUS = 16, MINUS = 17, INC = 18, DEC = 19, 
+    MULT = 20, DIV = 21, MOD = 22, ASSIGN = 23, ADD_ASSIGN = 24, SUB_ASSIGN = 25, 
+    MUL_ASSIGN = 26, DIV_ASSIGN = 27, MOD_ASSIGN = 28, AND_ASSIGN = 29, 
+    OR_ASSIGN = 30, XOR_ASSIGN = 31, LSHIFT_ASSIGN = 32, RSHIFT_ASSIGN = 33, 
+    GREATER = 34, LESS = 35, COND_EQUAL = 36, NOT_EQUAL = 37, GREATER_EQ = 38, 
+    LESS_EQ = 39, LOGIC_AND = 40, LOGIC_OR = 41, NOT = 42, SEMICOLON = 43, 
+    LPAREN = 44, RPAREN = 45, LBRACE = 46, RBRACE = 47, COMMA = 48, STRING_LITERAL = 49, 
+    IDENTIFIER = 50, INTEGER_LITERAL = 51, FLOAT_LITERAL = 52, LINE_COMMENT = 53, 
+    WS = 54, BIT_AND = 55, BIT_OR = 56, BIT_XOR = 57, BIT_NOT = 58, LSHIFT = 59, 
+    RSHIFT = 60
   };
 
   enum {
@@ -173,6 +174,8 @@ public:
     antlr4::tree::TerminalNode *BOOL();
     std::vector<antlr4::tree::TerminalNode *> LONG();
     antlr4::tree::TerminalNode* LONG(size_t i);
+    antlr4::tree::TerminalNode *FLOAT();
+    antlr4::tree::TerminalNode *DOUBLE();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -690,6 +693,7 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *STRING_LITERAL();
     antlr4::tree::TerminalNode *INTEGER_LITERAL();
+    antlr4::tree::TerminalNode *FLOAT_LITERAL();
     antlr4::tree::TerminalNode *TRUE();
     antlr4::tree::TerminalNode *FALSE();
 

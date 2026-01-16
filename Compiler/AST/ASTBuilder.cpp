@@ -262,6 +262,19 @@ namespace Ryntra::Compiler {
             }
             return createNode<IntegerLiteralNode>(context, value, kind);
         }
+        else if (context->FLOAT_LITERAL()) {
+            std::string text = context->FLOAT_LITERAL()->getText();
+            TypeKind kind = TypeKind::Double;
+            double value = 0;
+
+            if (text.back() == 'F' || text.back() == 'f') {
+                kind = TypeKind::Float;
+                value = std::stod(text.substr(0, text.size() - 1));
+            } else {
+                value = std::stod(text);
+            }
+            return createNode<FloatingLiteralNode>(context, value, kind);
+        }
         else if (context->TRUE()) {
             return createNode<BooleanLiteralNode>(context, true);
         }

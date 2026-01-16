@@ -8,6 +8,8 @@ namespace Ryntra::Compiler {
         Int,
         Long,
         LongLong,
+        Float,
+        Double,
         String,
         Void,
         Boolean,

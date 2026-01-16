@@ -21,7 +21,7 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitProgram(std::shared_ptr<ProgramNode> node) {
-        for (auto i : node->getFunctions()) {
+        for (const auto& i : node->getFunctions()) {
             visit(i);
         }
     }
@@ -40,6 +40,10 @@ namespace Ryntra::Compiler {
                 return llvm::Type::getVoidTy(context);
             if (typeName == "bool")
                 return llvm::Type::getInt1Ty(context);
+            if (typeName == "float")
+                return llvm::Type::getFloatTy(context);
+            if (typeName == "double")
+                return llvm::Type::getDoubleTy(context);
             return llvm::Type::getVoidTy(context);
         }
     } // namespace
@@ -77,7 +81,7 @@ namespace Ryntra::Compiler {
 
             // Create alloca for parameter
             llvm::AllocaInst *alloca = builder->CreateAlloca(arg.getType(), nullptr, paramNode->getName() + ".addr");
-            unsigned          align = (arg.getType()->getIntegerBitWidth() == 64) ? 8 : 4;
+            unsigned          align = (arg.getType()->getPrimitiveSizeInBits() == 64) ? 8 : 4;
             alloca->setAlignment(llvm::Align(align));
 
             auto store = builder->CreateStore(&arg, alloca);
@@ -100,6 +104,10 @@ namespace Ryntra::Compiler {
                 builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(32, 0)));
             } else if (node->getReturnType() == "long" || node->getReturnType() == "long long") {
                 builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
+            } else if (node->getReturnType() == "float") {
+                builder->CreateRet(llvm::ConstantFP::get(*context, llvm::APFloat(0.0f)));
+            } else if (node->getReturnType() == "double") {
+                builder->CreateRet(llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
             }
         }
     }
@@ -289,6 +297,62 @@ namespace Ryntra::Compiler {
 
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
+            } else if (funcName == "__builtin_floatToString") {
+                // Declare rcrt_builtin_floatToString if not exists: char* rcrt_builtin_floatToString(float)
+                std::vector<llvm::Type *> argsTypes;
+                argsTypes.push_back(llvm::Type::getFloatTy(*context));
+
+                llvm::FunctionType *toStringType = llvm::FunctionType::get(
+                    llvm::PointerType::get(*context, 0), // return char*
+                    argsTypes,
+                    false);
+
+                llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_floatToString", toStringType);
+
+                std::vector<llvm::Value *> args;
+                for (auto arg : node->getArguments()) {
+                    llvm::Value *val = evaluate(arg);
+                    if (val) {
+                        // Ensure it's float
+                        if (val->getType()->isDoubleTy()) {
+                            val = builder->CreateFPTrunc(val, llvm::Type::getFloatTy(*context), "fptrunc");
+                        } else if (val->getType()->isIntegerTy()) {
+                            val = builder->CreateSIToFP(val, llvm::Type::getFloatTy(*context), "sitofp");
+                        }
+                        args.push_back(val);
+                    }
+                }
+
+                lastValue = builder->CreateCall(toStringFunc, args);
+                return;
+            } else if (funcName == "__builtin_doubleToString") {
+                // Declare rcrt_builtin_doubleToString if not exists: char* rcrt_builtin_doubleToString(double)
+                std::vector<llvm::Type *> argsTypes;
+                argsTypes.push_back(llvm::Type::getDoubleTy(*context));
+
+                llvm::FunctionType *toStringType = llvm::FunctionType::get(
+                    llvm::PointerType::get(*context, 0), // return char*
+                    argsTypes,
+                    false);
+
+                llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_doubleToString", toStringType);
+
+                std::vector<llvm::Value *> args;
+                for (auto arg : node->getArguments()) {
+                    llvm::Value *val = evaluate(arg);
+                    if (val) {
+                        // Ensure it's double
+                        if (val->getType()->isFloatTy()) {
+                            val = builder->CreateFPExt(val, llvm::Type::getDoubleTy(*context), "fpext");
+                        } else if (val->getType()->isIntegerTy()) {
+                            val = builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context), "sitofp");
+                        }
+                        args.push_back(val);
+                    }
+                }
+
+                lastValue = builder->CreateCall(toStringFunc, args);
+                return;
             } else if (funcName == "__builtin_free") {
                 // Declare rcrt_builtin_free if not exists: void rcrt_builtin_free(void*)
                 llvm::FunctionType *freeType = llvm::FunctionType::get(
@@ -322,13 +386,25 @@ namespace Ryntra::Compiler {
                             // Handle argument type conversion
                             if (idx < callee->arg_size()) {
                                 llvm::Type *targetType = callee->getFunctionType()->getParamType(idx);
-                                if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
-                                    unsigned valWidth = val->getType()->getIntegerBitWidth();
-                                    unsigned targetWidth = targetType->getIntegerBitWidth();
-                                    if (valWidth < targetWidth) {
-                                        val = builder->CreateSExt(val, targetType, "sext");
-                                    } else if (valWidth > targetWidth) {
-                                        val = builder->CreateTrunc(val, targetType, "trunc");
+                                if (val->getType() != targetType) {
+                                    if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                                        unsigned valWidth = val->getType()->getIntegerBitWidth();
+                                        unsigned targetWidth = targetType->getIntegerBitWidth();
+                                        if (valWidth < targetWidth) {
+                                            val = builder->CreateSExt(val, targetType, "sext");
+                                        } else if (valWidth > targetWidth) {
+                                            val = builder->CreateTrunc(val, targetType, "trunc");
+                                        }
+                                    } else if (val->getType()->isFloatingPointTy() && targetType->isFloatingPointTy()) {
+                                        if (val->getType()->getPrimitiveSizeInBits() < targetType->getPrimitiveSizeInBits()) {
+                                            val = builder->CreateFPExt(val, targetType, "fpext");
+                                        } else {
+                                            val = builder->CreateFPTrunc(val, targetType, "fptrunc");
+                                        }
+                                    } else if (val->getType()->isIntegerTy() && targetType->isFloatingPointTy()) {
+                                        val = builder->CreateSIToFP(val, targetType, "sitofp");
+                                    } else if (val->getType()->isFloatingPointTy() && targetType->isIntegerTy()) {
+                                        val = builder->CreateFPToSI(val, targetType, "fptosi");
                                     }
                                 }
                             }
@@ -356,7 +432,7 @@ namespace Ryntra::Compiler {
         }
         llvm::Type *type = ((llvm::AllocaInst *)v)->getAllocatedType();
         auto        load = builder->CreateLoad(type, v, node->getName());
-        unsigned    align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        unsigned    align = (type->getPrimitiveSizeInBits() == 64) ? 8 : 4;
         load->setAlignment(llvm::Align(align));
         lastValue = load;
     }
@@ -378,6 +454,17 @@ namespace Ryntra::Compiler {
         }
     }
 
+    void IRGenerator::visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) {
+        double   val = node->getValue();
+        TypeKind kind = node->getTypeKind();
+
+        if (kind == TypeKind::Float) {
+            lastValue = llvm::ConstantFP::get(*context, llvm::APFloat((float)val));
+        } else {
+            lastValue = llvm::ConstantFP::get(*context, llvm::APFloat(val));
+        }
+    }
+
     void IRGenerator::visitParameter(std::shared_ptr<ParameterNode> node) {
     }
 
@@ -386,13 +473,24 @@ namespace Ryntra::Compiler {
         if (val) {
             // Handle type conversion to function return type
             llvm::Type *retType = builder->GetInsertBlock()->getParent()->getReturnType();
-            if (val->getType()->isIntegerTy() && retType->isIntegerTy()) {
-                unsigned valWidth = val->getType()->getIntegerBitWidth();
-                unsigned targetWidth = retType->getIntegerBitWidth();
-                if (valWidth < targetWidth) {
-                    val = builder->CreateSExt(val, retType, "sext");
-                } else if (valWidth > targetWidth) {
-                    val = builder->CreateTrunc(val, retType, "trunc");
+            if (val->getType() != retType) {
+                if (val->getType()->isIntegerTy() && retType->isIntegerTy()) {
+                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                    unsigned targetWidth = retType->getIntegerBitWidth();
+                    if (valWidth < targetWidth) {
+                        val = builder->CreateSExt(val, retType, "sext");
+                    } else if (valWidth > targetWidth) {
+                        val = builder->CreateTrunc(val, retType, "trunc");
+                    }
+                } else if (val->getType()->isFloatingPointTy() && retType->isFloatingPointTy()) {
+                    if (val->getType()->getPrimitiveSizeInBits() < retType->getPrimitiveSizeInBits())
+                        val = builder->CreateFPExt(val, retType, "fpext");
+                    else if (val->getType()->getPrimitiveSizeInBits() > retType->getPrimitiveSizeInBits())
+                        val = builder->CreateFPTrunc(val, retType, "fptrunc");
+                } else if (val->getType()->isIntegerTy() && retType->isFloatingPointTy()) {
+                    val = builder->CreateSIToFP(val, retType, "sitofp");
+                } else if (val->getType()->isFloatingPointTy() && retType->isIntegerTy()) {
+                    val = builder->CreateFPToSI(val, retType, "fptosi");
                 }
             }
             builder->CreateRet(val);
@@ -410,18 +508,30 @@ namespace Ryntra::Compiler {
 
         llvm::Type       *type = mapType(*context, node->getVarType());
         llvm::AllocaInst *alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
-        unsigned          align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        unsigned          align = (type->getPrimitiveSizeInBits() == 64) ? 8 : 4;
         alloca->setAlignment(llvm::Align(align));
 
         if (val) {
-            // Handle type conversion (e.g. int to long)
-            if (val->getType()->isIntegerTy() && type->isIntegerTy()) {
-                unsigned valWidth = val->getType()->getIntegerBitWidth();
-                unsigned targetWidth = type->getIntegerBitWidth();
-                if (valWidth < targetWidth) {
-                    val = builder->CreateSExt(val, type, "sext");
-                } else if (valWidth > targetWidth) {
-                    val = builder->CreateTrunc(val, type, "trunc");
+            // Handle type conversion (e.g. int to long, int to float)
+            if (val->getType() != type) {
+                if (val->getType()->isIntegerTy() && type->isIntegerTy()) {
+                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                    unsigned targetWidth = type->getIntegerBitWidth();
+                    if (valWidth < targetWidth) {
+                        val = builder->CreateSExt(val, type, "sext");
+                    } else if (valWidth > targetWidth) {
+                        val = builder->CreateTrunc(val, type, "trunc");
+                    }
+                } else if (val->getType()->isFloatingPointTy() && type->isFloatingPointTy()) {
+                    if (val->getType()->getPrimitiveSizeInBits() < type->getPrimitiveSizeInBits()) {
+                        val = builder->CreateFPExt(val, type, "fpext");
+                    } else {
+                        val = builder->CreateFPTrunc(val, type, "fptrunc");
+                    }
+                } else if (val->getType()->isIntegerTy() && type->isFloatingPointTy()) {
+                    val = builder->CreateSIToFP(val, type, "sitofp");
+                } else if (val->getType()->isFloatingPointTy() && type->isIntegerTy()) {
+                    val = builder->CreateFPToSI(val, type, "fptosi");
                 }
             }
             auto store = builder->CreateStore(val, alloca);
@@ -496,7 +606,21 @@ namespace Ryntra::Compiler {
             llvm::Type *leftType = leftValue->getType();
             llvm::Type *rightType = rightValue->getType();
 
-            if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
+            if (leftType->isFloatingPointTy() || rightType->isFloatingPointTy()) {
+                // Promote to double if either is double, or both are floating point
+                llvm::Type *targetType = (leftType->isDoubleTy() || rightType->isDoubleTy()) 
+                                         ? llvm::Type::getDoubleTy(*context) 
+                                         : llvm::Type::getFloatTy(*context);
+                
+                if (leftType != targetType) {
+                    if (leftType->isIntegerTy()) leftValue = builder->CreateSIToFP(leftValue, targetType, "sitofp");
+                    else leftValue = builder->CreateFPExt(leftValue, targetType, "fpext");
+                }
+                if (rightType != targetType) {
+                    if (rightType->isIntegerTy()) rightValue = builder->CreateSIToFP(rightValue, targetType, "sitofp");
+                    else rightValue = builder->CreateFPExt(rightValue, targetType, "fpext");
+                }
+            } else if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
                 unsigned leftWidth = leftType->getIntegerBitWidth();
                 unsigned rightWidth = rightType->getIntegerBitWidth();
 
@@ -509,19 +633,35 @@ namespace Ryntra::Compiler {
         }
 
         if (op == "+") {
-            lastValue = builder->CreateAdd(leftValue, rightValue, "addtmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFAdd(leftValue, rightValue, "faddtmp");
+            } else {
+                lastValue = builder->CreateAdd(leftValue, rightValue, "addtmp");
+            }
             return;
         }
         if (op == "-") {
-            lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFSub(leftValue, rightValue, "fsubtmp");
+            } else {
+                lastValue = builder->CreateSub(leftValue, rightValue, "subTemp");
+            }
             return;
         }
         if (op == "*") {
-            lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFMul(leftValue, rightValue, "fmultmp");
+            } else {
+                lastValue = builder->CreateMul(leftValue, rightValue, "mulTemp");
+            }
             return;
         }
         if ("/" == op) {
-            lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFDiv(leftValue, rightValue, "fdivtmp");
+            } else {
+                lastValue = builder->CreateSDiv(leftValue, rightValue, "subDiv");
+            }
             return;
         }
         if (op == "%") {
@@ -552,27 +692,51 @@ namespace Ryntra::Compiler {
 
         // Comparison operators
         if ("==" == op) {
-            lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpOEQ(leftValue, rightValue, "feqtmp");
+            } else {
+                lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
+            }
             return;
         }
         if ("!=" == op) {
-            lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpONE(leftValue, rightValue, "fnetmp");
+            } else {
+                lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
+            }
             return;
         }
         if (op == "<") {
-            lastValue = builder->CreateICmpSLT(leftValue, rightValue, "lttmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpOLT(leftValue, rightValue, "flttmp");
+            } else {
+                lastValue = builder->CreateICmpSLT(leftValue, rightValue, "lttmp");
+            }
             return;
         }
         if (op == "<=") {
-            lastValue = builder->CreateICmpSLE(leftValue, rightValue, "letmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpOLE(leftValue, rightValue, "fletmp");
+            } else {
+                lastValue = builder->CreateICmpSLE(leftValue, rightValue, "letmp");
+            }
             return;
         }
         if (op == ">") {
-            lastValue = builder->CreateICmpSGT(leftValue, rightValue, "gttmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpOGT(leftValue, rightValue, "fgttmp");
+            } else {
+                lastValue = builder->CreateICmpSGT(leftValue, rightValue, "gttmp");
+            }
             return;
         }
         if (op == ">=") {
-            lastValue = builder->CreateICmpSGE(leftValue, rightValue, "getmp");
+            if (leftValue->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFCmpOGE(leftValue, rightValue, "fgetmp");
+            } else {
+                lastValue = builder->CreateICmpSGE(leftValue, rightValue, "getmp");
+            }
             return;
         }
 
@@ -596,12 +760,24 @@ namespace Ryntra::Compiler {
 
             if (op != "=") {
                 // Compound assignment: Load, Op, Store
-                unsigned     align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
+                unsigned     align = (targetType->getPrimitiveSizeInBits() == 64) ? 8 : 4;
                 llvm::Value *currentVal = builder->CreateLoad(targetType, alloca, idName + ".load");
                 ((llvm::LoadInst *)currentVal)->setAlignment(llvm::Align(align));
 
                 // Handle type promotion for the operation
-                if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
+                if (targetType->isFloatingPointTy() || val->getType()->isFloatingPointTy()) {
+                    llvm::Type *opType = (targetType->isDoubleTy() || val->getType()->isDoubleTy())
+                                         ? llvm::Type::getDoubleTy(*context)
+                                         : llvm::Type::getFloatTy(*context);
+                    if (currentVal->getType() != opType) {
+                        if (currentVal->getType()->isIntegerTy()) currentVal = builder->CreateSIToFP(currentVal, opType, "sitofp");
+                        else currentVal = builder->CreateFPExt(currentVal, opType, "fpext");
+                    }
+                    if (val->getType() != opType) {
+                        if (val->getType()->isIntegerTy()) val = builder->CreateSIToFP(val, opType, "sitofp");
+                        else val = builder->CreateFPExt(val, opType, "fpext");
+                    }
+                } else if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
                     unsigned valWidth = val->getType()->getIntegerBitWidth();
                     unsigned targetWidth = targetType->getIntegerBitWidth();
                     if (valWidth < targetWidth) {
@@ -609,15 +785,19 @@ namespace Ryntra::Compiler {
                     }
                 }
 
-                if (op == "+=")
-                    val = builder->CreateAdd(currentVal, val, "addtmp");
-                else if (op == "-=")
-                    val = builder->CreateSub(currentVal, val, "subtmp");
-                else if (op == "*=")
-                    val = builder->CreateMul(currentVal, val, "multmp");
-                else if (op == "/=")
-                    val = builder->CreateSDiv(currentVal, val, "divtmp");
-                else if (op == "%=")
+                if (op == "+=") {
+                    if (currentVal->getType()->isFloatingPointTy()) val = builder->CreateFAdd(currentVal, val, "faddtmp");
+                    else val = builder->CreateAdd(currentVal, val, "addtmp");
+                } else if (op == "-=") {
+                    if (currentVal->getType()->isFloatingPointTy()) val = builder->CreateFSub(currentVal, val, "fsubtmp");
+                    else val = builder->CreateSub(currentVal, val, "subtmp");
+                } else if (op == "*=") {
+                    if (currentVal->getType()->isFloatingPointTy()) val = builder->CreateFMul(currentVal, val, "fmultmp");
+                    else val = builder->CreateMul(currentVal, val, "multmp");
+                } else if (op == "/=") {
+                    if (currentVal->getType()->isFloatingPointTy()) val = builder->CreateFDiv(currentVal, val, "fdivtmp");
+                    else val = builder->CreateSDiv(currentVal, val, "divtmp");
+                } else if (op == "%=")
                     val = builder->CreateSRem(currentVal, val, "remtmp");
                 else if (op == "&=")
                     val = builder->CreateAnd(currentVal, val, "andtmp");
@@ -629,20 +809,28 @@ namespace Ryntra::Compiler {
                     val = builder->CreateShl(currentVal, val, "shltmp");
                 else if (op == ">>=")
                     val = builder->CreateAShr(currentVal, val, "ashrtmp");
-            } else {
+            }
+
+            // Final conversion back to target type
+            if (val->getType() != targetType) {
                 if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
                     unsigned valWidth = val->getType()->getIntegerBitWidth();
                     unsigned targetWidth = targetType->getIntegerBitWidth();
-                    if (valWidth < targetWidth) {
-                        val = builder->CreateSExt(val, targetType, "sext");
-                    } else if (valWidth > targetWidth) {
-                        val = builder->CreateTrunc(val, targetType, "trunc");
-                    }
+                    if (valWidth < targetWidth) val = builder->CreateSExt(val, targetType, "sext");
+                    else if (valWidth > targetWidth) val = builder->CreateTrunc(val, targetType, "trunc");
+                } else if (val->getType()->isFloatingPointTy() && targetType->isFloatingPointTy()) {
+                    if (val->getType()->getPrimitiveSizeInBits() < targetType->getPrimitiveSizeInBits())
+                        val = builder->CreateFPExt(val, targetType, "fpext");
+                    else val = builder->CreateFPTrunc(val, targetType, "fptrunc");
+                } else if (val->getType()->isIntegerTy() && targetType->isFloatingPointTy()) {
+                    val = builder->CreateSIToFP(val, targetType, "sitofp");
+                } else if (val->getType()->isFloatingPointTy() && targetType->isIntegerTy()) {
+                    val = builder->CreateFPToSI(val, targetType, "fptosi");
                 }
             }
 
             auto     store = builder->CreateStore(val, alloca);
-            unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
+            unsigned align = (targetType->getPrimitiveSizeInBits() == 64) ? 8 : 4;
             store->setAlignment(llvm::Align(align));
             lastValue = val;
             return;
@@ -671,8 +859,11 @@ namespace Ryntra::Compiler {
         }
 
         if (op == "-") {
-            llvm::Value *zero = llvm::ConstantInt::get(value->getType(), 0);
-            lastValue = builder->CreateSub(zero, value, "negtmp");
+            if (value->getType()->isFloatingPointTy()) {
+                lastValue = builder->CreateFNeg(value, "fnegtmp");
+            } else {
+                lastValue = builder->CreateNeg(value, "negtmp");
+            }
             return;
         }
 
@@ -682,6 +873,14 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
         lastValue = llvm::ConstantInt::get(*context, llvm::APInt(1, node->getValue() ? 1 : 0));
     }
+
+    // void IRGenerator::visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) {
+    //     if (node->isFloat()) {
+    //         lastValue = llvm::ConstantFP::get(*context, llvm::APFloat(node->getValue()));
+    //     } else {
+    //         lastValue = llvm::ConstantFP::get(*context, llvm::APFloat((double)node->getValue()));
+    //     }
+    // }
 
     void IRGenerator::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
         llvm::Function *func = builder->GetInsertBlock()->getParent();
@@ -793,15 +992,23 @@ namespace Ryntra::Compiler {
 
         llvm::Type *type = ((llvm::AllocaInst *)v)->getAllocatedType();
         auto        load = builder->CreateLoad(type, v, node->getVarName() + ".load");
-        unsigned    align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        unsigned    align = (type->getPrimitiveSizeInBits() == 64) ? 8 : 4;
         load->setAlignment(llvm::Align(align));
 
         llvm::Value *oldVal = load;
         llvm::Value *newVal;
         if (node->getOp() == "++") {
-            newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(type, 1), "inc");
+            if (type->isFloatingPointTy()) {
+                newVal = builder->CreateFAdd(oldVal, llvm::ConstantFP::get(type, 1.0), "inc");
+            } else {
+                newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(type, 1), "inc");
+            }
         } else {
-            newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(type, 1), "dec");
+            if (type->isFloatingPointTy()) {
+                newVal = builder->CreateFSub(oldVal, llvm::ConstantFP::get(type, 1.0), "dec");
+            } else {
+                newVal = builder->CreateSub(oldVal, llvm::ConstantInt::get(type, 1), "dec");
+            }
         }
         auto store = builder->CreateStore(newVal, v);
         store->setAlignment(llvm::Align(align));

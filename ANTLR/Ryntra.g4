@@ -16,6 +16,8 @@ FOR: 'for';
 BREAK: 'break';
 CONTINUE: 'continue';
 LONG: 'long';
+FLOAT: 'float';
+DOUBLE: 'double';
 
 // Operators
 PLUS: '+';
@@ -58,6 +60,10 @@ COMMA: ',';
 STRING_LITERAL: '"' ( ~["\\\r\n] | '\\' ["\\bfnrt] )* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 INTEGER_LITERAL: ('0' | [1-9] [0-9]*) ([lL] | [lL][lL])?;
+FLOAT_LITERAL: [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)? [fF]?
+             | '.' [0-9]+ ([eE] [+-]? [0-9]+)? [fF]?
+             | [0-9]+ [eE] [+-]? [0-9]+ [fF]?
+             ;
 
 // Comments and Whitespaces
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
@@ -85,6 +91,8 @@ typeSpecifier
     | BOOL
     | LONG
     | LONG LONG
+    | FLOAT
+    | DOUBLE
     ;
 
 variableDeclaration
@@ -218,5 +226,6 @@ RSHIFT: '>>';
 literal:
     STRING_LITERAL
     | INTEGER_LITERAL
+    | FLOAT_LITERAL
     | TRUE
     | FALSE;

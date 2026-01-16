@@ -94,6 +94,20 @@ namespace Ryntra::Compiler {
             Symbol ptrParam({TypeKind::String, ""}, "ptr", SymbolKind::Parameter);
             sBuiltinFree.parameters.push_back(ptrParam);
             functions.emplace(sBuiltinFree.name, sBuiltinFree);
+
+            FunctionSymbol sBuiltinFloatToString;
+            sBuiltinFloatToString.name = "__builtin_floatToString";
+            sBuiltinFloatToString.returnType = {TypeKind::String, ""};
+            Symbol floatParam({TypeKind::Float, ""}, "value", SymbolKind::Parameter);
+            sBuiltinFloatToString.parameters.push_back(floatParam);
+            functions.emplace(sBuiltinFloatToString.name, sBuiltinFloatToString);
+
+            FunctionSymbol sBuiltinDoubleToString;
+            sBuiltinDoubleToString.name = "__builtin_doubleToString";
+            sBuiltinDoubleToString.returnType = {TypeKind::String, ""};
+            Symbol doubleParam({TypeKind::Double, ""}, "value", SymbolKind::Parameter);
+            sBuiltinDoubleToString.parameters.push_back(doubleParam);
+            functions.emplace(sBuiltinDoubleToString.name, sBuiltinDoubleToString);
         }
     public:
         void enterScope() {
