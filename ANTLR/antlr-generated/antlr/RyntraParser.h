@@ -21,10 +21,10 @@ public:
     OR_ASSIGN = 30, XOR_ASSIGN = 31, LSHIFT_ASSIGN = 32, RSHIFT_ASSIGN = 33, 
     GREATER = 34, LESS = 35, COND_EQUAL = 36, NOT_EQUAL = 37, GREATER_EQ = 38, 
     LESS_EQ = 39, LOGIC_AND = 40, LOGIC_OR = 41, NOT = 42, SEMICOLON = 43, 
-    LPAREN = 44, RPAREN = 45, LBRACE = 46, RBRACE = 47, COMMA = 48, STRING_LITERAL = 49, 
-    IDENTIFIER = 50, INTEGER_LITERAL = 51, FLOAT_LITERAL = 52, LINE_COMMENT = 53, 
-    WS = 54, BIT_AND = 55, BIT_OR = 56, BIT_XOR = 57, BIT_NOT = 58, LSHIFT = 59, 
-    RSHIFT = 60
+    LPAREN = 44, RPAREN = 45, LBRACE = 46, RBRACE = 47, LBRACKET = 48, RBRACKET = 49, 
+    COMMA = 50, STRING_LITERAL = 51, IDENTIFIER = 52, INTEGER_LITERAL = 53, 
+    FLOAT_LITERAL = 54, LINE_COMMENT = 55, WS = 56, BIT_AND = 57, BIT_OR = 58, 
+    BIT_XOR = 59, BIT_NOT = 60, LSHIFT = 61, RSHIFT = 62
   };
 
   enum {
@@ -192,6 +192,9 @@ public:
     virtual size_t getRuleIndex() const override;
     TypeSpecifierContext *typeSpecifier();
     antlr4::tree::TerminalNode *IDENTIFIER();
+    antlr4::tree::TerminalNode *LBRACKET();
+    antlr4::tree::TerminalNode *INTEGER_LITERAL();
+    antlr4::tree::TerminalNode *RBRACKET();
     antlr4::tree::TerminalNode *ASSIGN();
     ExpressionContext *expression();
 
@@ -396,7 +399,7 @@ public:
   public:
     AssignmentContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *IDENTIFIER();
+    PostfixExpressionContext *postfixExpression();
     ExpressionContext *expression();
     antlr4::tree::TerminalNode *ASSIGN();
     antlr4::tree::TerminalNode *ADD_ASSIGN();
@@ -654,7 +657,10 @@ public:
     PostfixExpressionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     PrimaryExpressionContext *primaryExpression();
-    antlr4::tree::TerminalNode *IDENTIFIER();
+    PostfixExpressionContext *postfixExpression();
+    antlr4::tree::TerminalNode *LBRACKET();
+    ExpressionContext *expression();
+    antlr4::tree::TerminalNode *RBRACKET();
     antlr4::tree::TerminalNode *INC();
     antlr4::tree::TerminalNode *DEC();
 
@@ -666,7 +672,7 @@ public:
   };
 
   PostfixExpressionContext* postfixExpression();
-
+  PostfixExpressionContext* postfixExpression(int precedence);
   class  PrimaryExpressionContext : public antlr4::ParserRuleContext {
   public:
     PrimaryExpressionContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -706,6 +712,10 @@ public:
 
   LiteralContext* literal();
 
+
+  bool sempred(antlr4::RuleContext *_localctx, size_t ruleIndex, size_t predicateIndex) override;
+
+  bool postfixExpressionSempred(PostfixExpressionContext *_localctx, size_t predicateIndex);
 
   // By default the static state used to implement the parser is lazily initialized during the first
   // call to the constructor. You can call this function if you wish to initialize the static state

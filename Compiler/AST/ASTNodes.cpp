@@ -69,7 +69,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string PostfixExpressionNode::toString() const {
-        return "PostfixExpression(" + varName + " " + op + ")";
+        return "PostfixExpression(" + expression->toString() + " " + op + ")";
     }
 
     long long IntegerLiteralNode::getValue() const {
@@ -156,10 +156,15 @@ namespace Ryntra::Compiler {
     }
 
     std::string VariableDeclarationNode::toString() const {
-        if (initialValue) {
-            return "VariableDeclaration(" + varType + " " + varName + ", " + initialValue->toString() + ")";
+        std::string res = "VariableDeclaration(" + varType + " " + varName;
+        if (isArray) {
+            res += "[" + std::to_string(arraySize) + "]";
         }
-        return "VariableDeclaration(" + varType + " " + varName + ")";
+        if (initialValue) {
+            res += ", " + initialValue->toString();
+        }
+        res += ")";
+        return res;
     }
 
     std::string BinaryExpressionNode::toString() const {
@@ -182,8 +187,16 @@ namespace Ryntra::Compiler {
         visitor->visitUnaryExpression(std::static_pointer_cast<UnaryExpressionNode>(shared_from_this()));
     }
 
+    std::string ArrayAccessNode::toString() const {
+        return "ArrayAccess(" + array->toString() + "[" + index->toString() + "])";
+    }
+
+    void ArrayAccessNode::accept(IASTVisitor *visitor) {
+        visitor->visitArrayAccess(std::static_pointer_cast<ArrayAccessNode>(shared_from_this()));
+    }
+
     std::string AssignmentExpressionNode::toString() const {
-        return "AssignmentExpression(" + identifier + " " + operand + " " + expression->toString() + ")";
+        return "AssignmentExpression(" + target->toString() + " " + operand + " " + expression->toString() + ")";
     }
 
     std::string ReturnStatementNode::toString() const {

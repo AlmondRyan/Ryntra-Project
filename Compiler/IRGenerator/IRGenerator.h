@@ -37,32 +37,35 @@ namespace Ryntra::Compiler {
         void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) override;
         void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
         void visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
+        void visitArrayAccess(std::shared_ptr<ArrayAccessNode> node) override;
 
         void visitBreakStatement(std::shared_ptr<BreakStatementNode> node) override;
         void visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) override;
 
     private:
-        std::unique_ptr<llvm::LLVMContext>   context;
-        std::unique_ptr<llvm::Module>        module;
-        std::unique_ptr<llvm::IRBuilder<>>   builder;
-        SymbolTable                          symbolTable;
+        std::unique_ptr<llvm::LLVMContext> context;
+        std::unique_ptr<llvm::Module>      module;
+        std::unique_ptr<llvm::IRBuilder<>> builder;
+
+        SymbolTable symbolTable;
         std::map<std::string, llvm::Value *> namedValues;
+
+        // Break/Continue stacks
+        std::vector<llvm::BasicBlock *> breakTargets;
+        std::vector<llvm::BasicBlock *> continueTargets;
 
         llvm::Value *lastValue = nullptr;
 
-        std::vector<llvm::BasicBlock*> breakTargets;
-        std::vector<llvm::BasicBlock*> continueTargets;
-
         void visit(std::shared_ptr<IASTNode> node) {
-            if (node)
-                node->accept(this);
+            if (node) node->accept(this);
         }
 
         llvm::Value *evaluate(std::shared_ptr<IASTNode> node) {
-            if (!node)
-                return nullptr;
+            if (!node) return nullptr;
             node->accept(this);
             return lastValue;
         }
+
+        llvm::Value *getAddress(std::shared_ptr<IASTNode> node);
     };
 } // namespace Ryntra::Compiler

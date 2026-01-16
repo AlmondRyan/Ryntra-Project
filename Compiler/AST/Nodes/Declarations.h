@@ -17,9 +17,12 @@ namespace Ryntra::Compiler {
          * @param type The variable type.
          * @param name The variable name.
          * @param init The variable initial value.
+         * @param isArr Whether the variable is an array.
+         * @param size The size of the array (if it is an array).
          */
-        VariableDeclarationNode(const std::string &type, const std::string &name, std::shared_ptr<IASTNode> init = nullptr)
-            : varType(type), varName(name), initialValue(std::move(init)) {}
+        VariableDeclarationNode(const std::string &type, const std::string &name, std::shared_ptr<IASTNode> init = nullptr,
+                                bool isArr = false, unsigned long long size = 0)
+            : varType(type), varName(name), initialValue(std::move(init)), isArray(isArr), arraySize(size) {}
 
         /**
          * @brief Get the string representation of VariableDeclaration
@@ -53,10 +56,15 @@ namespace Ryntra::Compiler {
          */
         std::shared_ptr<IASTNode> getInitialValue() const { return initialValue; }
 
+        bool isArrayType() const { return isArray; }
+        unsigned long long getArraySize() const { return arraySize; }
+
     private:
         std::string               varType;
         std::string               varName;
         std::shared_ptr<IASTNode> initialValue; // WARN: Possible be nullptr if there are no parameters
+        bool                      isArray;
+        unsigned long long        arraySize;
     };
 
     /**

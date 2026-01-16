@@ -100,15 +100,15 @@ namespace Ryntra::Compiler {
     public:
         /**
          * @brief Constructor that creates a unary expression node.
-         * @param opr The operator symbol (e.g., "!", "-").
-         * @param expr The operand of the unary expression.
+         * @param op The operator symbol (e.g., "!", "-", "~").
+         * @param expr The operand expression.
          */
-        UnaryExpressionNode(std::string opr, std::shared_ptr<IASTNode> expr)
-            : operand(std::move(opr)), expression(std::move(expr)) {}
+        UnaryExpressionNode(std::string op, std::shared_ptr<IASTNode> expr)
+            : operand(std::move(op)), expression(std::move(expr)) {}
 
         /**
          * @brief Get the string representation of the Unary Expression Node.
-         * @return A string representation of the form "UnaryExpression(op expression)".
+         * @return A string representation of the form "UnaryExpression(op expr)".
          */
         std::string toString() const override;
 
@@ -125,7 +125,7 @@ namespace Ryntra::Compiler {
         std::string getOp() const { return operand; }
 
         /**
-         * @brief Get the expression of the unary expression.
+         * @brief Get the operand of the unary expression.
          * @return The operand expression node.
          */
         std::shared_ptr<IASTNode> getExpression() const { return expression; }
@@ -133,6 +133,26 @@ namespace Ryntra::Compiler {
     private:
         std::string               operand;
         std::shared_ptr<IASTNode> expression;
+    };
+
+    /**
+     * @brief The Array Access Node.
+     * @details Represents accessing an array element, e.g., arr[index].
+     */
+    class ArrayAccessNode : public IASTNode {
+    public:
+        ArrayAccessNode(std::shared_ptr<IASTNode> arr, std::shared_ptr<IASTNode> idx)
+            : array(std::move(arr)), index(std::move(idx)) {}
+
+        std::string toString() const override;
+        void accept(IASTVisitor *visitor) override;
+
+        std::shared_ptr<IASTNode> getArray() const { return array; }
+        std::shared_ptr<IASTNode> getIndex() const { return index; }
+
+    private:
+        std::shared_ptr<IASTNode> array;
+        std::shared_ptr<IASTNode> index;
     };
 
     /**
@@ -145,16 +165,16 @@ namespace Ryntra::Compiler {
     public:
         /**
          * @brief Constructor that creates an assignment expression node.
-         * @param id The identifier (variable name) being assigned to.
+         * @param tgt The target (variable or array access) being assigned to.
          * @param exp The expression whose value will be assigned to the identifier.
          * @param opr The assignment operator (e.g., "=", "+=", etc.).
          */
-        AssignmentExpressionNode(std::string id, std::shared_ptr<IASTNode> exp, std::string opr = "=")
-            : identifier(std::move(id)), expression(std::move(exp)), operand(std::move(opr)) {}
+        AssignmentExpressionNode(std::shared_ptr<IASTNode> tgt, std::shared_ptr<IASTNode> exp, std::string opr = "=")
+            : target(std::move(tgt)), expression(std::move(exp)), operand(std::move(opr)) {}
 
         /**
          * @brief Get the string representation of the Assignment Expression Node.
-         * @return A string representation of the form "AssignmentExpression(identifier op expression)".
+         * @return A string representation of the form "AssignmentExpression(target op expression)".
          */
         std::string toString() const override;
 
@@ -165,10 +185,10 @@ namespace Ryntra::Compiler {
         void accept(IASTVisitor *visitor) override;
 
         /**
-         * @brief Get the identifier being assigned to.
-         * @return The identifier name as a string reference.
+         * @brief Get the target being assigned to.
+         * @return The target node.
          */
-        const std::string &getIdentifier() const { return identifier; }
+        std::shared_ptr<IASTNode> getTarget() const { return target; }
 
         /**
          * @brief Get the expression being assigned.
@@ -183,7 +203,7 @@ namespace Ryntra::Compiler {
         const std::string &getOp() const { return operand; }
 
     private:
-        std::string               identifier; ///< The identifier (variable name) being assigned to
+        std::shared_ptr<IASTNode> target;     ///< The target (variable or array access) being assigned to
         std::shared_ptr<IASTNode> expression; ///< The expression providing the value for assignment
         std::string               operand;    ///< The assignment operator (e.g., "=", "+=", etc.)
     };
@@ -237,17 +257,17 @@ namespace Ryntra::Compiler {
 
     class PostfixExpressionNode : public IASTNode {
     public:
-        PostfixExpressionNode(const std::string& name, const std::string& op)
-            : varName(name), op(op) {}
+        PostfixExpressionNode(std::shared_ptr<IASTNode> expr, const std::string& op)
+            : expression(std::move(expr)), op(op) {}
 
         std::string toString() const override;
         void accept(IASTVisitor* visitor) override;
 
-        const std::string& getVarName() const { return varName; }
+        std::shared_ptr<IASTNode> getExpression() const { return expression; }
         const std::string& getOp() const { return op; }
 
     private:
-        std::string varName;
+        std::shared_ptr<IASTNode> expression;
         std::string op;
     };
 } // namespace Ryntra::Compiler

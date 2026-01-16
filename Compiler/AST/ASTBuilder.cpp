@@ -95,11 +95,29 @@ namespace Ryntra::Compiler {
         std::string varName = context->IDENTIFIER()->getText();
         std::shared_ptr<IASTNode> initialValue = nullptr;
 
+        bool isArray = false;
+        unsigned long long arraySize = 0;
+
+        if (context->LBRACKET()) {
+            isArray = true;
+            std::string sizeText = context->INTEGER_LITERAL()->getText();
+            // Handle suffixes like 10L, 10LL
+             if (sizeText.back() == 'L' || sizeText.back() == 'l') {
+                if (sizeText.size() >= 2 && (sizeText[sizeText.size() - 2] == 'L' || sizeText[sizeText.size() - 2] == 'l')) {
+                    arraySize = std::stoull(sizeText.substr(0, sizeText.size() - 2));
+                } else {
+                    arraySize = std::stoull(sizeText.substr(0, sizeText.size() - 1));
+                }
+            } else {
+                arraySize = std::stoull(sizeText);
+            }
+        }
+
         if (context->expression()) {
             initialValue = visitExpression(context->expression());
         }
 
-        return createNode<VariableDeclarationNode>(context, varType, varName, std::move(initialValue));
+        return createNode<VariableDeclarationNode>(context, varType, varName, std::move(initialValue), isArray, arraySize);
     }
 
     std::shared_ptr<ReturnStatementNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *context) {
@@ -307,10 +325,10 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<AssignmentExpressionNode> ASTBuilder::visitAssignment(antlr::RyntraParser::AssignmentContext *context) {
-        std::string idName = context->IDENTIFIER()->getText();
+        auto target = visitPostfixExpression(context->postfixExpression());
         std::string op = context->children[1]->getText();
         auto expr = visitExpression(context->expression());
-        return createNode<AssignmentExpressionNode>(context, idName, std::move(expr), op);
+        return createNode<AssignmentExpressionNode>(context, std::move(target), std::move(expr), op);
     }
 
     std::shared_ptr<IASTNode> ASTBuilder::visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context) {
@@ -356,10 +374,16 @@ namespace Ryntra::Compiler {
     std::shared_ptr<IASTNode> ASTBuilder::visitPostfixExpression(antlr::RyntraParser::PostfixExpressionContext *context) {
         if (context->primaryExpression()) {
             return visitPrimaryExpression(context->primaryExpression());
+        } else if (context->LBRACKET()) {
+            auto array = visitPostfixExpression(context->postfixExpression());
+            auto index = visitExpression(context->expression());
+            return createNode<ArrayAccessNode>(context, std::move(array), std::move(index));
         } else if (context->INC()) {
-            return createNode<PostfixExpressionNode>(context, context->IDENTIFIER()->getText(), "++");
+            auto expr = visitPostfixExpression(context->postfixExpression());
+            return createNode<PostfixExpressionNode>(context, std::move(expr), "++");
         } else if (context->DEC()) {
-            return createNode<PostfixExpressionNode>(context, context->IDENTIFIER()->getText(), "--");
+            auto expr = visitPostfixExpression(context->postfixExpression());
+            return createNode<PostfixExpressionNode>(context, std::move(expr), "--");
         }
         return nullptr;
     }
