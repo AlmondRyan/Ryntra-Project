@@ -2,6 +2,9 @@
 
 #include "ASTNodes.h"
 #include "Semantic/Symbol.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
+#include "AST/Nodes/Declarations.h"
 
 namespace Ryntra::Compiler {
     class IASTVisitor {

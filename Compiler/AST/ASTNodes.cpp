@@ -1,5 +1,7 @@
 #include "ASTNodes.h"
 #include "ASTVisitor.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
 
 namespace Ryntra::Compiler {
     void IntegerLiteralNode::accept(IASTVisitor *visitor) {

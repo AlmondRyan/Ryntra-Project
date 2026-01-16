@@ -1,5 +1,8 @@
 #pragma once
 #include "ASTNodes.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
+#include "AST/Nodes/Declarations.h"
 #include <antlr4-runtime.h>
 #include <antlr/RyntraParser.h>
 
