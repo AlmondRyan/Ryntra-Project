@@ -1,21 +1,20 @@
 #include "IRGenerator/IRGenerator.h"
 
 #include <iostream>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Type.h>
+#include <llvm/Support/raw_ostream.h>
 #include <vector>
 
 namespace Ryntra::Compiler {
-
-    IRGenerator::IRGenerator() 
+    IRGenerator::IRGenerator()
         : context(std::make_unique<llvm::LLVMContext>()),
           module(std::make_unique<llvm::Module>("RyntraModule", *context)),
           builder(std::make_unique<llvm::IRBuilder<>>(*context)) {
     }
 
     std::string IRGenerator::getIR() const {
-        std::string str;
+        std::string              str;
         llvm::raw_string_ostream os(str);
         module->print(os, nullptr);
         return str;
@@ -28,58 +27,62 @@ namespace Ryntra::Compiler {
     }
 
     namespace {
-        llvm::Type* mapType(llvm::LLVMContext& context, const std::string& typeName) {
-            if (typeName == "int") return llvm::Type::getInt32Ty(context);
-            if (typeName == "long") return llvm::Type::getInt64Ty(context);
-            if (typeName == "long long") return llvm::Type::getInt64Ty(context);
-            if (typeName == "string") return llvm::PointerType::get(context, 0);
-            if (typeName == "void") return llvm::Type::getVoidTy(context);
-            if (typeName == "bool") return llvm::Type::getInt1Ty(context);
+        llvm::Type *mapType(llvm::LLVMContext &context, const std::string &typeName) {
+            if (typeName == "int")
+                return llvm::Type::getInt32Ty(context);
+            if (typeName == "long")
+                return llvm::Type::getInt64Ty(context);
+            if (typeName == "long long")
+                return llvm::Type::getInt64Ty(context);
+            if (typeName == "string")
+                return llvm::PointerType::get(context, 0);
+            if (typeName == "void")
+                return llvm::Type::getVoidTy(context);
+            if (typeName == "bool")
+                return llvm::Type::getInt1Ty(context);
             return llvm::Type::getVoidTy(context);
         }
-    }
+    } // namespace
 
     void IRGenerator::visitFunctionDefinition(std::shared_ptr<FunctionDefinitionNode> node) {
         // 1. Prepare parameter types
-        std::vector<llvm::Type*> paramTypes;
-        for (const auto& param : node->getParameters()) {
+        std::vector<llvm::Type *> paramTypes;
+        for (const auto &param : node->getParameters()) {
             paramTypes.push_back(mapType(*context, param->getType()));
         }
 
         // 2. Create Function Type and Function
-        llvm::FunctionType* funcType = llvm::FunctionType::get(
+        llvm::FunctionType *funcType = llvm::FunctionType::get(
             mapType(*context, node->getReturnType()),
             paramTypes,
-            false
-        );
+            false);
 
-        llvm::Function* func = llvm::Function::Create(
+        llvm::Function *func = llvm::Function::Create(
             funcType,
             llvm::Function::ExternalLinkage,
             node->getFunctionName(),
-            module.get()
-        );
+            module.get());
 
         // 3. Create Entry Basic Block
-        llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(*context, "entry", func);
+        llvm::BasicBlock *entryBB = llvm::BasicBlock::Create(*context, "entry", func);
         builder->SetInsertPoint(entryBB);
 
         // 4. Handle Parameters (Allocation and Storage)
         symbolTable.enterScope();
         namedValues.clear();
         unsigned idx = 0;
-        for (auto& arg : func->args()) {
+        for (auto &arg : func->args()) {
             auto paramNode = node->getParameters()[idx++];
             arg.setName(paramNode->getName());
-            
+
             // Create alloca for parameter
-            llvm::AllocaInst* alloca = builder->CreateAlloca(arg.getType(), nullptr, paramNode->getName() + ".addr");
-            unsigned align = (arg.getType()->getIntegerBitWidth() == 64) ? 8 : 4;
+            llvm::AllocaInst *alloca = builder->CreateAlloca(arg.getType(), nullptr, paramNode->getName() + ".addr");
+            unsigned          align = (arg.getType()->getIntegerBitWidth() == 64) ? 8 : 4;
             alloca->setAlignment(llvm::Align(align));
-            
+
             auto store = builder->CreateStore(&arg, alloca);
             store->setAlignment(llvm::Align(align));
-            
+
             // Add to IR generator's local symbol map
             namedValues[paramNode->getName()] = alloca;
         }
@@ -102,7 +105,7 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitBlock(std::shared_ptr<BlockNode> node) {
-        for (auto& stmt : node->getStatements()) {
+        for (auto &stmt : node->getStatements()) {
             visit(stmt);
         }
     }
@@ -111,14 +114,15 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitIfStatement(std::shared_ptr<IfStatementNode> node) {
-        llvm::Value* condValue = evaluate(node->getCondition());
-        if (!condValue) return;
+        llvm::Value *condValue = evaluate(node->getCondition());
+        if (!condValue)
+            return;
 
-        llvm::Function* func = builder->GetInsertBlock()->getParent();
+        llvm::Function *func = builder->GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*context, "then", func);
-        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(*context, "else");
-        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "ifcont");
+        llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(*context, "then", func);
+        llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(*context, "else");
+        llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(*context, "ifcont");
 
         if (node->getElseBody()) {
             builder->CreateCondBr(condValue, thenBB, elseBB);
@@ -154,39 +158,39 @@ namespace Ryntra::Compiler {
 
     void IRGenerator::visitFunctionCall(std::shared_ptr<FunctionCallNode> node) {
         std::string funcName = node->getFunctionName();
-        
+
         // 1. Symbol Table Lookup
         if (symbolTable.lookupFunction(funcName)) {
             // 2. Builtin Handling
             if (funcName == "__builtin_print") {
                 // Declare printf if not exists: int printf(i8*, ...)
-                std::vector<llvm::Type*> argsTypes;
+                std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::PointerType::get(*context, 0));
 
-                llvm::FunctionType* printfType = llvm::FunctionType::get(
+                llvm::FunctionType *printfType = llvm::FunctionType::get(
                     llvm::Type::getInt32Ty(*context), // return int
                     argsTypes,
                     true // varargs
                 );
-                
+
                 llvm::FunctionCallee printfFunc = module->getOrInsertFunction("printf", printfType);
-                
-                std::vector<llvm::Value*> args;
-                std::vector<llvm::Value*> stringsToFree; // Track temporary strings from intToString
-                
+
+                std::vector<llvm::Value *> args;
+                std::vector<llvm::Value *> stringsToFree; // Track temporary strings from intToString
+
                 for (auto argNode : node->getArguments()) {
                     // Check if this argument is a call to a builtin that returns a temporary string
                     bool isTempString = false;
                     if (auto callNode = std::dynamic_pointer_cast<FunctionCallNode>(argNode)) {
                         std::string calleeName = callNode->getFunctionName();
-                        if (calleeName == "__builtin_intToString" || 
-                            calleeName == "__builtin_longToString" || 
+                        if (calleeName == "__builtin_intToString" ||
+                            calleeName == "__builtin_longToString" ||
                             calleeName == "__builtin_longlongToString") {
                             isTempString = true;
                         }
                     }
 
-                    llvm::Value* val = evaluate(argNode);
+                    llvm::Value *val = evaluate(argNode);
                     if (val) {
                         args.push_back(val);
                         if (isTempString) {
@@ -194,63 +198,60 @@ namespace Ryntra::Compiler {
                         }
                     }
                 }
-                
+
                 if (!args.empty()) {
-                     lastValue = builder->CreateCall(printfFunc, args);
-                     
-                     // Insert free calls for temporary strings
-                     if (!stringsToFree.empty()) {
-                         llvm::FunctionType* freeType = llvm::FunctionType::get(
-                             llvm::Type::getVoidTy(*context),
-                             {llvm::PointerType::get(*context, 0)},
-                             false
-                         );
-                         llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
-                         for (auto strPtr : stringsToFree) {
-                             builder->CreateCall(freeFunc, {strPtr});
-                         }
-                     }
-                     return;
+                    lastValue = builder->CreateCall(printfFunc, args);
+
+                    // Insert free calls for temporary strings
+                    if (!stringsToFree.empty()) {
+                        llvm::FunctionType *freeType = llvm::FunctionType::get(
+                            llvm::Type::getVoidTy(*context),
+                            {llvm::PointerType::get(*context, 0)},
+                            false);
+                        llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
+                        for (auto strPtr : stringsToFree) {
+                            builder->CreateCall(freeFunc, {strPtr});
+                        }
+                    }
+                    return;
                 }
             } else if (funcName == "__builtin_intToString") {
                 // Declare rcrt_builtin_intToString if not exists: char* rcrt_builtin_intToString(int)
-                std::vector<llvm::Type*> argsTypes;
+                std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::Type::getInt32Ty(*context));
 
-                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                llvm::FunctionType *toStringType = llvm::FunctionType::get(
                     llvm::PointerType::get(*context, 0), // return char*
                     argsTypes,
-                    false
-                );
-                
+                    false);
+
                 llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_intToString", toStringType);
-                
-                std::vector<llvm::Value*> args;
+
+                std::vector<llvm::Value *> args;
                 for (auto arg : node->getArguments()) {
-                    llvm::Value* val = evaluate(arg);
+                    llvm::Value *val = evaluate(arg);
                     if (val) {
                         args.push_back(val);
                     }
                 }
-                
+
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
             } else if (funcName == "__builtin_longToString") {
                 // Declare rcrt_builtin_longToString if not exists: char* rcrt_builtin_longToString(long)
-                std::vector<llvm::Type*> argsTypes;
+                std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::Type::getInt64Ty(*context));
 
-                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                llvm::FunctionType *toStringType = llvm::FunctionType::get(
                     llvm::PointerType::get(*context, 0), // return char*
                     argsTypes,
-                    false
-                );
-                
+                    false);
+
                 llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_longToString", toStringType);
-                
-                std::vector<llvm::Value*> args;
+
+                std::vector<llvm::Value *> args;
                 for (auto arg : node->getArguments()) {
-                    llvm::Value* val = evaluate(arg);
+                    llvm::Value *val = evaluate(arg);
                     if (val) {
                         // Ensure it's i64
                         if (val->getType()->isIntegerTy() && val->getType()->getIntegerBitWidth() < 64) {
@@ -259,25 +260,24 @@ namespace Ryntra::Compiler {
                         args.push_back(val);
                     }
                 }
-                
+
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
             } else if (funcName == "__builtin_longlongToString") {
                 // Declare rcrt_builtin_longlongToString if not exists: char* rcrt_builtin_longlongToString(long long)
-                std::vector<llvm::Type*> argsTypes;
+                std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::Type::getInt64Ty(*context));
 
-                llvm::FunctionType* toStringType = llvm::FunctionType::get(
+                llvm::FunctionType *toStringType = llvm::FunctionType::get(
                     llvm::PointerType::get(*context, 0), // return char*
                     argsTypes,
-                    false
-                );
-                
+                    false);
+
                 llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_longlongToString", toStringType);
-                
-                std::vector<llvm::Value*> args;
+
+                std::vector<llvm::Value *> args;
                 for (auto arg : node->getArguments()) {
-                    llvm::Value* val = evaluate(arg);
+                    llvm::Value *val = evaluate(arg);
                     if (val) {
                         // Ensure it's i64
                         if (val->getType()->isIntegerTy() && val->getType()->getIntegerBitWidth() < 64) {
@@ -286,43 +286,42 @@ namespace Ryntra::Compiler {
                         args.push_back(val);
                     }
                 }
-                
+
                 lastValue = builder->CreateCall(toStringFunc, args);
-                 return;
-             } else if (funcName == "__builtin_free") {
-                 // Declare rcrt_builtin_free if not exists: void rcrt_builtin_free(void*)
-                 llvm::FunctionType* freeType = llvm::FunctionType::get(
-                     llvm::Type::getVoidTy(*context),
-                     {llvm::PointerType::get(*context, 0)},
-                     false
-                 );
-                 llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
-                 
-                 std::vector<llvm::Value*> args;
-                 for (auto arg : node->getArguments()) {
-                     llvm::Value* val = evaluate(arg);
-                     if (val) {
-                         args.push_back(val);
-                     }
-                 }
-                 
-                 if (!args.empty()) {
-                     builder->CreateCall(freeFunc, args[0]);
-                 }
-                 lastValue = nullptr;
-                 return;
-             } else {
+                return;
+            } else if (funcName == "__builtin_free") {
+                // Declare rcrt_builtin_free if not exists: void rcrt_builtin_free(void*)
+                llvm::FunctionType *freeType = llvm::FunctionType::get(
+                    llvm::Type::getVoidTy(*context),
+                    {llvm::PointerType::get(*context, 0)},
+                    false);
+                llvm::FunctionCallee freeFunc = module->getOrInsertFunction("rcrt_builtin_free", freeType);
+
+                std::vector<llvm::Value *> args;
+                for (auto arg : node->getArguments()) {
+                    llvm::Value *val = evaluate(arg);
+                    if (val) {
+                        args.push_back(val);
+                    }
+                }
+
+                if (!args.empty()) {
+                    builder->CreateCall(freeFunc, args[0]);
+                }
+                lastValue = nullptr;
+                return;
+            } else {
                 // Non-builtin function lookup in Module
-                llvm::Function* callee = module->getFunction(funcName);
+                llvm::Function *callee = module->getFunction(funcName);
                 if (callee) {
-                    std::vector<llvm::Value*> args;
-                    unsigned idx = 0;
+                    std::vector<llvm::Value *> args;
+                    unsigned                   idx = 0;
                     for (auto argNode : node->getArguments()) {
-                        llvm::Value* val = evaluate(argNode);
+                        llvm::Value *val = evaluate(argNode);
                         if (val) {
                             // Handle argument type conversion
                             if (idx < callee->arg_size()) {
-                                llvm::Type* targetType = callee->getFunctionType()->getParamType(idx);
+                                llvm::Type *targetType = callee->getFunctionType()->getParamType(idx);
                                 if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
                                     unsigned valWidth = val->getType()->getIntegerBitWidth();
                                     unsigned targetWidth = targetType->getIntegerBitWidth();
@@ -350,26 +349,26 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitIdentifier(std::shared_ptr<IdentifierNode> node) {
-        llvm::Value* v = namedValues[node->getName()];
+        llvm::Value *v = namedValues[node->getName()];
         if (!v) {
             lastValue = nullptr;
             return;
         }
-        llvm::Type* type = ((llvm::AllocaInst*)v)->getAllocatedType();
-        auto load = builder->CreateLoad(type, v, node->getName());
-        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        llvm::Type *type = ((llvm::AllocaInst *)v)->getAllocatedType();
+        auto        load = builder->CreateLoad(type, v, node->getName());
+        unsigned    align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
         load->setAlignment(llvm::Align(align));
         lastValue = load;
     }
 
     void IRGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
         long long val = node->getValue();
-        TypeKind kind = node->getTypeKind();
+        TypeKind  kind = node->getTypeKind();
 
         if (kind == TypeKind::Long || kind == TypeKind::LongLong) {
             lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, val, true));
         } else {
-            // Even if it's marked as Int, check if it actually fits. 
+            // Even if it's marked as Int, check if it actually fits.
             // This handles cases where ASTBuilder might have promoted it but it's not explicitly suffixed.
             if (val > 2147483647LL || val < -2147483648LL) {
                 lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, val, true));
@@ -383,10 +382,10 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) {
-        llvm::Value* val = evaluate(node->getReturnValue());
+        llvm::Value *val = evaluate(node->getReturnValue());
         if (val) {
             // Handle type conversion to function return type
-            llvm::Type* retType = builder->GetInsertBlock()->getParent()->getReturnType();
+            llvm::Type *retType = builder->GetInsertBlock()->getParent()->getReturnType();
             if (val->getType()->isIntegerTy() && retType->isIntegerTy()) {
                 unsigned valWidth = val->getType()->getIntegerBitWidth();
                 unsigned targetWidth = retType->getIntegerBitWidth();
@@ -407,11 +406,11 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
-        llvm::Value* val = evaluate(node->getInitialValue());
+        llvm::Value *val = evaluate(node->getInitialValue());
 
-        llvm::Type* type = mapType(*context, node->getVarType());
-        llvm::AllocaInst* alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
-        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        llvm::Type       *type = mapType(*context, node->getVarType());
+        llvm::AllocaInst *alloca = builder->CreateAlloca(type, nullptr, node->getVarName());
+        unsigned          align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
         alloca->setAlignment(llvm::Align(align));
 
         if (val) {
@@ -437,49 +436,49 @@ namespace Ryntra::Compiler {
 
         // Handle logical AND/OR with short-circuiting
         if (op == "&&") {
-            llvm::Value* lhsValue = evaluate(node->getLeft());
-            llvm::Function* func = builder->GetInsertBlock()->getParent();
-            
-            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "and.rhs", func);
-            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "and.merge", func);
-            
-            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            llvm::Value    *lhsValue = evaluate(node->getLeft());
+            llvm::Function *func = builder->GetInsertBlock()->getParent();
+
+            llvm::BasicBlock *rhsBB = llvm::BasicBlock::Create(*context, "and.rhs", func);
+            llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(*context, "and.merge", func);
+
+            llvm::BasicBlock *entryBB = builder->GetInsertBlock();
             builder->CreateCondBr(lhsValue, rhsBB, mergeBB);
-            
+
             builder->SetInsertPoint(rhsBB);
-            llvm::Value* rhsValue = evaluate(node->getRight());
-            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            llvm::Value      *rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock *rhsEndBB = builder->GetInsertBlock();
             builder->CreateBr(mergeBB);
-            
+
             builder->SetInsertPoint(mergeBB);
-            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "andtmp");
+            llvm::PHINode *phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "andtmp");
             phi->addIncoming(llvm::ConstantInt::getFalse(*context), entryBB);
             phi->addIncoming(rhsValue, rhsEndBB);
-            
+
             lastValue = phi;
             return;
         }
 
         if (op == "||") {
-            llvm::Value* lhsValue = evaluate(node->getLeft());
-            llvm::Function* func = builder->GetInsertBlock()->getParent();
-            
-            llvm::BasicBlock* rhsBB = llvm::BasicBlock::Create(*context, "or.rhs", func);
-            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "or.merge", func);
-            
-            llvm::BasicBlock* entryBB = builder->GetInsertBlock();
+            llvm::Value    *lhsValue = evaluate(node->getLeft());
+            llvm::Function *func = builder->GetInsertBlock()->getParent();
+
+            llvm::BasicBlock *rhsBB = llvm::BasicBlock::Create(*context, "or.rhs", func);
+            llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(*context, "or.merge", func);
+
+            llvm::BasicBlock *entryBB = builder->GetInsertBlock();
             builder->CreateCondBr(lhsValue, mergeBB, rhsBB);
-            
+
             builder->SetInsertPoint(rhsBB);
-            llvm::Value* rhsValue = evaluate(node->getRight());
-            llvm::BasicBlock* rhsEndBB = builder->GetInsertBlock();
+            llvm::Value      *rhsValue = evaluate(node->getRight());
+            llvm::BasicBlock *rhsEndBB = builder->GetInsertBlock();
             builder->CreateBr(mergeBB);
-            
+
             builder->SetInsertPoint(mergeBB);
-            llvm::PHINode* phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "ortmp");
+            llvm::PHINode *phi = builder->CreatePHI(llvm::Type::getInt1Ty(*context), 2, "ortmp");
             phi->addIncoming(llvm::ConstantInt::getTrue(*context), entryBB);
             phi->addIncoming(rhsValue, rhsEndBB);
-            
+
             lastValue = phi;
             return;
         }
@@ -487,14 +486,15 @@ namespace Ryntra::Compiler {
         llvm::Value *leftValue = evaluate(node->getLeft());
         llvm::Value *rightValue = evaluate(node->getRight());
 
-        if (!leftValue || !rightValue) return;
+        if (!leftValue || !rightValue)
+            return;
 
         // Handle type promotion for arithmetic and bitwise operations
         if (op == "*" || op == "/" || op == "%" || op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" ||
-            op == "+" || op == "-" || op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==") {
-            
-            llvm::Type* leftType = leftValue->getType();
-            llvm::Type* rightType = rightValue->getType();
+            op == "+" || op == "-" || op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==" || op == "!=") {
+
+            llvm::Type *leftType = leftValue->getType();
+            llvm::Type *rightType = rightValue->getType();
 
             if (leftType->isIntegerTy() && rightType->isIntegerTy()) {
                 unsigned leftWidth = leftType->getIntegerBitWidth();
@@ -551,11 +551,11 @@ namespace Ryntra::Compiler {
         }
 
         // Comparison operators
-        if (op == "==") {
+        if ("==" == op) {
             lastValue = builder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
             return;
         }
-        if (op == "!=") {
+        if ("!=" == op) {
             lastValue = builder->CreateICmpNE(leftValue, rightValue, "netmp");
             return;
         }
@@ -580,25 +580,25 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
-        std::string idName = node->getIdentifier();
-        std::string op = node->getOp();
-        llvm::Value* alloca = namedValues[idName];
-        
+        std::string  idName = node->getIdentifier();
+        std::string  op = node->getOp();
+        llvm::Value *alloca = namedValues[idName];
+
         if (!alloca) {
             lastValue = nullptr;
             return;
         }
 
-        llvm::Value* val = evaluate(node->getExpression());
+        llvm::Value *val = evaluate(node->getExpression());
         if (val) {
             // Handle type conversion
-            llvm::Type* targetType = ((llvm::AllocaInst*)alloca)->getAllocatedType();
-            
+            llvm::Type *targetType = ((llvm::AllocaInst *)alloca)->getAllocatedType();
+
             if (op != "=") {
                 // Compound assignment: Load, Op, Store
-                unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
-                llvm::Value* currentVal = builder->CreateLoad(targetType, alloca, idName + ".load");
-                ((llvm::LoadInst*)currentVal)->setAlignment(llvm::Align(align));
+                unsigned     align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
+                llvm::Value *currentVal = builder->CreateLoad(targetType, alloca, idName + ".load");
+                ((llvm::LoadInst *)currentVal)->setAlignment(llvm::Align(align));
 
                 // Handle type promotion for the operation
                 if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
@@ -609,16 +609,26 @@ namespace Ryntra::Compiler {
                     }
                 }
 
-                if (op == "+=") val = builder->CreateAdd(currentVal, val, "addtmp");
-                else if (op == "-=") val = builder->CreateSub(currentVal, val, "subtmp");
-                else if (op == "*=") val = builder->CreateMul(currentVal, val, "multmp");
-                else if (op == "/=") val = builder->CreateSDiv(currentVal, val, "divtmp");
-                else if (op == "%=") val = builder->CreateSRem(currentVal, val, "remtmp");
-                else if (op == "&=") val = builder->CreateAnd(currentVal, val, "andtmp");
-                else if (op == "|=") val = builder->CreateOr(currentVal, val, "ortmp");
-                else if (op == "^=") val = builder->CreateXor(currentVal, val, "xortmp");
-                else if (op == "<<=") val = builder->CreateShl(currentVal, val, "shltmp");
-                else if (op == ">>=") val = builder->CreateAShr(currentVal, val, "ashrtmp");
+                if (op == "+=")
+                    val = builder->CreateAdd(currentVal, val, "addtmp");
+                else if (op == "-=")
+                    val = builder->CreateSub(currentVal, val, "subtmp");
+                else if (op == "*=")
+                    val = builder->CreateMul(currentVal, val, "multmp");
+                else if (op == "/=")
+                    val = builder->CreateSDiv(currentVal, val, "divtmp");
+                else if (op == "%=")
+                    val = builder->CreateSRem(currentVal, val, "remtmp");
+                else if (op == "&=")
+                    val = builder->CreateAnd(currentVal, val, "andtmp");
+                else if (op == "|=")
+                    val = builder->CreateOr(currentVal, val, "ortmp");
+                else if (op == "^=")
+                    val = builder->CreateXor(currentVal, val, "xortmp");
+                else if (op == "<<=")
+                    val = builder->CreateShl(currentVal, val, "shltmp");
+                else if (op == ">>=")
+                    val = builder->CreateAShr(currentVal, val, "ashrtmp");
             } else {
                 if (val->getType()->isIntegerTy() && targetType->isIntegerTy()) {
                     unsigned valWidth = val->getType()->getIntegerBitWidth();
@@ -630,8 +640,8 @@ namespace Ryntra::Compiler {
                     }
                 }
             }
-            
-            auto store = builder->CreateStore(val, alloca);
+
+            auto     store = builder->CreateStore(val, alloca);
             unsigned align = (targetType->getIntegerBitWidth() == 64) ? 8 : 4;
             store->setAlignment(llvm::Align(align));
             lastValue = val;
@@ -642,8 +652,8 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
-        llvm::Value* value = evaluate(node->getExpression());
-        std::string op = node->getOp();
+        llvm::Value *value = evaluate(node->getExpression());
+        std::string  op = node->getOp();
 
         if (!value) {
             lastValue = nullptr;
@@ -661,7 +671,7 @@ namespace Ryntra::Compiler {
         }
 
         if (op == "-") {
-            llvm::Value* zero = llvm::ConstantInt::get(value->getType(), 0);
+            llvm::Value *zero = llvm::ConstantInt::get(value->getType(), 0);
             lastValue = builder->CreateSub(zero, value, "negtmp");
             return;
         }
@@ -674,11 +684,11 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
-        llvm::Function* func = builder->GetInsertBlock()->getParent();
+        llvm::Function *func = builder->GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "while.cond", func);
-        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "while.body");
-        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "while.end");
+        llvm::BasicBlock *loopCondBB = llvm::BasicBlock::Create(*context, "while.cond", func);
+        llvm::BasicBlock *loopBodyBB = llvm::BasicBlock::Create(*context, "while.body");
+        llvm::BasicBlock *afterLoopBB = llvm::BasicBlock::Create(*context, "while.end");
 
         // Break target is after loop, Continue target is condition check
         breakTargets.push_back(afterLoopBB);
@@ -687,7 +697,7 @@ namespace Ryntra::Compiler {
         builder->CreateBr(loopCondBB);
 
         builder->SetInsertPoint(loopCondBB);
-        llvm::Value* condValue = evaluate(node->getCondition());
+        llvm::Value *condValue = evaluate(node->getCondition());
         if (!condValue) {
             breakTargets.pop_back();
             continueTargets.pop_back();
@@ -698,7 +708,7 @@ namespace Ryntra::Compiler {
         func->insert(func->end(), loopBodyBB);
         builder->SetInsertPoint(loopBodyBB);
         visit(node->getBody());
-        
+
         if (!builder->GetInsertBlock()->getTerminator()) {
             builder->CreateBr(loopCondBB);
         }
@@ -711,7 +721,7 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitForStatement(std::shared_ptr<ForStatementNode> node) {
-        llvm::Function* func = builder->GetInsertBlock()->getParent();
+        llvm::Function *func = builder->GetInsertBlock()->getParent();
 
         symbolTable.enterScope();
 
@@ -721,10 +731,10 @@ namespace Ryntra::Compiler {
         }
 
         // 2. Create blocks
-        llvm::BasicBlock* loopCondBB = llvm::BasicBlock::Create(*context, "for.cond", func);
-        llvm::BasicBlock* loopBodyBB = llvm::BasicBlock::Create(*context, "for.body");
-        llvm::BasicBlock* loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
-        llvm::BasicBlock* afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
+        llvm::BasicBlock *loopCondBB = llvm::BasicBlock::Create(*context, "for.cond", func);
+        llvm::BasicBlock *loopBodyBB = llvm::BasicBlock::Create(*context, "for.body");
+        llvm::BasicBlock *loopIncBB = llvm::BasicBlock::Create(*context, "for.inc");
+        llvm::BasicBlock *afterLoopBB = llvm::BasicBlock::Create(*context, "for.end");
 
         // Break target is after loop, Continue target is increment block
         breakTargets.push_back(afterLoopBB);
@@ -735,7 +745,7 @@ namespace Ryntra::Compiler {
         // 3. Condition check block
         builder->SetInsertPoint(loopCondBB);
         if (node->getCondition()) {
-            llvm::Value* condValue = evaluate(node->getCondition());
+            llvm::Value *condValue = evaluate(node->getCondition());
             if (!condValue) {
                 breakTargets.pop_back();
                 continueTargets.pop_back();
@@ -751,7 +761,7 @@ namespace Ryntra::Compiler {
         func->insert(func->end(), loopBodyBB);
         builder->SetInsertPoint(loopBodyBB);
         visit(node->getBody());
-        
+
         if (!builder->GetInsertBlock()->getTerminator()) {
             builder->CreateBr(loopIncBB);
         }
@@ -775,19 +785,19 @@ namespace Ryntra::Compiler {
     }
 
     void IRGenerator::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
-        llvm::Value* v = namedValues[node->getVarName()];
+        llvm::Value *v = namedValues[node->getVarName()];
         if (!v) {
             lastValue = nullptr;
             return;
         }
 
-        llvm::Type* type = ((llvm::AllocaInst*)v)->getAllocatedType();
-        auto load = builder->CreateLoad(type, v, node->getVarName() + ".load");
-        unsigned align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
+        llvm::Type *type = ((llvm::AllocaInst *)v)->getAllocatedType();
+        auto        load = builder->CreateLoad(type, v, node->getVarName() + ".load");
+        unsigned    align = (type->getIntegerBitWidth() == 64) ? 8 : 4;
         load->setAlignment(llvm::Align(align));
-        
-        llvm::Value* oldVal = load;
-        llvm::Value* newVal;
+
+        llvm::Value *oldVal = load;
+        llvm::Value *newVal;
         if (node->getOp() == "++") {
             newVal = builder->CreateAdd(oldVal, llvm::ConstantInt::get(type, 1), "inc");
         } else {
@@ -801,10 +811,10 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
         if (!breakTargets.empty()) {
             builder->CreateBr(breakTargets.back());
-            
+
             // Create a dead block to satisfy LLVM IR structure after terminator
-            llvm::Function* func = builder->GetInsertBlock()->getParent();
-            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "break.dead", func);
+            llvm::Function   *func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock *deadBB = llvm::BasicBlock::Create(*context, "break.dead", func);
             builder->SetInsertPoint(deadBB);
         }
     }
@@ -812,10 +822,10 @@ namespace Ryntra::Compiler {
     void IRGenerator::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
         if (!continueTargets.empty()) {
             builder->CreateBr(continueTargets.back());
-            
+
             // Create a dead block to satisfy LLVM IR structure after terminator
-            llvm::Function* func = builder->GetInsertBlock()->getParent();
-            llvm::BasicBlock* deadBB = llvm::BasicBlock::Create(*context, "continue.dead", func);
+            llvm::Function   *func = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock *deadBB = llvm::BasicBlock::Create(*context, "continue.dead", func);
             builder->SetInsertPoint(deadBB);
         }
     }

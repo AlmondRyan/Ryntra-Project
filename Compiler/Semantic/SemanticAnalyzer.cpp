@@ -260,7 +260,7 @@ namespace Ryntra::Compiler {
                     SourceLocation(node->getLocation()));
             }
             lastTypeResult = {TypeKind::Boolean, ""};
-        } else if (op == "==" || op == "!=" || op == ">" || op == "<" || op == ">=" || op == "<=") {
+        } else if (op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=") {
             if (lhs.kind != rhs.kind && !(isInteger(lhs.kind) && isInteger(rhs.kind))) {
                 ErrorHandler::getInstance().makeError(
                     "Cannot compare between different types.",
