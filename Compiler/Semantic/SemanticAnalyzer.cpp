@@ -243,19 +243,6 @@ namespace Ryntra::Compiler {
         std::string varName = node->getVarName();
         TypeKind declaredType = mapStringToType(node->getVarType());
 
-        if (node->isArrayType()) {
-            if (node->getArraySize() <= 0) {
-                ErrorHandler::getInstance().makeError(
-                    "Array size must be greater than 0.",
-                    SourceLocation(node->getLocation()));
-            }
-            if (node->getInitialValue()) {
-                 ErrorHandler::getInstance().makeError(
-                    "Array initialization is not supported yet.",
-                    SourceLocation(node->getLocation()));
-            }
-        }
-
         auto initialValue = node->getInitialValue();
         if (initialValue) {
             bool handledBuiltinScan = false;
@@ -300,7 +287,7 @@ namespace Ryntra::Compiler {
         }
 
         Symbol variableSymbol = {
-            {declaredType, "", node->isArrayType(), node->getArraySize()},
+            {declaredType, ""},
             varName,
             SymbolKind::Variable};
 
@@ -372,54 +359,21 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
-        auto target = node->getTarget();
-        Type lhsType;
-        std::string idName = "expression";
+        auto idName = node->getIdentifier();
+        auto op = node->getOp();
+        auto symbol = symbolTable.lookupSymbolInScopes(idName);
 
-        if (auto idNode = std::dynamic_pointer_cast<IdentifierNode>(target)) {
-            idName = idNode->getName();
-            auto symbol = symbolTable.lookupSymbolInScopes(idName);
-
-            if (symbol == std::nullopt) {
-                ErrorHandler::getInstance().makeError(
-                    "Undefined variable '" + idName + "' in current scope.",
-                    SourceLocation(node->getLocation()));
-                lastTypeResult = {TypeKind::Void, ""};
-                nodeTypes[node] = lastTypeResult;
-                return;
-            }
-            lhsType = symbol->type;
-            
-            // Check if assigning to an array variable directly (not supported usually, unless copy)
-            // C does not allow array assignment. Ryntra probably shouldn't either.
-            if (lhsType.isArray) {
-                ErrorHandler::getInstance().makeError(
-                    "Cannot assign to array '" + idName + "' directly.",
-                    SourceLocation(node->getLocation()));
-                lastTypeResult = {TypeKind::Void, ""};
-                nodeTypes[node] = lastTypeResult;
-                return;
-            }
-
-        } else if (auto arrNode = std::dynamic_pointer_cast<ArrayAccessNode>(target)) {
-            lhsType = evaluate(arrNode);
-            if (lhsType.kind == TypeKind::ErrorType) {
-                lastTypeResult = {TypeKind::Void, ""};
-                nodeTypes[node] = lastTypeResult;
-                return;
-            }
-            idName = "array element";
-        } else {
-             ErrorHandler::getInstance().makeError(
-                "Invalid assignment target. Must be a variable or array element.",
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined variable '" + idName + "' in current scope.",
                 SourceLocation(node->getLocation()));
-             lastTypeResult = {TypeKind::Void, ""};
-             nodeTypes[node] = lastTypeResult;
-             return;
+            lastTypeResult = {TypeKind::Void, ""};
+            nodeTypes[node] = lastTypeResult;
+            return;
         }
 
-        auto op = node->getOp();
         Type rhsType = evaluate(node->getExpression());
+        Type lhsType = symbol->type;
 
         if (op != "=") {
             bool isArithmetic = (op == "+=" || op == "-=" || op == "*=" || op == "/=");
@@ -442,7 +396,7 @@ namespace Ryntra::Compiler {
         if (!isCompatible(lhsType.kind, rhsType.kind)) {
             ErrorHandler::getInstance().makeError(
                 "Cannot assign " + mapTypeToString(rhsType.kind) +
-                    " rvalue to " + idName + " of type " + mapTypeToString(lhsType.kind),
+                    " rvalue to variable '" + idName + "' of type " + mapTypeToString(lhsType.kind),
                 SourceLocation(node->getLocation()));
         }
 
@@ -535,10 +489,10 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
-        Type type = evaluate(node->getExpression());
-        if (!isNumeric(type.kind)) {
+        auto symbol = symbolTable.lookupSymbolInScopes(node->getVarName());
+        if (symbol == std::nullopt) {
             ErrorHandler::getInstance().makeError(
-                "Increment/Decrement operator can only be applied to numeric types, but got " + mapTypeToString(type.kind) + ".",
+                "Undefined identifier: " + node->getVarName(),
                 SourceLocation(node->getLocation())
             );
             lastTypeResult = {TypeKind::ErrorType, ""};
@@ -546,36 +500,17 @@ namespace Ryntra::Compiler {
             return;
         }
 
-        // Check l-value
-        auto expr = node->getExpression();
-        if (!std::dynamic_pointer_cast<IdentifierNode>(expr) && !std::dynamic_pointer_cast<ArrayAccessNode>(expr)) {
-             ErrorHandler::getInstance().makeError("Increment/Decrement operator requires an l-value (variable or array element).", SourceLocation(node->getLocation()));
+        if (!isNumeric(symbol->type.kind)) {
+            ErrorHandler::getInstance().makeError(
+                "Increment/Decrement operator can only be applied to numeric types, but got " + mapTypeToString(symbol->type.kind) + ".",
+                SourceLocation(node->getLocation())
+            );
+            lastTypeResult = {TypeKind::ErrorType, ""};
+            nodeTypes[node] = lastTypeResult;
+            return;
         }
 
-        lastTypeResult = type;
-        nodeTypes[node] = lastTypeResult;
-    }
-
-    void SemanticAnalyzer::visitArrayAccess(std::shared_ptr<ArrayAccessNode> node) {
-        Type arrayType = evaluate(node->getArray());
-        if (!arrayType.isArray) {
-             ErrorHandler::getInstance().makeError("Cannot access element of non-array type.", SourceLocation(node->getLocation()));
-             lastTypeResult = {TypeKind::ErrorType, ""};
-             nodeTypes[node] = lastTypeResult;
-             return;
-        }
-        
-        Type indexType = evaluate(node->getIndex());
-        if (!isInteger(indexType.kind)) {
-             ErrorHandler::getInstance().makeError("Array index must be an integer.", SourceLocation(node->getLocation()));
-        }
-
-        // Return the element type
-        Type resultType = arrayType;
-        resultType.isArray = false;
-        resultType.arraySize = 0;
-        
-        lastTypeResult = resultType;
+        lastTypeResult = symbol->type;
         nodeTypes[node] = lastTypeResult;
     }
 
@@ -584,25 +519,6 @@ namespace Ryntra::Compiler {
             ErrorHandler::getInstance().makeError("Continue must use in a loop statement.",
                 SourceLocation(node->getLocation()));
         }
-    }
-
-    void SemanticAnalyzer::visitArrayAccess(std::shared_ptr<ArrayAccessNode> node) {
-        Type arrayType = evaluate(node->getArray());
-        if (!arrayType.isArray) {
-            ErrorHandler::getInstance().makeError("Type " + mapTypeToString(arrayType.kind) + " is not an array.", node->getLocation());
-            lastTypeResult = {TypeKind::ErrorType, ""};
-            nodeTypes[node] = lastTypeResult;
-            return;
-        }
-
-        Type indexType = evaluate(node->getIndex());
-        if (!isInteger(indexType.kind)) {
-             ErrorHandler::getInstance().makeError("Array index must be an integer.", node->getLocation());
-        }
-
-        // Result is the element type.
-        lastTypeResult = {arrayType.kind, arrayType.name, false, 0}; 
-        nodeTypes[node] = lastTypeResult;
     }
 
     void SemanticAnalyzer::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {

@@ -33,7 +33,6 @@ namespace Ryntra::Compiler {
         void visitWhileStatement(std::shared_ptr<WhileStatementNode> node) override;
         void visitForStatement(std::shared_ptr<ForStatementNode> node) override;
         void visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) override;
-        void visitArrayAccess(std::shared_ptr<ArrayAccessNode> node) override;
 
         void visitBreakStatement(std::shared_ptr<BreakStatementNode> node) override;
         void visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) override;

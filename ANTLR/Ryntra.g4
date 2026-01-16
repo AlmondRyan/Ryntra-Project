@@ -54,8 +54,6 @@ LPAREN: '(' ;
 RPAREN: ')' ;
 LBRACE: '{' ;
 RBRACE: '}' ;
-LBRACKET: '[';
-RBRACKET: ']';
 COMMA: ',';
 
 // Literals
@@ -98,7 +96,7 @@ typeSpecifier
     ;
 
 variableDeclaration
-    : typeSpecifier IDENTIFIER (LBRACKET INTEGER_LITERAL RBRACKET)? (ASSIGN expression)?
+    : typeSpecifier IDENTIFIER (ASSIGN expression)?
 //    | STRING IDENTIFIER (ASSIGN expression)?
 //    | BOOL IDENTIFIER (ASSIGN expression)?
 //    | LONG IDENTIFIER (ASSIGN expression)?
@@ -152,7 +150,7 @@ continueStatement
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
 argumentList: expression (COMMA expression)*;
 
-assignment: postfixExpression (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | AND_ASSIGN | OR_ASSIGN | XOR_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN) expression;
+assignment: IDENTIFIER (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | AND_ASSIGN | OR_ASSIGN | XOR_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN) expression;
 
 expression
     : logicalOrExpression
@@ -207,9 +205,8 @@ unaryExpression
 
 postfixExpression
     : primaryExpression
-    | postfixExpression LBRACKET expression RBRACKET
-    | postfixExpression INC
-    | postfixExpression DEC
+    | IDENTIFIER INC
+    | IDENTIFIER DEC
     ;
 
 primaryExpression

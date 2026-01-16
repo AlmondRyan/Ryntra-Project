@@ -26,8 +26,6 @@ namespace Ryntra::Compiler {
     struct Type {
         TypeKind kind;
         std::string name;  // when kind == Custom
-        bool isArray = false;
-        unsigned long long arraySize = 0;
     };
 
     struct Symbol {
