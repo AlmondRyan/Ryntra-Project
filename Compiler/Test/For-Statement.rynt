@@ -1,0 +1,16 @@
+int main() {
+    int n = 0;
+    for (int i = 1; i <= 10; i++) {
+        n += i;
+    }
+
+    __builtin_print(__builtin_intToString(n));
+    __builtin_print("\n");
+
+    for (int i = 10; i > 0; i--) {
+        __builtin_print("Hello");
+        __builtin_print("\n");
+    }
+
+    return 0;
+}

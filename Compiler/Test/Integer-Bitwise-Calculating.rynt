@@ -1,0 +1,23 @@
+int main() {
+    int a = 5;
+    int b = 3;
+
+    int c = a & b;
+    __builtin_print(__builtin_intToString(c)); // Should be 1
+    __builtin_print("\n");
+    int d = a | b;
+    __builtin_print(__builtin_intToString(d)); // Should be 7
+    __builtin_print("\n");
+    int e = a ^ b;
+    __builtin_print(__builtin_intToString(e)); // Should be 6
+    __builtin_print("\n");
+    int f = ~a;
+    __builtin_print(__builtin_intToString(f)); // Should be -6
+    __builtin_print("\n");
+    int g = a << b;
+    __builtin_print(__builtin_intToString(g)); // Should be 40
+    __builtin_print("\n");
+    int h = a >> b;
+    __builtin_print(__builtin_intToString(h)); // Should be 0
+    __builtin_print("\n");
+}

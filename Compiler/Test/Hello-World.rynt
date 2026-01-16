@@ -1,0 +1,4 @@
+int main() {
+    __builtin_print("Hello World");
+    return 0;
+}

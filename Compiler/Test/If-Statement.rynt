@@ -1,0 +1,24 @@
+int main() {
+    int n = 10;
+    int m = 20;
+
+    if (n == 10) {
+        __builtin_print("n is 10");
+    }
+
+    __builtin_print("\n");
+
+    if (m < 30) {
+        __builtin_print("m less than 30");
+    } else {
+        __builtin_print("m greater than 30");
+    }
+
+    if (n < 5) {
+        __builtin_print("n less than 5");
+    } else if (m > 8) {
+        __builtin_print("\n");
+        __builtin_print("m greater than 8");
+    }
+    return 0;
+}
