@@ -184,7 +184,7 @@ namespace Ryntra::Compiler {
                 llvm::FunctionCallee printfFunc = module->getOrInsertFunction("printf", printfType);
 
                 std::vector<llvm::Value *> args;
-                std::vector<llvm::Value *> stringsToFree; // Track temporary strings from intToString
+                std::vector<llvm::Value *> stringsToFree; // Track temporary strings from *ToString builtins
 
                 for (auto argNode : node->getArguments()) {
                     // Check if this argument is a call to a builtin that returns a temporary string
@@ -193,7 +193,9 @@ namespace Ryntra::Compiler {
                         std::string calleeName = callNode->getFunctionName();
                         if (calleeName == "__builtin_intToString" ||
                             calleeName == "__builtin_longToString" ||
-                            calleeName == "__builtin_longlongToString") {
+                            calleeName == "__builtin_longlongToString" ||
+                            calleeName == "__builtin_floatToString" ||
+                            calleeName == "__builtin_doubleToString") {
                             isTempString = true;
                         }
                     }
@@ -298,9 +300,10 @@ namespace Ryntra::Compiler {
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
             } else if (funcName == "__builtin_floatToString") {
-                // Declare rcrt_builtin_floatToString if not exists: char* rcrt_builtin_floatToString(float)
+                // Declare rcrt_builtin_floatToString if not exists: char* rcrt_builtin_floatToString(float, int)
                 std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::Type::getFloatTy(*context));
+                argsTypes.push_back(llvm::Type::getInt32Ty(*context));
 
                 llvm::FunctionType *toStringType = llvm::FunctionType::get(
                     llvm::PointerType::get(*context, 0), // return char*
@@ -310,25 +313,46 @@ namespace Ryntra::Compiler {
                 llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_floatToString", toStringType);
 
                 std::vector<llvm::Value *> args;
+                int                         idx = 0;
                 for (auto arg : node->getArguments()) {
                     llvm::Value *val = evaluate(arg);
                     if (val) {
-                        // Ensure it's float
-                        if (val->getType()->isDoubleTy()) {
-                            val = builder->CreateFPTrunc(val, llvm::Type::getFloatTy(*context), "fptrunc");
-                        } else if (val->getType()->isIntegerTy()) {
-                            val = builder->CreateSIToFP(val, llvm::Type::getFloatTy(*context), "sitofp");
+                        if (idx == 0) {
+                            // Ensure first argument is float
+                            if (val->getType()->isDoubleTy()) {
+                                val = builder->CreateFPTrunc(val, llvm::Type::getFloatTy(*context), "fptrunc");
+                            } else if (val->getType()->isIntegerTy()) {
+                                val = builder->CreateSIToFP(val, llvm::Type::getFloatTy(*context), "sitofp");
+                            }
+                        } else if (idx == 1) {
+                            // Ensure second argument is i32
+                            llvm::Type *targetType = llvm::Type::getInt32Ty(*context);
+                            if (val->getType()->isIntegerTy()) {
+                                if (val->getType() != targetType) {
+                                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                                    unsigned targetWidth = targetType->getIntegerBitWidth();
+                                    if (valWidth < targetWidth) {
+                                        val = builder->CreateSExt(val, targetType, "sext");
+                                    } else if (valWidth > targetWidth) {
+                                        val = builder->CreateTrunc(val, targetType, "trunc");
+                                    }
+                                }
+                            } else if (val->getType()->isFloatingPointTy()) {
+                                val = builder->CreateFPToSI(val, targetType, "fptosi");
+                            }
                         }
                         args.push_back(val);
+                        ++idx;
                     }
                 }
 
                 lastValue = builder->CreateCall(toStringFunc, args);
                 return;
             } else if (funcName == "__builtin_doubleToString") {
-                // Declare rcrt_builtin_doubleToString if not exists: char* rcrt_builtin_doubleToString(double)
+                // Declare rcrt_builtin_doubleToString if not exists: char* rcrt_builtin_doubleToString(double, int)
                 std::vector<llvm::Type *> argsTypes;
                 argsTypes.push_back(llvm::Type::getDoubleTy(*context));
+                argsTypes.push_back(llvm::Type::getInt32Ty(*context));
 
                 llvm::FunctionType *toStringType = llvm::FunctionType::get(
                     llvm::PointerType::get(*context, 0), // return char*
@@ -338,16 +362,36 @@ namespace Ryntra::Compiler {
                 llvm::FunctionCallee toStringFunc = module->getOrInsertFunction("rcrt_builtin_doubleToString", toStringType);
 
                 std::vector<llvm::Value *> args;
+                int                         idx = 0;
                 for (auto arg : node->getArguments()) {
                     llvm::Value *val = evaluate(arg);
                     if (val) {
-                        // Ensure it's double
-                        if (val->getType()->isFloatTy()) {
-                            val = builder->CreateFPExt(val, llvm::Type::getDoubleTy(*context), "fpext");
-                        } else if (val->getType()->isIntegerTy()) {
-                            val = builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context), "sitofp");
+                        if (idx == 0) {
+                            // Ensure first argument is double
+                            if (val->getType()->isFloatTy()) {
+                                val = builder->CreateFPExt(val, llvm::Type::getDoubleTy(*context), "fpext");
+                            } else if (val->getType()->isIntegerTy()) {
+                                val = builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context), "sitofp");
+                            }
+                        } else if (idx == 1) {
+                            // Ensure second argument is i32
+                            llvm::Type *targetType = llvm::Type::getInt32Ty(*context);
+                            if (val->getType()->isIntegerTy()) {
+                                if (val->getType() != targetType) {
+                                    unsigned valWidth = val->getType()->getIntegerBitWidth();
+                                    unsigned targetWidth = targetType->getIntegerBitWidth();
+                                    if (valWidth < targetWidth) {
+                                        val = builder->CreateSExt(val, targetType, "sext");
+                                    } else if (valWidth > targetWidth) {
+                                        val = builder->CreateTrunc(val, targetType, "trunc");
+                                    }
+                                }
+                            } else if (val->getType()->isFloatingPointTy()) {
+                                val = builder->CreateFPToSI(val, targetType, "fptosi");
+                            }
                         }
                         args.push_back(val);
+                        ++idx;
                     }
                 }
 

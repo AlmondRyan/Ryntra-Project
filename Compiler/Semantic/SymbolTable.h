@@ -98,15 +98,19 @@ namespace Ryntra::Compiler {
             FunctionSymbol sBuiltinFloatToString;
             sBuiltinFloatToString.name = "__builtin_floatToString";
             sBuiltinFloatToString.returnType = {TypeKind::String, ""};
-            Symbol floatParam({TypeKind::Float, ""}, "value", SymbolKind::Parameter);
-            sBuiltinFloatToString.parameters.push_back(floatParam);
+            Symbol floatParamV({TypeKind::Float, ""}, "value", SymbolKind::Parameter);
+            sBuiltinFloatToString.parameters.push_back(floatParamV);
+            Symbol floatParamS({TypeKind::Int, ""}, "size", SymbolKind::Parameter);
+            sBuiltinFloatToString.parameters.push_back(floatParamS);
             functions.emplace(sBuiltinFloatToString.name, sBuiltinFloatToString);
 
             FunctionSymbol sBuiltinDoubleToString;
             sBuiltinDoubleToString.name = "__builtin_doubleToString";
             sBuiltinDoubleToString.returnType = {TypeKind::String, ""};
-            Symbol doubleParam({TypeKind::Double, ""}, "value", SymbolKind::Parameter);
-            sBuiltinDoubleToString.parameters.push_back(doubleParam);
+            Symbol doubleParamV({TypeKind::Double, ""}, "value", SymbolKind::Parameter);
+            sBuiltinDoubleToString.parameters.push_back(doubleParamV);
+            Symbol doubleParams({TypeKind::Int, ""}, "size", SymbolKind::Parameter);
+            sBuiltinDoubleToString.parameters.push_back(doubleParams);
             functions.emplace(sBuiltinDoubleToString.name, sBuiltinDoubleToString);
         }
     public:

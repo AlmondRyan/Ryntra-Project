@@ -34,24 +34,28 @@ char *rcrt_builtin_longlongToString(long long value) {
     return buf;
 }
 
-char *rcrt_builtin_floatToString(float value) {
-    int len = snprintf(NULL, 0, "%f", value);
+char *rcrt_builtin_floatToString(float value, int precision) {
+    char format[16];
+    snprintf(format, sizeof format, "%%.%df", precision);
+    int len = snprintf(NULL, 0, format, value);
     if (len < 0) return NULL;
 
     char *buf = malloc((size_t)len + 1);
     if (!buf) return NULL;
 
-    snprintf(buf, (size_t)len + 1, "%f", value);
+    snprintf(buf, (size_t)len + 1, format, value);
     return buf;
 }
 
-char *rcrt_builtin_doubleToString(double value) {
-    int len = snprintf(NULL, 0, "%lf", value);
+char *rcrt_builtin_doubleToString(double value, int precision) {
+    char format[16];
+    snprintf(format, sizeof format, "%%.%df", precision);
+    int len = snprintf(NULL, 0, format, value);
     if (len < 0) return NULL;
 
     char *buf = malloc((size_t)len + 1);
     if (!buf) return NULL;
 
-    snprintf(buf, (size_t)len + 1, "%lf", value);
+    snprintf(buf, (size_t)len + 1, format, value);
     return buf;
 }

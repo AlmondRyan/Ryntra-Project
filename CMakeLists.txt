@@ -39,6 +39,7 @@ add_executable(RyntraProject
         Compiler/AST/Nodes/Expressions.h
         Compiler/AST/Nodes/Statements.h
         Compiler/AST/Nodes/Declarations.h
+        Compiler/AST/Nodes/Literals.h
 )
 
 llvm_map_components_to_libnames(LLVM_LIBS
