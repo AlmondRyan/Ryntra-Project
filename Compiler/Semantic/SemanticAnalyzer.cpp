@@ -537,4 +537,8 @@ void SemanticAnalyzer::visitBreakStatement(std::shared_ptr<BreakStatementNode> n
                                               SourceLocation(node->getLocation()));
     }
 }
+
+void SemanticAnalyzer::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
+
+}
 } // namespace Ryntra::Compiler

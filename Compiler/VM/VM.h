@@ -20,7 +20,7 @@ namespace Ryntra::VM {
         RVM(const std::vector<Instruction> prog, const std::vector<Value> &constPool) {
             program = prog;
             constantPool = constPool;
-            builtins.resize(2);
+            builtins.resize(3);
 
             registerBuiltinFunction();
         }

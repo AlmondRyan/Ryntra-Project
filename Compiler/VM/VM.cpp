@@ -1,6 +1,7 @@
 #include "VM.h"
 #include <iostream>
 #include <variant>
+#include <limits>
 
 namespace Ryntra::VM {
     void RVM::operate() {
@@ -18,6 +19,12 @@ namespace Ryntra::VM {
                     variables.resize(static_cast<size_t>(instruction.operand) + 1);
                 }
                 variables[static_cast<size_t>(instruction.operand)] = value;
+                break;
+            }
+            case OpCodes::LOAD_VAR: {
+                if (instruction.operand < static_cast<int>(variables.size())) {
+                    push(variables[static_cast<size_t>(instruction.operand)]);
+                }
                 break;
             }
             case OpCodes::ADD: {
@@ -82,10 +89,22 @@ namespace Ryntra::VM {
         };
 
         builtins[1] = [](RVM& vm) {
-            std::string result;
-            std::getline(std::cin, result);
+            int input = 0;
+            if (!(std::cin >> input)) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                input = 0;
+            }
             Value v;
-            v.data = result;
+            v.data = input;
+            vm.push(v);
+        };
+
+        builtins[2] = [](RVM& vm) {
+            auto value = vm.pop();
+            int i = std::get<int>(value.data);
+            Value v;
+            v.data = std::to_string(i);
             vm.push(v);
         };
     }

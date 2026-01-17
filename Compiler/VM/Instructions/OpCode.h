@@ -4,6 +4,7 @@ namespace Ryntra::VM {
     enum class OpCodes {
         LD_CONST,                      // LD_CONST [index]
         STORE_VAR,                     // STORE_VAR [index]
+        LOAD_VAR,                      // LOAD_VAR [index]
         ADD,
         SUB,
         MUL,

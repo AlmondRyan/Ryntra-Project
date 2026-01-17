@@ -44,6 +44,7 @@ add_executable(RyntraProject
         Compiler/VM/VM.cpp
         Compiler/VM/VM.h
         Compiler/VM/Instructions/Instruction.h
+        Compiler/VM/VMCodeGenerator.cpp
 )
 
 llvm_map_components_to_libnames(LLVM_LIBS
