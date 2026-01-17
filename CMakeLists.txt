@@ -18,7 +18,6 @@ set(ANTLR_SOURCES
 find_package(antlr4-runtime REQUIRED)
 find_package(LLVM CONFIG REQUIRED)
 
-add_subdirectory(Compiler/RyntraCRT)
 message(STATUS "Found LLVM Library: ${LLVM_PACKAGE_VERSION}")
 
 include_directories(${LLVM_INCLUDE_DIRS})
@@ -36,7 +35,6 @@ add_executable(RyntraProject
         Utility/ErrorHandler/ErrorHandler.cpp
         Compiler/AST/ASTNodes.cpp
         Compiler/AST/Nodes/Expressions.h
-        Compiler/IRGenerator/IRGenerator.cpp
         Compiler/AST/Nodes/Statements.h
         Compiler/AST/Nodes/Declarations.h
         Compiler/AST/Nodes/Literals.h
