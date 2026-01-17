@@ -207,8 +207,65 @@ namespace Ryntra::Compiler {
 
     void VMCodeGenerator::visitAssignmentExpression(std::shared_ptr<AssignmentExpressionNode> node) {
         int idx = getOrCreateVariableIndex(node->getIdentifier());
-        evaluateToStack(node->getExpression());
-        emit(Instruction(OpCodes::STORE_VAR, idx));
+        std::string op = node->getOp();
+
+        if (op == "=") {
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+            return;
+        }
+
+        if (op == "+=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::ADD, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "-=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::SUB, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "*=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::MUL, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "/=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::DIV, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "%=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::MOD, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "&=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::AND, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "|=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::OR, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "^=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::XOR, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == "<<=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::SHL, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        } else if (op == ">>=") {
+            emit(Instruction(OpCodes::LOAD_VAR, idx));
+            evaluateToStack(node->getExpression());
+            emit(Instruction(OpCodes::SHR, 0));
+            emit(Instruction(OpCodes::STORE_VAR, idx));
+        }
     }
 
     void VMCodeGenerator::visitUnaryExpression(std::shared_ptr<UnaryExpressionNode> node) {
