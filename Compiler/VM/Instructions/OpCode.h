@@ -9,6 +9,22 @@ namespace Ryntra::VM {
         SUB,
         MUL,
         DIV,
+        MOD,
+        AND,
+        OR,
+        XOR,
+        SHL,
+        SHR,
+        EQ,
+        NE,
+        LT,
+        LE,
+        GT,
+        GE,
+        NOT,
+        JMP,
+        JZ,
+        RETURN,
         HALT,                          // HALT
         B_CALL,                        // B_CALL [index]
         NOP,                           // NOP

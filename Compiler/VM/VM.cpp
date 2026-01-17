@@ -6,6 +6,7 @@
 namespace Ryntra::VM {
     void RVM::operate() {
         ip = 0;
+        hasReturn = false;
         while (ip < program.size()) {
             Instruction& instruction = program[ip];
             switch (instruction.opCode) {
@@ -66,6 +67,170 @@ namespace Ryntra::VM {
                 result.data = lhs / rhs;
                 push(result);
                 break;
+            }
+            case OpCodes::MOD: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs % rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::AND: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs & rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::OR: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs | rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::XOR: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs ^ rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::SHL: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs << rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::SHR: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs >> rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::EQ: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs == rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::NE: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs != rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::LT: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs < rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::LE: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs <= rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::GT: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs > rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::GE: {
+                Value rhsValue = pop();
+                Value lhsValue = pop();
+                int rhs = std::get<int>(rhsValue.data);
+                int lhs = std::get<int>(lhsValue.data);
+                Value result;
+                result.data = lhs >= rhs;
+                push(result);
+                break;
+            }
+            case OpCodes::NOT: {
+                Value value = pop();
+                bool cond = false;
+                if (std::holds_alternative<int>(value.data)) {
+                    cond = std::get<int>(value.data) != 0;
+                } else if (std::holds_alternative<bool>(value.data)) {
+                    cond = std::get<bool>(value.data);
+                }
+                Value result;
+                result.data = !cond;
+                push(result);
+                break;
+            }
+            case OpCodes::JMP: {
+                ip = static_cast<size_t>(instruction.operand);
+                continue;
+            }
+            case OpCodes::JZ: {
+                Value value = pop();
+                bool cond = false;
+                if (std::holds_alternative<int>(value.data)) {
+                    cond = std::get<int>(value.data) != 0;
+                } else if (std::holds_alternative<bool>(value.data)) {
+                    cond = std::get<bool>(value.data);
+                } else {
+                    cond = true;
+                }
+                if (!cond) {
+                    ip = static_cast<size_t>(instruction.operand);
+                    continue;
+                }
+                break;
+            }
+            case OpCodes::RETURN: {
+                if (!stack.empty()) {
+                    returnValue = pop();
+                } else {
+                    Value v;
+                    v.data = 0;
+                    returnValue = v;
+                }
+                hasReturn = true;
+                return;
             }
             case OpCodes::HALT:
                 return;

@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <variant>
 
 #include "Compiler/AST/ASTBuilder.h"
 #include "Compiler/AST/ASTNodes.h"
@@ -63,6 +64,13 @@ int main() {
 
     Ryntra::VM::RVM vm(program, constPool);
     vm.operate();
+
+    if (vm.hasReturnValue()) {
+        const auto& ret = vm.getReturnValue();
+        if (std::holds_alternative<int>(ret.data)) {
+            return std::get<int>(ret.data);
+        }
+    }
 
     return 0;
 }

@@ -31,12 +31,17 @@ namespace Ryntra::VM {
         Value pop() { auto v =  stack.back(); stack.pop_back(); return v; }
         void push(const Value& v) { stack.push_back(v); }
         const std::vector<Value>& getVariables() const { return variables; }
+        const Value& getReturnValue() const { return returnValue; }
+        bool hasReturnValue() const { return hasReturn; }
     private:
         std::vector<Instruction> program;
         std::vector<Value> constantPool;
         std::vector<Value> stack;
         std::vector<Value> variables;
         std::vector<BuiltinFunction> builtins;
+
+        Value returnValue{};
+        bool hasReturn = false;
 
         size_t ip = 0;
     };
