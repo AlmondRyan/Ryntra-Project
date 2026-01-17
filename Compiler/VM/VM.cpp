@@ -1,9 +1,28 @@
 #include "VM.h"
 #include <iostream>
-#include <variant>
 #include <limits>
+#include <sstream>
+#include <variant>
 
 namespace Ryntra::VM {
+    namespace {
+        int getNumericRank(const Value& v) {
+            if (std::holds_alternative<double>(v.data)) return 3;
+            if (std::holds_alternative<float>(v.data)) return 2;
+            if (std::holds_alternative<int>(v.data)) return 1;
+            if (std::holds_alternative<bool>(v.data)) return 1;
+            return 0;
+        }
+
+        double toDoubleNumeric(const Value& v) {
+            if (std::holds_alternative<double>(v.data)) return std::get<double>(v.data);
+            if (std::holds_alternative<float>(v.data)) return static_cast<double>(std::get<float>(v.data));
+            if (std::holds_alternative<int>(v.data)) return static_cast<double>(std::get<int>(v.data));
+            if (std::holds_alternative<bool>(v.data)) return std::get<bool>(v.data) ? 1.0 : 0.0;
+            return 0.0;
+        }
+    }
+
     void RVM::operate() {
         ip = 0;
         hasReturn = false;
@@ -31,40 +50,84 @@ namespace Ryntra::VM {
             case OpCodes::ADD: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
                 Value result;
-                result.data = lhs + rhs;
+                if (rank == 3) {
+                    double lhs = toDoubleNumeric(lhsValue);
+                    double rhs = toDoubleNumeric(rhsValue);
+                    result.data = lhs + rhs;
+                } else if (rank == 2) {
+                    float lhs = static_cast<float>(toDoubleNumeric(lhsValue));
+                    float rhs = static_cast<float>(toDoubleNumeric(rhsValue));
+                    result.data = lhs + rhs;
+                } else {
+                    int lhs = static_cast<int>(toDoubleNumeric(lhsValue));
+                    int rhs = static_cast<int>(toDoubleNumeric(rhsValue));
+                    result.data = lhs + rhs;
+                }
                 push(result);
                 break;
             }
             case OpCodes::SUB: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
                 Value result;
-                result.data = lhs - rhs;
+                if (rank == 3) {
+                    double lhs = toDoubleNumeric(lhsValue);
+                    double rhs = toDoubleNumeric(rhsValue);
+                    result.data = lhs - rhs;
+                } else if (rank == 2) {
+                    float lhs = static_cast<float>(toDoubleNumeric(lhsValue));
+                    float rhs = static_cast<float>(toDoubleNumeric(rhsValue));
+                    result.data = lhs - rhs;
+                } else {
+                    int lhs = static_cast<int>(toDoubleNumeric(lhsValue));
+                    int rhs = static_cast<int>(toDoubleNumeric(rhsValue));
+                    result.data = lhs - rhs;
+                }
                 push(result);
                 break;
             }
             case OpCodes::MUL: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
                 Value result;
-                result.data = lhs * rhs;
+                if (rank == 3) {
+                    double lhs = toDoubleNumeric(lhsValue);
+                    double rhs = toDoubleNumeric(rhsValue);
+                    result.data = lhs * rhs;
+                } else if (rank == 2) {
+                    float lhs = static_cast<float>(toDoubleNumeric(lhsValue));
+                    float rhs = static_cast<float>(toDoubleNumeric(rhsValue));
+                    result.data = lhs * rhs;
+                } else {
+                    int lhs = static_cast<int>(toDoubleNumeric(lhsValue));
+                    int rhs = static_cast<int>(toDoubleNumeric(rhsValue));
+                    result.data = lhs * rhs;
+                }
                 push(result);
                 break;
             }
             case OpCodes::DIV: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
                 Value result;
-                result.data = lhs / rhs;
+                if (rank == 3) {
+                    double lhs = toDoubleNumeric(lhsValue);
+                    double rhs = toDoubleNumeric(rhsValue);
+                    result.data = lhs / rhs;
+                } else if (rank == 2) {
+                    float lhs = static_cast<float>(toDoubleNumeric(lhsValue));
+                    float rhs = static_cast<float>(toDoubleNumeric(rhsValue));
+                    result.data = lhs / rhs;
+                } else {
+                    int lhs = static_cast<int>(toDoubleNumeric(lhsValue));
+                    int rhs = static_cast<int>(toDoubleNumeric(rhsValue));
+                    result.data = lhs / rhs;
+                }
                 push(result);
                 break;
             }
@@ -131,60 +194,82 @@ namespace Ryntra::VM {
             case OpCodes::EQ: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) == toDoubleNumeric(rhsValue);
+                } else if (std::holds_alternative<bool>(lhsValue.data) && std::holds_alternative<bool>(rhsValue.data)) {
+                    res = std::get<bool>(lhsValue.data) == std::get<bool>(rhsValue.data);
+                }
                 Value result;
-                result.data = lhs == rhs;
+                result.data = res;
                 push(result);
                 break;
             }
             case OpCodes::NE: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) != toDoubleNumeric(rhsValue);
+                } else if (std::holds_alternative<bool>(lhsValue.data) && std::holds_alternative<bool>(rhsValue.data)) {
+                    res = std::get<bool>(lhsValue.data) != std::get<bool>(rhsValue.data);
+                }
                 Value result;
-                result.data = lhs != rhs;
+                result.data = res;
                 push(result);
                 break;
             }
             case OpCodes::LT: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) < toDoubleNumeric(rhsValue);
+                }
                 Value result;
-                result.data = lhs < rhs;
+                result.data = res;
                 push(result);
                 break;
             }
             case OpCodes::LE: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) <= toDoubleNumeric(rhsValue);
+                }
                 Value result;
-                result.data = lhs <= rhs;
+                result.data = res;
                 push(result);
                 break;
             }
             case OpCodes::GT: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) > toDoubleNumeric(rhsValue);
+                }
                 Value result;
-                result.data = lhs > rhs;
+                result.data = res;
                 push(result);
                 break;
             }
             case OpCodes::GE: {
                 Value rhsValue = pop();
                 Value lhsValue = pop();
-                int rhs = std::get<int>(rhsValue.data);
-                int lhs = std::get<int>(lhsValue.data);
+                bool res = false;
+                int rank = std::max(getNumericRank(lhsValue), getNumericRank(rhsValue));
+                if (rank > 0) {
+                    res = toDoubleNumeric(lhsValue) >= toDoubleNumeric(rhsValue);
+                }
                 Value result;
-                result.data = lhs >= rhs;
+                result.data = res;
                 push(result);
                 break;
             }
@@ -270,6 +355,63 @@ namespace Ryntra::VM {
             int i = std::get<int>(value.data);
             Value v;
             v.data = std::to_string(i);
+            vm.push(v);
+        };
+
+        builtins[3] = [](RVM& vm) {
+            Value precisionValue = vm.pop();
+            Value numberValue = vm.pop();
+
+            int precision = 6;
+            if (std::holds_alternative<int>(precisionValue.data)) {
+                precision = std::get<int>(precisionValue.data);
+            }
+
+            double number = 0.0;
+            if (std::holds_alternative<float>(numberValue.data)) {
+                number = static_cast<double>(std::get<float>(numberValue.data));
+            } else if (std::holds_alternative<double>(numberValue.data)) {
+                number = std::get<double>(numberValue.data);
+            } else if (std::holds_alternative<int>(numberValue.data)) {
+                number = static_cast<double>(std::get<int>(numberValue.data));
+            }
+
+            std::ostringstream oss;
+            oss.setf(std::ios::fmtflags(0), std::ios::floatfield);
+            oss.setf(std::ios::fmtflags(0), std::ios::floatfield);
+            oss.precision(precision);
+            oss << number;
+
+            Value v;
+            v.data = oss.str();
+            vm.push(v);
+        };
+
+        builtins[4] = [](RVM& vm) {
+            Value precisionValue = vm.pop();
+            Value numberValue = vm.pop();
+
+            int precision = 6;
+            if (std::holds_alternative<int>(precisionValue.data)) {
+                precision = std::get<int>(precisionValue.data);
+            }
+
+            double number = 0.0;
+            if (std::holds_alternative<double>(numberValue.data)) {
+                number = std::get<double>(numberValue.data);
+            } else if (std::holds_alternative<float>(numberValue.data)) {
+                number = static_cast<double>(std::get<float>(numberValue.data));
+            } else if (std::holds_alternative<int>(numberValue.data)) {
+                number = static_cast<double>(std::get<int>(numberValue.data));
+            }
+
+            std::ostringstream oss;
+            oss.setf(std::ios::fmtflags(0), std::ios::floatfield);
+            oss.precision(precision);
+            oss << number;
+
+            Value v;
+            v.data = oss.str();
             vm.push(v);
         };
     }

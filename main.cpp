@@ -15,8 +15,14 @@
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 
+// int main(int argc, char *argv[]) {
+//     if (argc < 2) {
+//         std::cout << "Usage: RyntraProject.exe [arguments]" << std::endl;
+//         return 0;
+//     }
+
 int main() {
-    std::ifstream inFileStream("Test.rynt");
+    std::ifstream inFileStream(argv[1]);
     std::string src;
     if (inFileStream) {
         std::ostringstream ss;

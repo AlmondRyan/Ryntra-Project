@@ -175,6 +175,35 @@ namespace Ryntra::Compiler {
             return;
         }
 
+        if (funcName == "__builtin_floatToString" || funcName == "__builtin_doubleToString") {
+            if (args.empty() || args.size() > 2) {
+                ErrorHandler::getInstance().makeError(
+                    "Function " + funcName + " requires 1 or 2 arguments, but got " + std::to_string(args.size()),
+                    SourceLocation(node->getLocation().line, node->getLocation().column));
+            } else {
+                Type arg0Type = evaluate(args[0]);
+                if (!isCompatible(params[0].type.kind, arg0Type.kind)) {
+                    ErrorHandler::getInstance().makeError(
+                        "Function " + funcName + " requires " + mapTypeToString(params[0].type.kind) + " but got " +
+                            mapTypeToString(arg0Type.kind),
+                        SourceLocation(node->getLocation().line, node->getLocation().column));
+                }
+                if (args.size() == 2) {
+                    Type arg1Type = evaluate(args[1]);
+                    if (!isCompatible(params[1].type.kind, arg1Type.kind)) {
+                        ErrorHandler::getInstance().makeError(
+                            "Function " + funcName + " requires " + mapTypeToString(params[1].type.kind) + " but got " +
+                                mapTypeToString(arg1Type.kind),
+                            SourceLocation(node->getLocation().line, node->getLocation().column));
+                    }
+                }
+            }
+
+            lastTypeResult = funcSymbol->returnType;
+            nodeTypes[node] = lastTypeResult;
+            return;
+        }
+
         if (args.size() != params.size()) {
             ErrorHandler::getInstance().makeError(
                 "Function " + funcName + " requires " + std::to_string(params.size()) +

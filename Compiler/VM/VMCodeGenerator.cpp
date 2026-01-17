@@ -25,28 +25,22 @@ namespace Ryntra::Compiler {
     }
 
     void VMCodeGenerator::visitVariableDeclaration(std::shared_ptr<VariableDeclarationNode> node) {
-        if (node->getVarType() != "int") {
-            return;
-        }
-
         int varIdx = getOrCreateVariableIndex(node->getVarName());
 
         auto init = node->getInitialValue();
         if (!init) {
             Value v;
-            v.data = 0;
+            if (node->getVarType() == "float") {
+                v.data = static_cast<float>(0.0f);
+            } else if (node->getVarType() == "double") {
+                v.data = static_cast<double>(0.0);
+            } else {
+                v.data = 0;
+            }
             int cidx = addConstant(v);
             emit(Instruction(OpCodes::LD_CONST, cidx));
             emit(Instruction(OpCodes::STORE_VAR, varIdx));
             return;
-        }
-
-        if (auto call = std::dynamic_pointer_cast<FunctionCallNode>(init)) {
-            if (call->getFunctionName() == "__builtin_scan") {
-                emit(Instruction(OpCodes::B_CALL, 1));
-                emit(Instruction(OpCodes::STORE_VAR, varIdx));
-                return;
-            }
         }
 
         evaluateToStack(init);
@@ -102,6 +96,44 @@ namespace Ryntra::Compiler {
             emit(Instruction(OpCodes::B_CALL, 2));
             return;
         }
+
+        if (funcName == "__builtin_floatToString") {
+            const auto& args = node->getArguments();
+            if (!args.empty()) {
+                evaluateToStack(args[0]);
+            }
+
+            if (args.size() >= 2) {
+                evaluateToStack(args[1]);
+            } else {
+                Value v;
+                v.data = 6;
+                int idx = addConstant(v);
+                emit(Instruction(OpCodes::LD_CONST, idx));
+            }
+
+            emit(Instruction(OpCodes::B_CALL, 3));
+            return;
+        }
+
+        if (funcName == "__builtin_doubleToString") {
+            const auto& args = node->getArguments();
+            if (!args.empty()) {
+                evaluateToStack(args[0]);
+            }
+
+            if (args.size() >= 2) {
+                evaluateToStack(args[1]);
+            } else {
+                Value v;
+                v.data = 6;
+                int idx = addConstant(v);
+                emit(Instruction(OpCodes::LD_CONST, idx));
+            }
+
+            emit(Instruction(OpCodes::B_CALL, 4));
+            return;
+        }
     }
 
     void VMCodeGenerator::visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) {
@@ -123,6 +155,14 @@ namespace Ryntra::Compiler {
     }
 
     void VMCodeGenerator::visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) {
+        Value v;
+        if (node->getTypeKind() == TypeKind::Float) {
+            v.data = static_cast<float>(node->getValue());
+        } else {
+            v.data = static_cast<double>(node->getValue());
+        }
+        int idx = addConstant(v);
+        emit(Instruction(OpCodes::LD_CONST, idx));
     }
 
     void VMCodeGenerator::visitStringLiteral(std::shared_ptr<StringLiteralNode> node) {

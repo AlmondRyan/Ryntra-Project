@@ -1,0 +1,15 @@
+int main() {
+    float a = 3.1415926f;
+    __builtin_print(__builtin_floatToString(a, 3)); // Should be 3.142
+
+    double b = 2.71828;
+    __builtin_print(__builtin_doubleToString(b, 4)); // Should be 2.7183
+
+    double c = 39.7772;
+    __builtin_print(__builtin_doubleToString(c, 3)); // Should be 39.777
+
+    double d = b + c;
+    __builtin_print(__builtin_doubleToString(d)); // Should be 42.49548
+
+    return 0;
+}
