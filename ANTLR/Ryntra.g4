@@ -16,6 +16,8 @@ FOR: 'for';
 BREAK: 'break';
 CONTINUE: 'continue';
 LONG: 'long';
+FLOAT: 'float';
+DOUBLE: 'double';
 
 // Operators
 PLUS: '+';
@@ -24,10 +26,22 @@ INC: '++';
 DEC: '--';
 MULT: '*';
 DIV: '/';
+MOD: '%';
 ASSIGN: '=';
+ADD_ASSIGN: '+=';
+SUB_ASSIGN: '-=';
+MUL_ASSIGN: '*=';
+DIV_ASSIGN: '/=';
+MOD_ASSIGN: '%=';
+AND_ASSIGN: '&=';
+OR_ASSIGN: '|=';
+XOR_ASSIGN: '^=';
+LSHIFT_ASSIGN: '<<=';
+RSHIFT_ASSIGN: '>>=';
 GREATER: '>';
 LESS: '<';
 COND_EQUAL: '==';
+NOT_EQUAL: '!=';
 GREATER_EQ: '>=';
 LESS_EQ: '<=';
 LOGIC_AND: '&&';
@@ -45,7 +59,11 @@ COMMA: ',';
 // Literals
 STRING_LITERAL: '"' ( ~["\\\r\n] | '\\' ["\\bfnrt] )* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
-INTEGER_LITERAL: '0' | [1-9] [0-9]*;
+INTEGER_LITERAL: ('0' | [1-9] [0-9]*) ([lL] | [lL][lL])?;
+FLOAT_LITERAL: [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)? [fF]?
+             | '.' [0-9]+ ([eE] [+-]? [0-9]+)? [fF]?
+             | [0-9]+ [eE] [+-]? [0-9]+ [fF]?
+             ;
 
 // Comments and Whitespaces
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
@@ -56,11 +74,11 @@ WS : [ \t\r\n]+ -> skip ;
 program: functionDefinition+ EOF;
 
 functionDefinition
-    : INT IDENTIFIER LPAREN parameterList? RPAREN block
+    : typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
     ;
 
 parameterList
-    : INT IDENTIFIER (COMMA INT IDENTIFIER)*
+    : typeSpecifier IDENTIFIER (COMMA typeSpecifier IDENTIFIER)*
     ;
 
 block
@@ -73,6 +91,8 @@ typeSpecifier
     | BOOL
     | LONG
     | LONG LONG
+    | FLOAT
+    | DOUBLE
     ;
 
 variableDeclaration
@@ -130,7 +150,7 @@ continueStatement
 functionCall: IDENTIFIER LPAREN (argumentList?) RPAREN;
 argumentList: expression (COMMA expression)*;
 
-assignment: IDENTIFIER ASSIGN expression;
+assignment: IDENTIFIER (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | AND_ASSIGN | OR_ASSIGN | XOR_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN) expression;
 
 expression
     : logicalOrExpression
@@ -141,15 +161,31 @@ logicalOrExpression
     ;
 
 logicalAndExpression
-    : equalityExpression (LOGIC_AND equalityExpression)*
+    : inclusiveOrExpression (LOGIC_AND inclusiveOrExpression)*
+    ;
+
+inclusiveOrExpression
+    : exclusiveOrExpression (BIT_OR exclusiveOrExpression)*
+    ;
+
+exclusiveOrExpression
+    : andExpression (BIT_XOR andExpression)*
+    ;
+
+andExpression
+    : equalityExpression (BIT_AND equalityExpression)*
     ;
 
 equalityExpression
-    : relationalExpression ((COND_EQUAL) relationalExpression)*
+    : relationalExpression ((COND_EQUAL | NOT_EQUAL) relationalExpression)*
     ;
 
 relationalExpression
-    : additiveExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ) additiveExpression)*
+    : shiftExpression ((GREATER | LESS | GREATER_EQ | LESS_EQ) shiftExpression)*
+    ;
+
+shiftExpression
+    : additiveExpression ((LSHIFT | RSHIFT) additiveExpression)*
     ;
 
 additiveExpression
@@ -157,12 +193,13 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : unaryExpression ((MULT | DIV) unaryExpression)*
+    : unaryExpression ((MULT | DIV | MOD) unaryExpression)*
     ;
 
 unaryExpression
     : postfixExpression
     | NOT unaryExpression
+    | BIT_NOT unaryExpression
     | MINUS unaryExpression
     ;
 
@@ -179,8 +216,16 @@ primaryExpression
     | LPAREN expression RPAREN
     ;
 
+BIT_AND: '&';
+BIT_OR: '|';
+BIT_XOR: '^';
+BIT_NOT: '~';
+LSHIFT: '<<';
+RSHIFT: '>>';
+
 literal:
     STRING_LITERAL
     | INTEGER_LITERAL
+    | FLOAT_LITERAL
     | TRUE
     | FALSE;

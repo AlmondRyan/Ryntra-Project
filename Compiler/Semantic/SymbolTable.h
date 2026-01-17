@@ -73,6 +73,50 @@ namespace Ryntra::Compiler {
 
             functions.emplace(sBuiltinPrint.name, sBuiltinPrint);
             functions.emplace(sBuiltinIntToString.name, sBuiltinIntToString);
+
+            FunctionSymbol sBuiltinLongToString;
+            sBuiltinLongToString.name = "__builtin_longToString";
+            sBuiltinLongToString.returnType = {TypeKind::String, ""};
+            Symbol longParam({TypeKind::Long, ""}, "value", SymbolKind::Parameter);
+            sBuiltinLongToString.parameters.push_back(longParam);
+            functions.emplace(sBuiltinLongToString.name, sBuiltinLongToString);
+
+            FunctionSymbol sBuiltinLongLongToString;
+            sBuiltinLongLongToString.name = "__builtin_longlongToString";
+            sBuiltinLongLongToString.returnType = {TypeKind::String, ""};
+            Symbol longlongParam({TypeKind::LongLong, ""}, "value", SymbolKind::Parameter);
+            sBuiltinLongLongToString.parameters.push_back(longlongParam);
+            functions.emplace(sBuiltinLongLongToString.name, sBuiltinLongLongToString);
+
+            FunctionSymbol sBuiltinFree;
+            sBuiltinFree.name = "__builtin_free";
+            sBuiltinFree.returnType = {TypeKind::Void, ""};
+            Symbol ptrParam({TypeKind::String, ""}, "ptr", SymbolKind::Parameter);
+            sBuiltinFree.parameters.push_back(ptrParam);
+            functions.emplace(sBuiltinFree.name, sBuiltinFree);
+
+            FunctionSymbol sBuiltinFloatToString;
+            sBuiltinFloatToString.name = "__builtin_floatToString";
+            sBuiltinFloatToString.returnType = {TypeKind::String, ""};
+            Symbol floatParamV({TypeKind::Float, ""}, "value", SymbolKind::Parameter);
+            sBuiltinFloatToString.parameters.push_back(floatParamV);
+            Symbol floatParamS({TypeKind::Int, ""}, "size", SymbolKind::Parameter);
+            sBuiltinFloatToString.parameters.push_back(floatParamS);
+            functions.emplace(sBuiltinFloatToString.name, sBuiltinFloatToString);
+
+            FunctionSymbol sBuiltinDoubleToString;
+            sBuiltinDoubleToString.name = "__builtin_doubleToString";
+            sBuiltinDoubleToString.returnType = {TypeKind::String, ""};
+            Symbol doubleParamV({TypeKind::Double, ""}, "value", SymbolKind::Parameter);
+            sBuiltinDoubleToString.parameters.push_back(doubleParamV);
+            Symbol doubleParams({TypeKind::Int, ""}, "size", SymbolKind::Parameter);
+            sBuiltinDoubleToString.parameters.push_back(doubleParams);
+            functions.emplace(sBuiltinDoubleToString.name, sBuiltinDoubleToString);
+
+            FunctionSymbol sBuiltinScan;
+            sBuiltinScan.name = "__builtin_scan";
+            sBuiltinScan.returnType = {TypeKind::ErrorType, ""};
+            functions.emplace(sBuiltinScan.name, sBuiltinScan);
         }
     public:
         void enterScope() {
@@ -128,10 +172,10 @@ namespace Ryntra::Compiler {
     }
 
     inline Symbol createParameterSymbol(const std::string& name, const Type& type) {
-        return Symbol(type, name, SymbolKind::Parameter);
+        return {type, name, SymbolKind::Parameter};
     }
 
     inline Symbol createGlobalSymbol(const std::string& name, const Type& type) {
-        return Symbol(type, name, SymbolKind::Global);
+        return {type, name, SymbolKind::Global};
     }
 }

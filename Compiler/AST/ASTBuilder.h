@@ -1,5 +1,9 @@
 #pragma once
 #include "ASTNodes.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
+#include "AST/Nodes/Declarations.h"
+#include "AST/Nodes/Literals.h"
 #include <antlr4-runtime.h>
 #include <antlr/RyntraParser.h>
 
@@ -20,10 +24,14 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IASTNode> visitExpression(antlr::RyntraParser::ExpressionContext *context);
         std::shared_ptr<IASTNode> visitLogicalOrExpression(antlr::RyntraParser::LogicalOrExpressionContext *context);
         std::shared_ptr<IASTNode> visitLogicalAndExpression(antlr::RyntraParser::LogicalAndExpressionContext *context);
+        std::shared_ptr<IASTNode> visitInclusiveOrExpression(antlr::RyntraParser::InclusiveOrExpressionContext *context);
+        std::shared_ptr<IASTNode> visitExclusiveOrExpression(antlr::RyntraParser::ExclusiveOrExpressionContext *context);
+        std::shared_ptr<IASTNode> visitAndExpression(antlr::RyntraParser::AndExpressionContext *context);
         std::shared_ptr<IASTNode> visitEqualityExpression(antlr::RyntraParser::EqualityExpressionContext *context);
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *context);
         std::shared_ptr<AssignmentExpressionNode> visitAssignment(antlr::RyntraParser::AssignmentContext *context);
         std::shared_ptr<IASTNode> visitRelationalExpression(antlr::RyntraParser::RelationalExpressionContext *context);
+        std::shared_ptr<IASTNode> visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *context);
         std::shared_ptr<IASTNode> visitAdditiveExpression(antlr::RyntraParser::AdditiveExpressionContext *context);
         std::shared_ptr<IASTNode> visitMultiplicativeExpression(antlr::RyntraParser::MultiplicativeExpressionContext *context);
         std::shared_ptr<IASTNode> visitPostfixExpression(antlr::RyntraParser::PostfixExpressionContext *context);

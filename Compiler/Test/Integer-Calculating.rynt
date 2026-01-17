@@ -1,0 +1,16 @@
+int main() {
+    int a = 5;
+    int b = 3;
+    int c = 13;
+    int d = 20;
+
+    __builtin_print(__builtin_intToString(a + b)); // Should be 8
+    __builtin_print("\n");
+    __builtin_print(__builtin_intToString(b - c)); // Should be -10
+    __builtin_print("\n");
+    __builtin_print(__builtin_intToString(c * d)); // Should be 260
+    __builtin_print("\n");
+    __builtin_print(__builtin_intToString(a / b)); // Should be 1
+    __builtin_print("\n");
+    __builtin_print(__builtin_intToString(c % d)); // Should be 13
+}

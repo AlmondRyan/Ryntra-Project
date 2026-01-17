@@ -19,6 +19,7 @@ namespace Ryntra::Compiler {
         void visitFunctionCallStatement(std::shared_ptr<FunctionCallStatementNode> node) override;
         void visitIdentifier(std::shared_ptr<IdentifierNode> node) override;
         void visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) override;
+        void visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) override;
         void visitParameter(std::shared_ptr<ParameterNode> node) override;
         void visitReturnStatement(std::shared_ptr<ReturnStatementNode> node) override;
         void visitStringLiteral(std::shared_ptr<StringLiteralNode> node) override;

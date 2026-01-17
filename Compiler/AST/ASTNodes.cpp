@@ -1,5 +1,7 @@
 #include "ASTNodes.h"
 #include "ASTVisitor.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
 
 namespace Ryntra::Compiler {
     void IntegerLiteralNode::accept(IASTVisitor *visitor) {
@@ -12,6 +14,10 @@ namespace Ryntra::Compiler {
 
     void BooleanLiteralNode::accept(IASTVisitor *visitor) {
         visitor->visitBooleanLiteral(std::static_pointer_cast<BooleanLiteralNode>(shared_from_this()));
+    }
+
+    void FloatingLiteralNode::accept(IASTVisitor *visitor) {
+        visitor->visitFloatingLiteral(std::static_pointer_cast<FloatingLiteralNode>(shared_from_this()));
     }
 
     void IdentifierNode::accept(IASTVisitor *visitor) {
@@ -66,7 +72,7 @@ namespace Ryntra::Compiler {
         return "PostfixExpression(" + varName + " " + op + ")";
     }
 
-    int IntegerLiteralNode::getValue() const {
+    long long IntegerLiteralNode::getValue() const {
         return value;
     }
 
@@ -84,6 +90,10 @@ namespace Ryntra::Compiler {
 
     std::string BooleanLiteralNode::toString() const {
         return "BooleanLiteral(" + std::string(value ? "true" : "false") + ")";
+    }
+
+    std::string FloatingLiteralNode::toString() const {
+        return "FloatingLiteral(" + std::to_string(value) + ")";
     }
 
     std::string IdentifierNode::toString() const {
@@ -173,7 +183,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string AssignmentExpressionNode::toString() const {
-        return "AssignmentExpression(" + identifier + ", " + expression->toString() + ")";
+        return "AssignmentExpression(" + identifier + " " + operand + " " + expression->toString() + ")";
     }
 
     std::string ReturnStatementNode::toString() const {

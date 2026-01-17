@@ -78,11 +78,23 @@ public:
   virtual void enterLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
   virtual void exitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext * /*ctx*/) override { }
 
+  virtual void enterInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext * /*ctx*/) override { }
+  virtual void exitInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext * /*ctx*/) override { }
+
+  virtual void enterExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext * /*ctx*/) override { }
+  virtual void exitExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext * /*ctx*/) override { }
+
+  virtual void enterAndExpression(RyntraParser::AndExpressionContext * /*ctx*/) override { }
+  virtual void exitAndExpression(RyntraParser::AndExpressionContext * /*ctx*/) override { }
+
   virtual void enterEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
   virtual void exitEqualityExpression(RyntraParser::EqualityExpressionContext * /*ctx*/) override { }
 
   virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
   virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext * /*ctx*/) override { }
+
+  virtual void enterShiftExpression(RyntraParser::ShiftExpressionContext * /*ctx*/) override { }
+  virtual void exitShiftExpression(RyntraParser::ShiftExpressionContext * /*ctx*/) override { }
 
   virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }
   virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext * /*ctx*/) override { }

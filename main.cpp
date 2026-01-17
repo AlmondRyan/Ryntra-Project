@@ -1,18 +1,28 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <memory>
+#include <variant>
 
-#include "antlr4-runtime.h"
-#include <antlr/RyntraLexer.h>
-#include <antlr/RyntraParser.h>
 #include "Compiler/AST/ASTBuilder.h"
 #include "Compiler/AST/ASTNodes.h"
 #include "ErrorHandler/ErrorHandler.h"
-#include "IRGenerator/IRGenerator.h"
 #include "Semantic/SemanticAnalyzer.h"
+#include "VM/Instructions/Instruction.h"
+#include "VM/VM.h"
+#include "VM/VMCodeGenerator.h"
+#include "antlr4-runtime.h"
+
+#include <antlr/RyntraLexer.h>
+#include <antlr/RyntraParser.h>
+
+// int main(int argc, char *argv[]) {
+//     if (argc < 2) {
+//         std::cout << "Usage: RyntraProject.exe [arguments]" << std::endl;
+//         return 0;
+    // std::ifstream inFileStream(argv[1]);
+//     }
 
 int main() {
-    // Read Source File
     std::ifstream inFileStream("Test.rynt");
     std::string src;
     if (inFileStream) {
@@ -21,66 +31,53 @@ int main() {
         src = ss.str();
     }
 
-    try {
-        // 1. Initialize ANTLR
-        antlr4::ANTLRInputStream input(src);
-        Ryntra::antlr::RyntraLexer lexer(&input);
-        antlr4::CommonTokenStream tokens(&lexer);
-        
-        tokens.fill();
-        Ryntra::antlr::RyntraParser parser(&tokens);
+    antlr4::ANTLRInputStream input(src);
+    Ryntra::antlr::RyntraLexer lexer(&input);
+    antlr4::CommonTokenStream tokens(&lexer);
 
-        auto* programContext = parser.program();
-        if (parser.getNumberOfSyntaxErrors() > 0) {
-            std::cout << "Syntax errors found in input" << std::endl;
-            return 1;
-        }
+    tokens.fill();
+    Ryntra::antlr::RyntraParser parser(&tokens);
 
-        // 2. Build AST
-        Ryntra::Compiler::ASTBuilder astBuilder;
-        auto programNode = astBuilder.visitProgram(programContext);
-        
-        std::cout << ">>> Generated AST:" << std::endl;
-        std::cout << programNode->toString() << std::endl;
-
-        // 3. Semantic Analysis
-        Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
-        semanticAnalyzer.visitProgram(programNode);
-
-        // 4. Get Semantic Errors
-        Ryntra::Compiler::ErrorHandler::getInstance().print();
-
-        // If there's no errors but only warnings, continue IR Generating without terminate
-        if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
-            for (auto i : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
-                if (i.type == Ryntra::Compiler::ET_WARNING) {
-                    continue;
-                } else {
-                    std::cout << "Semantic Analysis Failed." << std::endl;
-                    return 0;
-                }
-            }
-        }
-
-        // 5. IR Generating
-        Ryntra::Compiler::IRGenerator irGenerator;
-        irGenerator.visitProgram(programNode);
-        auto ir = irGenerator.getIR();
-        std::cout << ir << std::endl;
-
-        // 6. Write IR into .ll file
-        std::ofstream out("output.ll");
-        if (out.is_open()) {
-            out << ir;
-            out.close();
-            std::cout << "IR Written Successfully." << std::endl;
-        } else {
-            std::cout << "Cannot open file." << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Error occurred: " << e.what() << std::endl;
+    auto* programContext = parser.program();
+    if (parser.getNumberOfSyntaxErrors() > 0) {
+        std::cout << "Syntax errors found in input" << std::endl;
         return 1;
     }
-    
+
+    Ryntra::Compiler::ASTBuilder astBuilder;
+    auto programNode = astBuilder.visitProgram(programContext);
+
+    Ryntra::Compiler::SemanticAnalyzer semanticAnalyzer;
+    semanticAnalyzer.visitProgram(programNode);
+
+    Ryntra::Compiler::ErrorHandler::getInstance().print();
+
+    if (!Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects().empty()) {
+        for (auto i : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+            if (i.type == Ryntra::Compiler::ET_WARNING) {
+                continue;
+            } else {
+                std::cout << "Semantic Analysis Failed." << std::endl;
+                return 0;
+            }
+        }
+    }
+
+    Ryntra::Compiler::VMCodeGenerator vmCodeGen;
+    vmCodeGen.visitProgram(programNode);
+
+    auto program = vmCodeGen.getProgram();
+    auto constPool = vmCodeGen.getConstantPool();
+
+    Ryntra::VM::RVM vm(program, constPool);
+    vm.operate();
+
+    if (vm.hasReturnValue()) {
+        const auto& ret = vm.getReturnValue();
+        if (std::holds_alternative<int>(ret.data)) {
+            return std::get<int>(ret.data);
+        }
+    }
+
     return 0;
 }

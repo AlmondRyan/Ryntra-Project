@@ -60,9 +60,17 @@ public:
 
     virtual std::any visitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *context) = 0;
 
+    virtual std::any visitInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext *context) = 0;
+
+    virtual std::any visitExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext *context) = 0;
+
+    virtual std::any visitAndExpression(RyntraParser::AndExpressionContext *context) = 0;
+
     virtual std::any visitEqualityExpression(RyntraParser::EqualityExpressionContext *context) = 0;
 
     virtual std::any visitRelationalExpression(RyntraParser::RelationalExpressionContext *context) = 0;
+
+    virtual std::any visitShiftExpression(RyntraParser::ShiftExpressionContext *context) = 0;
 
     virtual std::any visitAdditiveExpression(RyntraParser::AdditiveExpressionContext *context) = 0;
 

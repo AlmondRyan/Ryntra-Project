@@ -2,6 +2,10 @@
 
 #include "ASTNodes.h"
 #include "Semantic/Symbol.h"
+#include "AST/Nodes/Expressions.h"
+#include "AST/Nodes/Statements.h"
+#include "AST/Nodes/Declarations.h"
+#include "AST/Nodes/Literals.h"
 
 namespace Ryntra::Compiler {
     class IASTVisitor {
@@ -19,6 +23,7 @@ namespace Ryntra::Compiler {
         virtual void visitExpressionStatement(std::shared_ptr<ExpressionStatementNode> node) = 0;
         virtual void visitIdentifier(std::shared_ptr<IdentifierNode> node) = 0;
         virtual void visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) = 0;
+        virtual void visitFloatingLiteral(std::shared_ptr<FloatingLiteralNode> node) = 0;
         virtual void visitStringLiteral(std::shared_ptr<StringLiteralNode> node) = 0;
         virtual void visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) = 0;
         virtual void visitEmptyStatement(std::shared_ptr<EmptyStatementNode> node) = 0;

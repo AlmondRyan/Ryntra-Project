@@ -1,0 +1,19 @@
+int main() {
+    int n = __builtin_scan();
+    for (int i = 1; i <= n; i++) {
+        if (i % 15 == 0) {
+            __builtin_print("Fizz Buzz");
+            __builtin_print("\n");
+        } else if (i % 3 == 0) {
+            __builtin_print("Fizz");
+            __builtin_print("\n");
+        } else if (i % 5 == 0) {
+            __builtin_print("Buzz");
+            __builtin_print("\n");
+        } else {
+            __builtin_print(__builtin_intToString(i));
+            __builtin_print("\n");
+        }
+    }
+    return 0;
+}

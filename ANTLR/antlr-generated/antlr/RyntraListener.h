@@ -76,11 +76,23 @@ public:
   virtual void enterLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) = 0;
   virtual void exitLogicalAndExpression(RyntraParser::LogicalAndExpressionContext *ctx) = 0;
 
+  virtual void enterInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext *ctx) = 0;
+  virtual void exitInclusiveOrExpression(RyntraParser::InclusiveOrExpressionContext *ctx) = 0;
+
+  virtual void enterExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext *ctx) = 0;
+  virtual void exitExclusiveOrExpression(RyntraParser::ExclusiveOrExpressionContext *ctx) = 0;
+
+  virtual void enterAndExpression(RyntraParser::AndExpressionContext *ctx) = 0;
+  virtual void exitAndExpression(RyntraParser::AndExpressionContext *ctx) = 0;
+
   virtual void enterEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) = 0;
   virtual void exitEqualityExpression(RyntraParser::EqualityExpressionContext *ctx) = 0;
 
   virtual void enterRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
   virtual void exitRelationalExpression(RyntraParser::RelationalExpressionContext *ctx) = 0;
+
+  virtual void enterShiftExpression(RyntraParser::ShiftExpressionContext *ctx) = 0;
+  virtual void exitShiftExpression(RyntraParser::ShiftExpressionContext *ctx) = 0;
 
   virtual void enterAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;
   virtual void exitAdditiveExpression(RyntraParser::AdditiveExpressionContext *ctx) = 0;
