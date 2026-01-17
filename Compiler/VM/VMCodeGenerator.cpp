@@ -34,6 +34,8 @@ namespace Ryntra::Compiler {
                 v.data = static_cast<float>(0.0f);
             } else if (node->getVarType() == "double") {
                 v.data = static_cast<double>(0.0);
+            } else if (node->getVarType() == "long" || node->getVarType() == "long long") {
+                v.data = static_cast<long long>(0);
             } else {
                 v.data = 0;
             }
@@ -65,7 +67,13 @@ namespace Ryntra::Compiler {
                 auto arg = node->getArguments()[0];
                 if (auto intLit = std::dynamic_pointer_cast<IntegerLiteralNode>(arg)) {
                     Value v;
-                    v.data = static_cast<int>(intLit->getValue());
+                    long long value = intLit->getValue();
+                    TypeKind kind = intLit->getTypeKind();
+                    if (kind == TypeKind::LongLong || kind == TypeKind::Long) {
+                        v.data = static_cast<long long>(value);
+                    } else {
+                        v.data = static_cast<int>(value);
+                    }
                     int idx = addConstant(v);
                     emit(Instruction(OpCodes::LD_CONST, idx));
                 } else if (auto strLit = std::dynamic_pointer_cast<StringLiteralNode>(arg)) {
@@ -94,6 +102,22 @@ namespace Ryntra::Compiler {
                 evaluateToStack(node->getArguments()[0]);
             }
             emit(Instruction(OpCodes::B_CALL, 2));
+            return;
+        }
+
+        if (funcName == "__builtin_longToString") {
+            if (!node->getArguments().empty()) {
+                evaluateToStack(node->getArguments()[0]);
+            }
+            emit(Instruction(OpCodes::B_CALL, 5));
+            return;
+        }
+
+        if (funcName == "__builtin_longlongToString") {
+            if (!node->getArguments().empty()) {
+                evaluateToStack(node->getArguments()[0]);
+            }
+            emit(Instruction(OpCodes::B_CALL, 6));
             return;
         }
 
@@ -149,7 +173,13 @@ namespace Ryntra::Compiler {
 
     void VMCodeGenerator::visitIntegerLiteral(std::shared_ptr<IntegerLiteralNode> node) {
         Value v;
-        v.data = static_cast<int>(node->getValue());
+        long long value = node->getValue();
+        TypeKind kind = node->getTypeKind();
+        if (kind == TypeKind::LongLong || kind == TypeKind::Long) {
+            v.data = static_cast<long long>(value);
+        } else {
+            v.data = static_cast<int>(value);
+        }
         int idx = addConstant(v);
         emit(Instruction(OpCodes::LD_CONST, idx));
     }
@@ -314,7 +344,13 @@ namespace Ryntra::Compiler {
             auto inner = node->getExpression();
             if (auto intLit = std::dynamic_pointer_cast<IntegerLiteralNode>(inner)) {
                 Value v;
-                v.data = static_cast<int>(-intLit->getValue());
+                long long value = intLit->getValue();
+                TypeKind kind = intLit->getTypeKind();
+                if (kind == TypeKind::LongLong || kind == TypeKind::Long) {
+                    v.data = static_cast<long long>(-value);
+                } else {
+                    v.data = static_cast<int>(-value);
+                }
                 int idx = addConstant(v);
                 emit(Instruction(OpCodes::LD_CONST, idx));
             } else {

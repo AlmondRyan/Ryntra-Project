@@ -19,10 +19,11 @@
 //     if (argc < 2) {
 //         std::cout << "Usage: RyntraProject.exe [arguments]" << std::endl;
 //         return 0;
+    // std::ifstream inFileStream(argv[1]);
 //     }
 
 int main() {
-    std::ifstream inFileStream(argv[1]);
+    std::ifstream inFileStream("Test.rynt");
     std::string src;
     if (inFileStream) {
         std::ostringstream ss;

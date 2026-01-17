@@ -10,7 +10,7 @@ namespace Ryntra::VM {
     class RVM;
 
     struct Value {
-        std::variant<int, std::string, float, bool, double> data;
+        std::variant<int, long long, std::string, float, bool, double> data;
     };
 
     using BuiltinFunction = std::function<void(RVM &)>;
@@ -20,7 +20,7 @@ namespace Ryntra::VM {
         RVM(const std::vector<Instruction> prog, const std::vector<Value> &constPool) {
             program = prog;
             constantPool = constPool;
-            builtins.resize(5);
+            builtins.resize(7);
 
             registerBuiltinFunction();
         }

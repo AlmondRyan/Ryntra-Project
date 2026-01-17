@@ -85,6 +85,7 @@ namespace Ryntra::Compiler {
             if (kind == "int") return TypeKind::Int;
             if (kind == "long") return TypeKind::Long;
             if (kind == "long long") return TypeKind::LongLong;
+            if (kind == "longlong") return TypeKind::LongLong;
             if (kind == "float") return TypeKind::Float;
             if (kind == "double") return TypeKind::Double;
             if (kind == "string") return TypeKind::String;

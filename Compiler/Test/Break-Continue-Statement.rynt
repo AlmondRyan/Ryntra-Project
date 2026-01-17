@@ -8,7 +8,6 @@ int main() {
             continue;
         }
     }
-
     __builtin_print(__builtin_intToString(a)); // Should be 21
     return 0;
 }
