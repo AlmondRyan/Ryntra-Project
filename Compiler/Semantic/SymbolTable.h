@@ -172,10 +172,10 @@ namespace Ryntra::Compiler {
     }
 
     inline Symbol createParameterSymbol(const std::string& name, const Type& type) {
-        return Symbol(type, name, SymbolKind::Parameter);
+        return {type, name, SymbolKind::Parameter};
     }
 
     inline Symbol createGlobalSymbol(const std::string& name, const Type& type) {
-        return Symbol(type, name, SymbolKind::Global);
+        return {type, name, SymbolKind::Global};
     }
 }

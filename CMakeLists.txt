@@ -13,7 +13,6 @@ set(ANTLR_SOURCES
         ANTLR/antlr-generated/antlr/RyntraListener.cpp
         ANTLR/antlr-generated/antlr/RyntraParser.cpp
         ANTLR/antlr-generated/antlr/RyntraVisitor.cpp
-        Compiler/IRGenerator/IRGenerator.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)
@@ -37,9 +36,14 @@ add_executable(RyntraProject
         Utility/ErrorHandler/ErrorHandler.cpp
         Compiler/AST/ASTNodes.cpp
         Compiler/AST/Nodes/Expressions.h
+        Compiler/IRGenerator/IRGenerator.cpp
         Compiler/AST/Nodes/Statements.h
         Compiler/AST/Nodes/Declarations.h
         Compiler/AST/Nodes/Literals.h
+        Compiler/VM/Instructions/OpCode.h
+        Compiler/VM/VM.cpp
+        Compiler/VM/VM.h
+        Compiler/VM/Instructions/Instruction.h
 )
 
 llvm_map_components_to_libnames(LLVM_LIBS

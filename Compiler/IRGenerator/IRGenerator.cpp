@@ -197,7 +197,7 @@ namespace Ryntra::Compiler {
                             calleeName == "__builtin_floatToString" ||
                             calleeName == "__builtin_doubleToString") {
                             isTempString = true;
-                        }
+                            }
                     }
 
                     llvm::Value *val = evaluate(argNode);
@@ -707,10 +707,10 @@ namespace Ryntra::Compiler {
 
             if (leftType->isFloatingPointTy() || rightType->isFloatingPointTy()) {
                 // Promote to double if either is double, or both are floating point
-                llvm::Type *targetType = (leftType->isDoubleTy() || rightType->isDoubleTy()) 
-                                         ? llvm::Type::getDoubleTy(*context) 
+                llvm::Type *targetType = (leftType->isDoubleTy() || rightType->isDoubleTy())
+                                         ? llvm::Type::getDoubleTy(*context)
                                          : llvm::Type::getFloatTy(*context);
-                
+
                 if (leftType != targetType) {
                     if (leftType->isIntegerTy()) leftValue = builder->CreateSIToFP(leftValue, targetType, "sitofp");
                     else leftValue = builder->CreateFPExt(leftValue, targetType, "fpext");
@@ -729,7 +729,7 @@ namespace Ryntra::Compiler {
                     rightValue = builder->CreateSExt(rightValue, leftType, "sext");
                 }
             }
-        }
+            }
 
         if (op == "+") {
             if (leftValue->getType()->isFloatingPointTy()) {
@@ -1135,4 +1135,4 @@ namespace Ryntra::Compiler {
             builder->SetInsertPoint(deadBB);
         }
     }
-} // namespace Ryntra::Compiler
+}
