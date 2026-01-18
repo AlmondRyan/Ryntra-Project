@@ -26,13 +26,11 @@ namespace Ryntra::Compiler {
         // Check is there any function called "main"
         auto mainFunc = symbolTable.lookupFunction("main");
         if (mainFunc == std::nullopt) {
-            ErrorHandler::getInstance().makeError(
-                "There's no main function.",
+            ErrorHandler::getInstance().makeError("There's no main function.",
                 SourceLocation(node->getLocation().line, node->getLocation().column));
         } else {
             if (mainFunc->returnType.kind != TypeKind::Int) {
-                ErrorHandler::getInstance().makeError(
-                    "Function main() should return int.",
+                ErrorHandler::getInstance().makeError("Function main() should return int.",
                     SourceLocation(node->getLocation().line, node->getLocation().column));
             }
         }
@@ -487,87 +485,86 @@ namespace Ryntra::Compiler {
     }
 
     void SemanticAnalyzer::visitWhileStatement(std::shared_ptr<WhileStatementNode> node) {
-    symbolTable.enterScope();
-    loopDepth++;
-    Type condType = evaluate(node->getCondition());
-    if (condType.kind != TypeKind::Boolean) {
-        ErrorHandler::getInstance().makeError(
-            "While condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
-            SourceLocation(node->getLocation()));
-    }
-    visit(node->getBody());
-    loopDepth--;
-    symbolTable.exitScope();
-}
-
-void SemanticAnalyzer::visitForStatement(std::shared_ptr<ForStatementNode> node) {
-    // For loop creates a new scope for its initializer
-    symbolTable.enterScope();
-    loopDepth++;
-
-    if (node->getInit()) {
-        visit(node->getInit());
-    }
-
-    if (node->getCondition()) {
+        symbolTable.enterScope();
+        loopDepth++;
         Type condType = evaluate(node->getCondition());
         if (condType.kind != TypeKind::Boolean) {
             ErrorHandler::getInstance().makeError(
-                "For condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
+                "While condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
                 SourceLocation(node->getLocation()));
+        }
+        visit(node->getBody());
+        loopDepth--;
+        symbolTable.exitScope();
+    }
+
+    void SemanticAnalyzer::visitForStatement(std::shared_ptr<ForStatementNode> node) {
+        // For loop creates a new scope for its initializer
+        symbolTable.enterScope();
+        loopDepth++;
+
+        if (node->getInit()) {
+            visit(node->getInit());
+        }
+
+        if (node->getCondition()) {
+            Type condType = evaluate(node->getCondition());
+            if (condType.kind != TypeKind::Boolean) {
+                ErrorHandler::getInstance().makeError(
+                    "For condition must be a boolean expression, but got " + mapTypeToString(condType.kind) + ".",
+                    SourceLocation(node->getLocation()));
+            }
+        }
+
+        if (node->getIncrement()) {
+            visit(node->getIncrement());
+        }
+
+        // Body will enter its own scope via visitBlock, which is fine
+        visit(node->getBody());
+
+        loopDepth--;
+        symbolTable.exitScope();
+    }
+
+    void SemanticAnalyzer::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
+        auto symbol = symbolTable.lookupSymbolInScopes(node->getVarName());
+        if (symbol == std::nullopt) {
+            ErrorHandler::getInstance().makeError(
+                "Undefined identifier: " + node->getVarName(),
+                SourceLocation(node->getLocation()));
+            lastTypeResult = {TypeKind::ErrorType, ""};
+            nodeTypes[node] = lastTypeResult;
+            return;
+        }
+
+        if (!isNumeric(symbol->type.kind)) {
+            ErrorHandler::getInstance().makeError(
+                "Increment/Decrement operator can only be applied to numeric types, but got " + mapTypeToString(symbol->type.kind) + ".",
+                SourceLocation(node->getLocation()));
+            lastTypeResult = {TypeKind::ErrorType, ""};
+            nodeTypes[node] = lastTypeResult;
+            return;
+        }
+
+        lastTypeResult = symbol->type;
+        nodeTypes[node] = lastTypeResult;
+    }
+
+    void SemanticAnalyzer::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
+        if (!(loopDepth > 0)) {
+            ErrorHandler::getInstance().makeError("Continue must use in a loop statement.",
+                                                  SourceLocation(node->getLocation()));
         }
     }
 
-    if (node->getIncrement()) {
-        visit(node->getIncrement());
+    void SemanticAnalyzer::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
+        if (!(loopDepth > 0)) {
+            ErrorHandler::getInstance().makeError("Break must use in a loop statement.",
+                                                  SourceLocation(node->getLocation()));
+        }
     }
 
-    // Body will enter its own scope via visitBlock, which is fine
-    visit(node->getBody());
-
-    loopDepth--;
-    symbolTable.exitScope();
-}
-
-void SemanticAnalyzer::visitPostfixExpression(std::shared_ptr<PostfixExpressionNode> node) {
-    auto symbol = symbolTable.lookupSymbolInScopes(node->getVarName());
-    if (symbol == std::nullopt) {
-        ErrorHandler::getInstance().makeError(
-            "Undefined identifier: " + node->getVarName(),
-            SourceLocation(node->getLocation()));
-        lastTypeResult = {TypeKind::ErrorType, ""};
-        nodeTypes[node] = lastTypeResult;
-        return;
+    void SemanticAnalyzer::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
     }
-
-    if (!isNumeric(symbol->type.kind)) {
-        ErrorHandler::getInstance().makeError(
-            "Increment/Decrement operator can only be applied to numeric types, but got " + mapTypeToString(symbol->type.kind) + ".",
-            SourceLocation(node->getLocation()));
-        lastTypeResult = {TypeKind::ErrorType, ""};
-        nodeTypes[node] = lastTypeResult;
-        return;
-    }
-
-    lastTypeResult = symbol->type;
-    nodeTypes[node] = lastTypeResult;
-}
-
-void SemanticAnalyzer::visitContinueStatement(std::shared_ptr<ContinueStatementNode> node) {
-    if (!(loopDepth > 0)) {
-        ErrorHandler::getInstance().makeError("Continue must use in a loop statement.",
-                                              SourceLocation(node->getLocation()));
-    }
-}
-
-void SemanticAnalyzer::visitBreakStatement(std::shared_ptr<BreakStatementNode> node) {
-    if (!(loopDepth > 0)) {
-        ErrorHandler::getInstance().makeError("Break must use in a loop statement.",
-                                              SourceLocation(node->getLocation()));
-    }
-}
-
-void SemanticAnalyzer::visitBooleanLiteral(std::shared_ptr<BooleanLiteralNode> node) {
-
-}
 } // namespace Ryntra::Compiler

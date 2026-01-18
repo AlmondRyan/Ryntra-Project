@@ -47,6 +47,12 @@ LESS_EQ: '<=';
 LOGIC_AND: '&&';
 LOGIC_OR: '||';
 NOT: '!';
+BIT_AND: '&';
+BIT_OR: '|';
+BIT_XOR: '^';
+BIT_NOT: '~';
+LSHIFT: '<<';
+RSHIFT: '>>';
 
 // Symbols
 SEMICOLON : ';' ;
@@ -215,13 +221,6 @@ primaryExpression
     | IDENTIFIER
     | LPAREN expression RPAREN
     ;
-
-BIT_AND: '&';
-BIT_OR: '|';
-BIT_XOR: '^';
-BIT_NOT: '~';
-LSHIFT: '<<';
-RSHIFT: '>>';
 
 literal:
     STRING_LITERAL
