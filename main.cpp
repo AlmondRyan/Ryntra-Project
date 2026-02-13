@@ -1,0 +1,31 @@
+#include <iostream>
+#include <antlr4-runtime.h>
+#include <antlr/RyntraLexer.h>
+#include <antlr/RyntraParser.h>
+#include "ASTBuilder.h"
+
+int main() {
+    try {
+        std::string Source = R"(public int main() {
+    __builtin_print("Hello World");
+})";
+
+        antlr4::ANTLRInputStream input(Source);
+        Ryntra::antlr::RyntraLexer lexer(&input);
+        antlr4::CommonTokenStream tokens(&lexer);
+        tokens.fill();
+        Ryntra::antlr::RyntraParser parser(&tokens);
+        auto tree = parser.program();
+
+        std::cout << tree->toStringTree(&parser) << std::endl;
+        std::cout << std::endl;
+
+        Ryntra::Compiler::ASTBuilder builder;
+        auto ast = builder.visitProgram(tree);
+        std::cout << ast->toString() << std::endl;
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+}
