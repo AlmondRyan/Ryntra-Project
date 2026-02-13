@@ -1,29 +1,67 @@
 cmake_minimum_required(VERSION 3.15)
 project(RyntraProject)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "vcpkg toolchain")
 set(antlr4-runtime_DIR "C:/vcpkg/vcpkg/vcpkg/installed/x64-windows/share/antlr4-runtime")
+
+set(GEN_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/GenAllNodesVisitor")
+set(GEN_SCRIPT "${GEN_SCRIPT_DIR}/GenAllNodesVisitor.py")
+set(GENERATED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/Compiler/AST/AllNodesVisitor.h")
+
+add_custom_command(
+        OUTPUT ${GENERATED_HEADER}
+        COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT}
+        WORKING_DIRECTORY ${GEN_SCRIPT_DIR}
+        DEPENDS ${GEN_SCRIPT}  # 如果脚本依赖其他文件，可加进来
+        COMMENT "Generating AllNodesVisitor.h from GenAllNodesVisitor.py"
+        VERBATIM
+)
+
+add_custom_target(GenerateAllNodesVisitor ALL DEPENDS ${GENERATED_HEADER})
+
 set(ANTLR_SOURCE
-    ANTLR/antlr-generated/antlr/RyntraBaseListener.cpp
-    ANTLR/antlr-generated/antlr/RyntraBaseVisitor.cpp
-    ANTLR/antlr-generated/antlr/RyntraLexer.cpp
-    ANTLR/antlr-generated/antlr/RyntraParser.cpp
-    ANTLR/antlr-generated/antlr/RyntraListener.cpp
-    ANTLR/antlr-generated/antlr/RyntraVisitor.cpp
+        ANTLR/antlr-generated/antlr/RyntraBaseListener.cpp
+        ANTLR/antlr-generated/antlr/RyntraBaseVisitor.cpp
+        ANTLR/antlr-generated/antlr/RyntraLexer.cpp
+        ANTLR/antlr-generated/antlr/RyntraParser.cpp
+        ANTLR/antlr-generated/antlr/RyntraListener.cpp
+        ANTLR/antlr-generated/antlr/RyntraVisitor.cpp
 )
 
 set(AST_SOURCE
-    Compiler/AST/ASTNodes.cpp
-    Compiler/AST/ASTBuilder.cpp
+        Compiler/AST/ASTNodes.cpp
+        Compiler/AST/ASTBuilder.cpp
+        ${GENERATED_HEADER}
 )
 
 set(UTILITY_SOURCE
-    Utility/ErrorHandler/ErrorHandler.cpp
+        Utility/ErrorHandler/ErrorHandler.cpp
+)
+
+set(SEMANTIC_SOURCE
+        Compiler/Semantic/SymbolTable.cpp
+        Compiler/Semantic/SemanticAnalyzer.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)
 
-add_executable(RyntraProject main.cpp ${ANTLR_SOURCE} ${AST_SOURCE} ${UTILITY_SOURCE})
+add_executable(RyntraProject
+        main.cpp
+        ${ANTLR_SOURCE}
+        ${AST_SOURCE}
+        ${UTILITY_SOURCE}
+        ${SEMANTIC_SOURCE}
+)
+
+add_dependencies(RyntraProject GenerateAllNodesVisitor)
+
 target_link_libraries(RyntraProject PRIVATE antlr4_shared)
-target_include_directories(RyntraProject PRIVATE ANTLR/antlr-generated Compiler/AST Utility)
+target_include_directories(RyntraProject PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/ANTLR/antlr-generated
+        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/AST
+        ${CMAKE_CURRENT_SOURCE_DIR}/Utility
+        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/Semantic
+)

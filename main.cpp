@@ -3,11 +3,12 @@
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include "ASTBuilder.h"
+#include "SemanticAnalyzer.h"
 
 int main() {
     try {
         std::string Source = R"(public int main() {
-    __builtin_print("Hello World");
+    __builtin_print("hello");
 })";
 
         antlr4::ANTLRInputStream input(Source);
@@ -23,6 +24,11 @@ int main() {
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
         std::cout << ast->toString() << std::endl;
+
+        Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
+        analyzer.analyze(ast);
+        std::cout << "Semantic Analysis Passed" << std::endl;
+
         return 0;
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;

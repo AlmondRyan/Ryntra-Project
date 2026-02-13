@@ -1,4 +1,5 @@
 cmake-build-debug/
 .vscode/
 cmake-build/release/
-ANTLR/antlr-generated/
+ANTLR/antlr-generated
+.venv/
