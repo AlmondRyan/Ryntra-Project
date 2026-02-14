@@ -9,13 +9,14 @@ set(antlr4-runtime_DIR "C:/vcpkg/vcpkg/vcpkg/installed/x64-windows/share/antlr4-
 
 set(GEN_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/GenAllNodesVisitor")
 set(GEN_SCRIPT "${GEN_SCRIPT_DIR}/GenAllNodesVisitor.py")
-set(GENERATED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/Compiler/AST/AllNodesVisitor.h")
+set(GENERATED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader")
 
 add_custom_command(
         OUTPUT ${GENERATED_HEADER}
-        COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT}
+        COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} ${GENERATED_HEADER}
         WORKING_DIRECTORY ${GEN_SCRIPT_DIR}
-        DEPENDS ${GEN_SCRIPT}  # 如果脚本依赖其他文件，可加进来
+        DEPENDS ${GEN_SCRIPT}
         COMMENT "Generating AllNodesVisitor.h from GenAllNodesVisitor.py"
         VERBATIM
 )
@@ -64,4 +65,5 @@ target_include_directories(RyntraProject PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/AST
         ${CMAKE_CURRENT_SOURCE_DIR}/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/Semantic
+        ${CMAKE_CURRENT_BINARY_DIR} #< Avoid pollute the source tree
 )
