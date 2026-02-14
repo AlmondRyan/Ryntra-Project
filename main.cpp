@@ -4,11 +4,12 @@
 #include <antlr/RyntraParser.h>
 #include "ASTBuilder.h"
 #include "SemanticAnalyzer.h"
+#include "ErrorHandler/ErrorHandler.h"
 
 int main() {
     try {
         std::string Source = R"(public int main() {
-    __builtin_print("hello");
+    __builtin_print("hello", "world");
 })";
 
         antlr4::ANTLRInputStream input(Source);
@@ -18,16 +19,30 @@ int main() {
         Ryntra::antlr::RyntraParser parser(&tokens);
         auto tree = parser.program();
 
-        std::cout << tree->toStringTree(&parser) << std::endl;
+        // std::cout << tree->toStringTree(&parser) << std::endl;
         std::cout << std::endl;
 
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
-        std::cout << ast->toString() << std::endl;
+        // std::cout << ast->toString() << std::endl;
 
         Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
         analyzer.analyze(ast);
-        std::cout << "Semantic Analysis Passed" << std::endl;
+
+        Ryntra::Compiler::ErrorHandler::getInstance().print();
+        bool hasError = false;
+        for (const auto &error : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+            if (error.type == Ryntra::Compiler::ET_ERROR) {
+                hasError = true;
+                break;
+            }
+        }
+
+        if (hasError) {
+            std::cout << "Semantic Analysis Failed" << std::endl;
+        } else {
+            std::cout << "Semantic Analysis Passed" << std::endl;
+        }
 
         return 0;
     } catch (const std::exception &e) {

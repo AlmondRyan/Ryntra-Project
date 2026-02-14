@@ -4,4 +4,5 @@ Ryntra is an experimental programming language that explores new ideas in syntax
 
 ## Build the project
 
-TODO IN FUTURE WHEN I WAS READY
+🚧 Work in progress!  
+Build instructions will be provided when the project reaches a runnable state.
