@@ -1,0 +1,10 @@
+section .cdata
+    string @str1 = "Hello World!"
+
+section .code
+_entry:
+    define @main() -> i32 {
+        loadc @str1
+        syscall 0
+        halt
+    }

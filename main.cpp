@@ -2,15 +2,33 @@
 #include <antlr4-runtime.h>
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
-#include "ASTBuilder.h"
-#include "SemanticAnalyzer.h"
+#include "AST/ASTBuilder.h"
+#include "Semantic/SemanticAnalyzer.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include "IR/IRBuilder.h"
+
+void manuallyGenIR() {
+    using namespace Ryntra;
+    Compiler::Module module("HelloWorld");
+    Compiler::IRBuilder builder(&module);
+
+    Compiler::ConstantObject *str1 = builder.CreateConstantString( "HelloWorld");
+    Compiler::Function *mainFunc = builder.CreateFunction("main", Compiler::Type::getInt32Ty());
+    Compiler::BasicBlock *entryBB = builder.CreateBasicBlock("entry", mainFunc);
+    builder.SetInsertPoint(entryBB);
+
+    builder.CreateLoadC(str1);
+    builder.CreateSyscall(0);
+    builder.CreateHalt();
+
+    std::cout << module.print() << std::endl;
+}
 
 int main() {
     try {
         std::string Source = R"(
 public int main() {
-    __builtin_print("hello", "world");
+    __builtin_print("hello");
 })";
 
         antlr4::ANTLRInputStream input(Source);
@@ -44,6 +62,8 @@ public int main() {
         } else {
             std::cout << "Semantic Analysis Passed" << std::endl;
         }
+
+        manuallyGenIR();
 
         return 0;
     } catch (const std::exception &e) {

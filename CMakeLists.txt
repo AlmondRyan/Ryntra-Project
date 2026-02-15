@@ -47,6 +47,11 @@ set(SEMANTIC_SOURCE
         Compiler/Semantic/SemanticAnalyzer.cpp
 )
 
+set(IR_SOURCE
+        Compiler/IR/IRBuilder.h
+        Compiler/IR/IRBuilder.cpp
+)
+
 find_package(antlr4-runtime REQUIRED)
 
 add_executable(RyntraProject
@@ -55,6 +60,7 @@ add_executable(RyntraProject
         ${AST_SOURCE}
         ${UTILITY_SOURCE}
         ${SEMANTIC_SOURCE}
+        ${IR_SOURCE}
 )
 
 add_dependencies(RyntraProject GenerateAllNodesVisitor)
@@ -62,8 +68,9 @@ add_dependencies(RyntraProject GenerateAllNodesVisitor)
 target_link_libraries(RyntraProject PRIVATE antlr4_shared)
 target_include_directories(RyntraProject PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/ANTLR/antlr-generated
-        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/AST
+        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/
         ${CMAKE_CURRENT_SOURCE_DIR}/Utility
-        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/Semantic
+        ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/
+        ${CMAKE_CURRENT_SOURCE_DIR}/
         ${CMAKE_CURRENT_BINARY_DIR} #< Avoid pollute the source tree
 )
