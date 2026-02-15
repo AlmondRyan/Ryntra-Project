@@ -16,8 +16,8 @@ namespace Ryntra::Compiler {
     };
 
     struct ErrorObject {
-        ErrorType      type;
-        std::string    description;
+        ErrorType type;
+        std::string description;
         SourceLocation location;
 
         ErrorObject(const ErrorType type, const SourceLocation _l, std::string desc)

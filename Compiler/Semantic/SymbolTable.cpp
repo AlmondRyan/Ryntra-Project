@@ -8,7 +8,8 @@ namespace Ryntra::Compiler::Semantic {
         enterScope(); // Global scope
 
         // vvv This definitely not the final version, it just a placeholder that type is declared in string. vvv
-        define(std::make_shared<FunctionSymbol>("__builtin_print", "void", std::vector<std::string>{"string"}), SourceLocation(0, 0));
+        define(std::make_shared<FunctionSymbol>("__builtin_print", "void", std::vector<std::string>{"string"}),
+            SourceLocation(0, 0));
     }
 
     void SymbolTable::enterScope() {

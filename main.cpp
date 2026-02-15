@@ -8,7 +8,8 @@
 
 int main() {
     try {
-        std::string Source = R"(public int main() {
+        std::string Source = R"(
+public int main() {
     __builtin_print("hello", "world");
 })";
 
