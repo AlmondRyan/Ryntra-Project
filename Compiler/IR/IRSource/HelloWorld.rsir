@@ -1,0 +1,9 @@
+declare __builtin_print(string) -> void
+
+global @str1 : string = "Hello World"
+
+define @main() -> i32 {
+entry:
+    %0 = call __builtin_print(@str1)
+    ret 0
+}

@@ -4,6 +4,7 @@
 #include "../AST/ASTVisitor.h"
 #include "../AST/ASTNodes.h"
 #include "Compiler/GeneratedHeader/AllNodesVisitor.h"
+#include "TypedAST.h"
 
 namespace Ryntra::Compiler::Semantic {
     class SemanticAnalyzer : public AllNodesVisitor {
@@ -11,6 +12,7 @@ namespace Ryntra::Compiler::Semantic {
         SemanticAnalyzer() = default;
         
         void analyze(const std::shared_ptr<IASTNode>& root);
+        std::shared_ptr<TypedProgramNode> getTypedAST() const { return typedProgram; }
 
         // Visitor methods
         void visit(ProgramNode &node) override;
@@ -24,6 +26,11 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         SymbolTable symbolTable;
+        std::shared_ptr<TypedProgramNode> typedProgram;
+
+        // Intermediate state for building the Typed AST
+        std::shared_ptr<ITypedASTNode> lastNode;
+        std::shared_ptr<Type> lastType; // For TypeSpecifierNode result
     };
 
 }
