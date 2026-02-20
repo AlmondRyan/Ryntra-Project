@@ -14,9 +14,11 @@ namespace Ryntra::Compiler {
         std::shared_ptr<TypeSpecifierNode> visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx);
         std::shared_ptr<BlockNode> visitBlock(antlr::RyntraParser::BlockContext *ctx);
         std::shared_ptr<StatementNode> visitStatement(antlr::RyntraParser::StatementContext *ctx);
+        std::shared_ptr<ReturnNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx);
         std::shared_ptr<ExpressionNode> visitExpression(antlr::RyntraParser::ExpressionContext *ctx);
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *ctx);
         std::shared_ptr<StringLiteralNode> visitStringLiteral(antlr::RyntraParser::StringLiteralContext *ctx);
+        std::shared_ptr<IntegerLiteralNode> visitIntegerLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:

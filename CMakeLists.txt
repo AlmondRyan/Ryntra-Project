@@ -50,6 +50,8 @@ set(SEMANTIC_SOURCE
 set(IR_SOURCE
         Compiler/IR/IRBuilder.h
         Compiler/IR/IRBuilder.cpp
+        Compiler/IR/HLIRBuilder.cpp
+        Compiler/IR/HLIRBuilder.h
 )
 
 find_package(antlr4-runtime REQUIRED)

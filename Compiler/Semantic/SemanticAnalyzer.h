@@ -21,8 +21,10 @@ namespace Ryntra::Compiler::Semantic {
         void visit(BlockNode &node) override;
         void visit(ExpressionStatementNode &node) override;
         void visit(StringLiteralNode &node) override;
+        void visit(IntegerLiteralNode &node) override;
         void visit(IdentifierNode &node) override;
         void visit(TypeSpecifierNode &node) override;
+        void visit(ReturnNode &node) override;
 
     private:
         SymbolTable symbolTable;
@@ -31,6 +33,7 @@ namespace Ryntra::Compiler::Semantic {
         // Intermediate state for building the Typed AST
         std::shared_ptr<ITypedASTNode> lastNode;
         std::shared_ptr<Type> lastType; // For TypeSpecifierNode result
+        std::shared_ptr<Type> currentFunctionReturnType;
     };
 
 }

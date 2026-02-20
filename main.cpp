@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <antlr4-runtime.h>
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
@@ -6,29 +8,14 @@
 #include "Semantic/SemanticAnalyzer.h"
 #include "ErrorHandler/ErrorHandler.h"
 #include "IR/IRBuilder.h"
-
-void manuallyGenIR() {
-    using namespace Ryntra;
-    Compiler::Module module("HelloWorld");
-    Compiler::IRBuilder builder(&module);
-
-    Compiler::ConstantObject *str1 = builder.CreateConstantString( "HelloWorld");
-    Compiler::Function *mainFunc = builder.CreateFunction("main", Compiler::Type::getInt32Ty());
-    Compiler::BasicBlock *entryBB = builder.CreateBasicBlock("entry", mainFunc);
-    builder.SetInsertPoint(entryBB);
-
-    builder.CreateLoadC(str1);
-    builder.CreateSyscall(0);
-    builder.CreateHalt();
-
-    std::cout << module.print() << std::endl;
-}
+#include "Compiler/IR/HLIRBuilder.h"
 
 int main() {
     try {
         std::string Source = R"(
 public int main() {
     __builtin_print("hello");
+    return 0;
 })";
 
         antlr4::ANTLRInputStream input(Source);
@@ -61,9 +48,20 @@ public int main() {
             std::cout << "Semantic Analysis Failed" << std::endl;
         } else {
             std::cout << "Semantic Analysis Passed" << std::endl;
-        }
+            if (auto typedAST = analyzer.getTypedAST()) {
+                std::cout << "Typed AST:" << std::endl;
+                typedAST->dump();
 
-        manuallyGenIR();
+                // Generate IR
+                std::cout << "\nGenerating IR..." << std::endl;
+                Ryntra::Compiler::IR::HLIRBuilder irBuilder;
+                typedAST->accept(irBuilder);
+                
+                auto module = irBuilder.takeModule();
+                std::cout << "IR Output:" << std::endl;
+                std::cout << module->print() << std::endl;
+            }
+        }
 
         return 0;
     } catch (const std::exception &e) {

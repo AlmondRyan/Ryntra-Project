@@ -51,6 +51,17 @@ namespace Ryntra::Compiler {
         std::string value;
     };
 
+    class IntegerLiteralNode : public ExpressionNode {
+    public:
+        IntegerLiteralNode(int value) : value(value) {}
+        int getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        int value;
+    };
+
     class IdentifierNode : public ExpressionNode {
     public:
         IdentifierNode(const std::string &name) : name(name) {}
@@ -85,6 +96,17 @@ namespace Ryntra::Compiler {
 
     private:
         std::shared_ptr<ExpressionNode> expression;
+    };
+
+    class ReturnNode : public StatementNode {
+    public:
+        ReturnNode(std::shared_ptr<ExpressionNode> value) : value(std::move(value)) {}
+        std::shared_ptr<ExpressionNode> getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> value;
     };
 
     class BlockNode : public IASTNode {

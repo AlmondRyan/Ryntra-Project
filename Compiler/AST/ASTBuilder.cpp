@@ -29,9 +29,19 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<StatementNode> ASTBuilder::visitStatement(Ryntra::antlr::RyntraParser::StatementContext *ctx) {
-        // Currently only ExpressionStatement
+        if (ctx->returnStatement()) {
+            return visitReturnStatement(ctx->returnStatement());
+        }
+        if (ctx->expression()) {
+            auto expr = visitExpression(ctx->expression());
+            return createNode<ExpressionStatementNode>(ctx, std::move(expr));
+        }
+        return nullptr;
+    }
+
+    std::shared_ptr<ReturnNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx) {
         auto expr = visitExpression(ctx->expression());
-        return createNode<ExpressionStatementNode>(ctx, std::move(expr));
+        return createNode<ReturnNode>(ctx, std::move(expr));
     }
 
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {
@@ -40,6 +50,9 @@ namespace Ryntra::Compiler {
         }
         if (auto *strCtx = dynamic_cast<Ryntra::antlr::RyntraParser::StringLiteralContext *>(ctx)) {
             return visitStringLiteral(strCtx);
+        }
+        if (auto *intCtx = dynamic_cast<Ryntra::antlr::RyntraParser::IntegerLiteralContext *>(ctx)) {
+            return visitIntegerLiteral(intCtx);
         }
         return nullptr; // Should not happen if grammar is covered
     }
@@ -59,6 +72,11 @@ namespace Ryntra::Compiler {
         std::string val = raw.substr(1, raw.length() - 2);
         // TODO: handle escape sequences if needed
         return createNode<StringLiteralNode>(ctx, val);
+    }
+
+    std::shared_ptr<IntegerLiteralNode> ASTBuilder::visitIntegerLiteral(Ryntra::antlr::RyntraParser::IntegerLiteralContext *ctx) {
+        int val = std::stoi(ctx->INTEGER_LITERAL()->getText());
+        return createNode<IntegerLiteralNode>(ctx, val);
     }
 
     std::vector<std::shared_ptr<ExpressionNode>> ASTBuilder::visitArgumentList(Ryntra::antlr::RyntraParser::ArgumentListContext *ctx) {

@@ -82,7 +82,9 @@ private:
 enum class OpCode {
     LoadC,
     Syscall,
-    Halt
+    Halt,
+    Call,
+    Ret
 };
 
 class Instruction : public Value {
@@ -119,18 +121,22 @@ private:
 
 class Function : public Value {
 public:
-    Function(const std::string& name, Type* retType, Module* parent);
+    Function(const std::string& name, Type* retType, Module* parent, std::vector<Type*> argTypes = {});
     
     Module* getParent() const { return parent; }
     const std::vector<std::unique_ptr<BasicBlock>>& getBasicBlocks() const { return basicBlocks; }
-    
+    const std::vector<Type*>& getArgTypes() const { return argTypes; }
+
     BasicBlock* addBasicBlock(std::unique_ptr<BasicBlock> bb);
     
+    bool isDeclaration() const { return basicBlocks.empty(); }
+
     std::string toString() const override;
 
 private:
     Module* parent;
     std::vector<std::unique_ptr<BasicBlock>> basicBlocks;
+    std::vector<Type*> argTypes;
 };
 
 class Module {
@@ -168,7 +174,7 @@ public:
     BasicBlock* GetInsertBlock() const { return insertBlock; }
 
     // Helpers to create structural elements
-    Function* CreateFunction(const std::string& name, Type* retType);
+    Function* CreateFunction(const std::string& name, Type* retType, std::vector<Type*> argTypes = {});
     BasicBlock* CreateBasicBlock(const std::string& name, Function* parent);
     
     // Create a string constant.
@@ -181,10 +187,13 @@ public:
     Instruction* CreateLoadC(ConstantObject* global, const std::string& destName = "");
     Instruction* CreateSyscall(int code);
     Instruction* CreateHalt();
+    Instruction* CreateCall(Function* func, const std::vector<Value*>& args, const std::string& destName = "");
+    Instruction* CreateRet(Value* val);
 
 private:
     Module* module;
     BasicBlock* insertBlock;
+    size_t tempVarCounter = 0;
 };
 
 }

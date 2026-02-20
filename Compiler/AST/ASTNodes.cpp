@@ -27,6 +27,18 @@ namespace Ryntra::Compiler {
         return "(StringLiteral \"" + value + "\")";
     }
 
+    void IntegerLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<IntegerLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        } else {
+            throw std::runtime_error("Visitor does not support IntegerLiteralNode");
+        }
+    }
+
+    std::string IntegerLiteralNode::toString() const {
+        return "(IntegerLiteral " + std::to_string(value) + ")";
+    }
+
     void IdentifierNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<IdentifierNode> *>(&visitor)) {
             v->visit(*this);
@@ -67,6 +79,18 @@ namespace Ryntra::Compiler {
 
     std::string ExpressionStatementNode::toString() const {
         return "(ExpressionStatement " + expression->toString() + ")";
+    }
+
+    void ReturnNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ReturnNode> *>(&visitor)) {
+            v->visit(*this);
+        } else {
+            throw std::runtime_error("Visitor does not support ReturnNode");
+        }
+    }
+
+    std::string ReturnNode::toString() const {
+        return "(Return " + value->toString() + ")";
     }
 
     void BlockNode::accept(IVisitor &visitor) {

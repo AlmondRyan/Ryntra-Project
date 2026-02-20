@@ -36,6 +36,9 @@ namespace Ryntra::Compiler::Semantic {
         if (!symbolTable.resolve("print")) {
              symbolTable.define(std::make_shared<FunctionSymbol>("print", "void", std::vector<std::string>{"string"}), SourceLocation{0,0});
         }
+        if (!symbolTable.resolve("__builtin_print")) {
+             symbolTable.define(std::make_shared<FunctionSymbol>("__builtin_print", "void", std::vector<std::string>{"string"}), SourceLocation{0,0});
+        }
 
         // Check for main function
         auto mainSym = symbolTable.resolve("main");
@@ -71,6 +74,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!returnType) {
             returnType = TypeFactory::getPrimitive("void"); // Default/Error fallback
         }
+        currentFunctionReturnType = returnType;
 
         auto funcName = node.getName()->getName();
 
@@ -87,8 +91,51 @@ namespace Ryntra::Compiler::Semantic {
             auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(funcName, returnType, typedBody);
             typedFunc->setLocation(node.getLocation());
             lastNode = typedFunc;
+
+            // Check for main function return
+            if (funcName == "main") {
+                bool hasReturn = false;
+                for (const auto& stmt : typedBody->getStatements()) {
+                    if (std::dynamic_pointer_cast<TypedReturnNode>(stmt)) {
+                        hasReturn = true;
+                        break;
+                    }
+                }
+                if (!hasReturn) {
+                    ErrorHandler::getInstance().makeError("Semantic Error: 'main' function must explicitly return a value.", node.getLocation());
+                }
+            }
         } else {
             lastNode = nullptr; // Error case
+        }
+        currentFunctionReturnType = nullptr;
+    }
+
+    void SemanticAnalyzer::visit(ReturnNode &node) {
+        node.getValue()->accept(*this);
+        auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        
+        if (typedExpr) {
+            if (currentFunctionReturnType) {
+                // Check return type mismatch
+                // Allow exact match or if expected is void (but return with value? usually error in C-like, but maybe void functions can return void expression?)
+                // Assuming strict match for now.
+                // Special case: if return type is void, expression should ideally be empty or void type.
+                // But AST ReturnNode has expression.
+                
+                std::string expectedType = currentFunctionReturnType->toString();
+                std::string actualType = typedExpr->getType()->toString();
+                
+                if (expectedType != actualType && actualType != "unknown") {
+                     ErrorHandler::getInstance().makeError("Semantic Error: Return type mismatch. Expected '" + expectedType + "', but got '" + actualType + "'.", node.getLocation());
+                }
+            }
+            
+            auto typedReturn = std::make_shared<TypedReturnNode>(typedExpr);
+            typedReturn->setLocation(node.getLocation());
+            lastNode = typedReturn;
+        } else {
+            lastNode = nullptr;
         }
     }
 
@@ -119,6 +166,13 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(StringLiteralNode &node) {
         auto type = TypeFactory::getPrimitive("string");
         auto typedNode = std::make_shared<TypedStringLiteralNode>(node.getValue(), type);
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(IntegerLiteralNode &node) {
+        auto type = TypeFactory::getPrimitive("int");
+        auto typedNode = std::make_shared<TypedIntegerLiteralNode>(node.getValue(), type);
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
     }

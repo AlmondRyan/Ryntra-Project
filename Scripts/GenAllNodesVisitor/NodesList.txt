@@ -6,3 +6,5 @@ ExpressionStatementNode
 BlockNode
 FunctionDefinitionNode
 ProgramNode
+ReturnNode
+IntegerLiteralNode
