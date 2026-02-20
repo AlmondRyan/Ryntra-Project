@@ -1,9 +1,12 @@
 #include "AST/ASTBuilder.h"
 #include "Compiler/IR/HLIRBuilder.h"
 #include "Compiler/IR/LLIRBuilder.h"
+#include "Compiler/VM/Assembler.h"
+#include "Compiler/VM/Interpreter.h"
 #include "ErrorHandler/ErrorHandler.h"
-#include "IR/IRBuilder.h"
+// #include "IR/IRBuilder.h"
 #include "Semantic/SemanticAnalyzer.h"
+// #include "VM/Interpreter.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
@@ -15,7 +18,7 @@ int main() {
     try {
         std::string Source = R"(
 public int main() {
-    __builtin_print("hello");
+    __builtin_print("hello world!");
     return 0;
 })";
 
@@ -76,6 +79,13 @@ public int main() {
                 Ryntra::Compiler::IR::LLIRBuilder llirBuilder;
                 std::cout << llirBuilder.emit(module.get()) << std::endl;
                 std::cout << "====================================================" << std::endl;
+
+                std::cout << "VM Execution:" << std::endl;
+                Ryntra::Compiler::VM::Assembler assembler;
+                auto vmProgram = assembler.assemble(module.get());
+                
+                Ryntra::Compiler::VM::Interpreter interpreter;
+                interpreter.execute(vmProgram);
             }
         }
 
