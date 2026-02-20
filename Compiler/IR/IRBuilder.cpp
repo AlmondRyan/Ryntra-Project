@@ -72,8 +72,9 @@ namespace Ryntra::Compiler {
         }
 
         if (opcode == OpCode::Ret) {
-            return "ret " + operands[0]->toString();
-        }
+        if (operands.empty()) return "ret void";
+        return "ret." + operands[0]->getType()->toString() + " " + operands[0]->toString();
+    }
 
         std::string opName;
         switch (opcode) {

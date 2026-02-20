@@ -1,14 +1,15 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <antlr4-runtime.h>
-#include <antlr/RyntraLexer.h>
-#include <antlr/RyntraParser.h>
 #include "AST/ASTBuilder.h"
-#include "Semantic/SemanticAnalyzer.h"
+#include "Compiler/IR/HLIRBuilder.h"
+#include "Compiler/IR/LLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
 #include "IR/IRBuilder.h"
-#include "Compiler/IR/HLIRBuilder.h"
+#include "Semantic/SemanticAnalyzer.h"
+#include <antlr/RyntraLexer.h>
+#include <antlr/RyntraParser.h>
+#include <antlr4-runtime.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 int main() {
     try {
@@ -18,6 +19,10 @@ public int main() {
     return 0;
 })";
 
+        std::cout << "Source: ";
+        std::cout << Source << std::endl;
+        std::cout << "====================================================" << std::endl;
+
         antlr4::ANTLRInputStream input(Source);
         Ryntra::antlr::RyntraLexer lexer(&input);
         antlr4::CommonTokenStream tokens(&lexer);
@@ -26,11 +31,15 @@ public int main() {
         auto tree = parser.program();
 
         // std::cout << tree->toStringTree(&parser) << std::endl;
-        std::cout << std::endl;
+        // std::cout << std::endl;
 
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
-        // std::cout << ast->toString() << std::endl;
+        std::cout << std::endl;
+        std::cout << ast->toString() << std::endl;
+        std::cout << std::endl;
+        std::cout << "====================================================" << std::endl;
+        std::cout << std::endl;
 
         Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
         analyzer.analyze(ast);
@@ -45,21 +54,28 @@ public int main() {
         }
 
         if (hasError) {
-            std::cout << "Semantic Analysis Failed" << std::endl;
+            std::cout << "Semantic Analysis Failed." << std::endl;
         } else {
-            std::cout << "Semantic Analysis Passed" << std::endl;
+            std::cout << "Semantic Analysis Passed." << std::endl;
             if (auto typedAST = analyzer.getTypedAST()) {
                 std::cout << "Typed AST:" << std::endl;
                 typedAST->dump();
+                std::cout << std::endl;
+                std::cout << "====================================================" << std::endl;
 
                 // Generate IR
-                std::cout << "\nGenerating IR..." << std::endl;
+                std::cout << "\nGenerating High-Level IR (SSA IR)..." << std::endl << std::endl;
                 Ryntra::Compiler::IR::HLIRBuilder irBuilder;
                 typedAST->accept(irBuilder);
-                
+
                 auto module = irBuilder.takeModule();
-                std::cout << "IR Output:" << std::endl;
+                std::cout << "HLIR Output:" << std::endl;
                 std::cout << module->print() << std::endl;
+
+                std::cout << "LLIR Output:" << std::endl;
+                Ryntra::Compiler::IR::LLIRBuilder llirBuilder;
+                std::cout << llirBuilder.emit(module.get()) << std::endl;
+                std::cout << "====================================================" << std::endl;
             }
         }
 

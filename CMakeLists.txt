@@ -52,6 +52,8 @@ set(IR_SOURCE
         Compiler/IR/IRBuilder.cpp
         Compiler/IR/HLIRBuilder.cpp
         Compiler/IR/HLIRBuilder.h
+        Compiler/IR/LLIRBuilder.h
+        Compiler/IR/LLIRBuilder.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)
