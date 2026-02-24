@@ -48,22 +48,24 @@ set(SEMANTIC_SOURCE
 )
 
 set(IR_SOURCE
-        Compiler/IR/IRBuilder.h
-        Compiler/IR/IRBuilder.cpp
+        Compiler/IR/BasicBlock.cpp
+        Compiler/IR/BasicBlock.h
+        Compiler/IR/Constant.cpp
+        Compiler/IR/Constant.h
+        Compiler/IR/Function.cpp
+        Compiler/IR/Function.h
         Compiler/IR/HLIRBuilder.cpp
         Compiler/IR/HLIRBuilder.h
-        Compiler/IR/LLIRBuilder.h
-        Compiler/IR/LLIRBuilder.cpp
-)
-
-set(VM_SOURCE
-        Compiler/VM/Interpreter.cpp
-        Compiler/VM/Interpreter.h
-        Compiler/VM/OpCode.h
-        Compiler/VM/Instruction.h
-        Compiler/VM/Value.h
-        Compiler/VM/Assembler.h
-        Compiler/VM/Assembler.cpp
+        Compiler/IR/Instruction.h
+        Compiler/IR/Instruction.cpp
+        Compiler/IR/IRBuilder.cpp
+        Compiler/IR/IRBuilder.h
+        Compiler/IR/Module.cpp
+        Compiler/IR/Module.h
+        Compiler/IR/Type.cpp
+        Compiler/IR/Type.h
+        Compiler/IR/Value.h
+        Compiler/IR/Value.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)
@@ -75,7 +77,6 @@ add_executable(RyntraProject
         ${UTILITY_SOURCE}
         ${SEMANTIC_SOURCE}
         ${IR_SOURCE}
-        ${VM_SOURCE}
 )
 
 add_dependencies(RyntraProject GenerateAllNodesVisitor)

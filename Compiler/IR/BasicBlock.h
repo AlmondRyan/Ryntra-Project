@@ -19,7 +19,11 @@ public:
     
     Instruction* addInstruction(std::unique_ptr<Instruction> inst);
     
-    std::string toString() const override;
+    // Print the block content (instructions)
+    std::string print() const;
+    
+    // Returns label name as operand (e.g. "%entry")
+    std::string toString() const override { return "%" + getName(); }
 
 private:
     Function* parent;

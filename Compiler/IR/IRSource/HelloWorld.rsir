@@ -1,9 +1,10 @@
-declare __builtin_print(string) -> void
-
-global @str1 : string = "Hello World"
-
-define @main() -> i32 {
-entry:
-    %0 = call __builtin_print(@str1)
-    ret.i32 0
+module HelloWorld {
+    external func @__builtin_print(string) -> void
+    @str0 = constant string "Hello, World!"
+    func @main() -> i32 {
+    entry:
+        %0 = load @str0
+        call @__builtin_print(%0)
+        ret i32 0
+    }
 }

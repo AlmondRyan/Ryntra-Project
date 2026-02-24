@@ -13,19 +13,29 @@ namespace Ryntra::Compiler::IR {
     }
 
     Type *HLIRBuilder::mapType(std::shared_ptr<Semantic::Type> type) {
-        if (type->getKind() == Semantic::TypeKind::PRIMITIVE) {
-            auto prim = std::static_pointer_cast<Semantic::PrimitiveType>(type);
-            if (prim->getName() == "int")
-                return Type::getInt32Ty();
-            if (prim->getName() == "string")
-                return Type::getStringTy();
-            if (prim->getName() == "void")
+        if (!type) return Type::getVoidTy();
+
+        switch (type->getKind()) {
+            case Semantic::TypeKind::PRIMITIVE: {
+                auto prim = std::static_pointer_cast<Semantic::PrimitiveType>(type);
+                if (prim->getName() == "int" || prim->getName() == "i32")
+                    return Type::getInt32Ty();
+                if (prim->getName() == "string")
+                    return Type::getStringTy();
+                if (prim->getName() == "void")
+                    return Type::getVoidTy();
+                break;
+            }
+            case Semantic::TypeKind::VOID:
+                return Type::getVoidTy();
+            case Semantic::TypeKind::FUNCTION:
+                // For now, we don't have function types as first-class in IR Types,
+                // but we can return void or implement it if needed.
+                return Type::getVoidTy();
+            default:
                 return Type::getVoidTy();
         }
-        if (type->getKind() == Semantic::TypeKind::VOID) {
-            return Type::getVoidTy();
-        }
-        return Type::getVoidTy(); // Fallback
+        return Type::getVoidTy();
     }
 
     void HLIRBuilder::visit(Semantic::TypedProgramNode &node) {
@@ -60,36 +70,55 @@ namespace Ryntra::Compiler::IR {
     }
 
     void HLIRBuilder::visit(Semantic::TypedStringLiteralNode &node) {
-        lastValue = builder->CreateConstantString(node.getValue());
+        // 1. Check if we already have this string constant to avoid duplicates
+        std::string val = "\"" + node.getValue() + "\"";
+        ConstantObject* global = nullptr;
+        for (const auto& co : module->getConstantObjects()) {
+            if (co->getInitValue() == val) {
+                global = co.get();
+                break;
+            }
+        }
+        
+        if (!global) {
+            std::string name = "str" + std::to_string(module->getNextStringConstantId());
+            global = builder->CreateConstant<ConstantObject>(Type::getStringTy(), name, val);
+        }
+        
+        // 2. Load the constant into a register
+        lastValue = builder->CreateLoad(global);
     }
 
     void HLIRBuilder::visit(Semantic::TypedIntegerLiteralNode &node) {
-        auto constant = std::make_unique<ConstantInt>(node.getValue());
-        lastValue = constant.get();
-        module->addConstant(std::move(constant));
+        // Integers are usually used as literals in instructions
+        lastValue = builder->CreateConstant<ConstantInt>(node.getValue());
     }
 
     void HLIRBuilder::visit(Semantic::TypedIdentifierNode &node) {
-        auto global = module->getConstantObject(node.getName());
+        auto name = node.getName();
+        
+        // Try to resolve as a global constant
+        auto global = module->getConstantObject(name);
         if (global) {
-            lastValue = global;
-        } else {
-            auto func = module->getFunction(node.getName());
-            if (func) {
-                lastValue = func;
-            } else {
-                lastValue = nullptr;
-            }
+            lastValue = builder->CreateLoad(global);
+            return;
         }
+        
+        // Try to resolve as a function (for calls, though CallNode handles this usually)
+        auto func = module->getFunction(name);
+        if (func) {
+            lastValue = func;
+            return;
+        }
+
+        // TODO: Handle local variables when we have them
+        std::cerr << "IR Generation Error: Identifier " << name << " not found." << std::endl;
+        lastValue = nullptr;
     }
 
     void HLIRBuilder::visit(Semantic::TypedFunctionCallNode &node) {
         auto funcName = node.getFunctionName()->getName();
         auto func = module->getFunction(funcName);
-
-        if (!func) {
-            func = module->getFunction("@" + funcName);
-        }
 
         if (!func) {
             std::cerr << "IR Generation Error: Function " << funcName << " not found." << std::endl;

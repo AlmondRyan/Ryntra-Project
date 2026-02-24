@@ -10,7 +10,6 @@
 
 namespace Ryntra::Compiler {
 
-// --- IRBuilder ---
 class IRBuilder {
 public:
     IRBuilder(Module* m) : module(m), insertBlock(nullptr) {}
@@ -18,27 +17,35 @@ public:
     void SetInsertPoint(BasicBlock* bb) { insertBlock = bb; }
     BasicBlock* GetInsertBlock() const { return insertBlock; }
 
-    // Helpers to create structural elements
     Function* CreateFunction(const std::string& name, Type* retType, std::vector<Type*> argTypes = {});
-    BasicBlock* CreateBasicBlock(const std::string& name, Function* parent);
+    Function* CreateExternalFunction(const std::string& name, Type* retType, std::vector<Type*> argTypes);
     
-    // Create a string constant.
-    // If name is provided, it will be prefixed with '@' automatically if not present.
-    ConstantObject* CreateConstantString(const std::string& name, const std::string& val);
-    // Overload for auto-naming (str0, str1, ...).
-    ConstantObject* CreateConstantString(const std::string& val);
+    BasicBlock* CreateBasicBlock(const std::string& name, Function* parent = nullptr);
+    
+    template<typename T, typename... Args>
+    T* CreateConstant(Args&&... args) {
+        auto c = std::make_unique<T>(std::forward<Args>(args)...);
+        T* ptr = c.get();
+        if constexpr (std::is_same_v<T, ConstantObject>) {
+            module->addConstantObject(std::move(c));
+        } else {
+            module->addConstant(std::move(c));
+        }
+        return ptr;
+    }
 
     // Helpers to create instructions
-    Instruction* CreateLoadC(ConstantObject* global, const std::string& destName = "");
-    Instruction* CreateSyscall(int code);
-    Instruction* CreateHalt();
-    Instruction* CreateCall(Function* func, const std::vector<Value*>& args, const std::string& destName = "");
+    Instruction* CreateLoad(ConstantObject* global); 
+    
+    Instruction* CreateCall(Function* func, const std::vector<Value*>& args);
     Instruction* CreateRet(Value* val);
 
 private:
+    std::string getNextRegisterName();
+    
     Module* module;
     BasicBlock* insertBlock;
-    size_t tempVarCounter = 0;
+    size_t nextRegisterId = 0;
 };
 
 }

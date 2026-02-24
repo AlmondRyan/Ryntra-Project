@@ -1,13 +1,10 @@
 #include "ASTNodes.h"
 #include <sstream>
-#include <stdexcept>
 
 namespace Ryntra::Compiler {
     void TypeSpecifierNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<TypeSpecifierNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support TypeSpecifierNode");
         }
     }
 
@@ -18,8 +15,6 @@ namespace Ryntra::Compiler {
     void StringLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<StringLiteralNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support StringLiteralNode");
         }
     }
 
@@ -30,8 +25,6 @@ namespace Ryntra::Compiler {
     void IntegerLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<IntegerLiteralNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support IntegerLiteralNode");
         }
     }
 
@@ -42,8 +35,6 @@ namespace Ryntra::Compiler {
     void IdentifierNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<IdentifierNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support IdentifierNode");
         }
     }
 
@@ -54,8 +45,6 @@ namespace Ryntra::Compiler {
     void FunctionCallNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<FunctionCallNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support FunctionCallNode");
         }
     }
 
@@ -72,8 +61,6 @@ namespace Ryntra::Compiler {
     void ExpressionStatementNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ExpressionStatementNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support ExpressionStatementNode");
         }
     }
 
@@ -84,8 +71,6 @@ namespace Ryntra::Compiler {
     void ReturnNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ReturnNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support ReturnNode");
         }
     }
 
@@ -96,8 +81,6 @@ namespace Ryntra::Compiler {
     void BlockNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BlockNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support BlockNode");
         }
     }
 
@@ -114,8 +97,6 @@ namespace Ryntra::Compiler {
     void FunctionDefinitionNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<FunctionDefinitionNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support FunctionDefinitionNode");
         }
     }
 
@@ -126,8 +107,6 @@ namespace Ryntra::Compiler {
     void ProgramNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ProgramNode> *>(&visitor)) {
             v->visit(*this);
-        } else {
-            throw std::runtime_error("Visitor does not support ProgramNode");
         }
     }
 

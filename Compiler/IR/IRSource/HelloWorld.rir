@@ -1,9 +1,0 @@
-section .cdata
-    string @str1 = "Hello World"
-
-section .code
-    func @main() -> i32 {
-        load_const.string @str1
-        call.native __builtin_print
-        ret.i32 0
-    }
