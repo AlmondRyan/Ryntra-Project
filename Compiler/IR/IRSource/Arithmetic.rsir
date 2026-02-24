@@ -1,0 +1,53 @@
+module "Arithmetic" {
+    // 假设一个简单的计算函数
+    // int calculate(int a, int b) {
+    //     int x = a + 10;
+    //     int y = b * 2;
+    //     return (x + y) / 2;
+    // }
+
+    func @calculate(i32 %a, i32 %b) -> i32 {
+    entry:
+        // 纯值运算，无副作用，无 GC 屏障
+        // x = a + 10
+        %c10 = i32 10
+        %x = add %a, %c10
+
+        // y = b * 2
+        %c2 = i32 2
+        %y = mul %b, %c2
+
+        // sum = x + y
+        %sum = add %x, %y
+
+        // res = sum / 2
+        %res = div %sum, %c2
+
+        ret %res
+    }
+
+    // 稍微复杂一点：涉及局部变量和可能的内存操作 (尽管可以用寄存器优化掉)
+    // void update_struct(MyStruct* s) {
+    //     s.x = s.x + 1;
+    // }
+    type %MyStruct = struct { i32, f64 }
+
+    func @update_struct(ptr %MyStruct %s_ptr) -> void {
+    entry:
+        // GEP 获取字段地址 (ptr 类型)
+        // 注意：ptr 不能跨 SafePoint，这里没有 call，所以是安全的
+        %field_x_ptr = gep %s_ptr, 0  // 0 是第一个字段 i32
+
+        // Load
+        %val_x = load %field_x_ptr
+
+        // Add
+        %one = i32 1
+        %new_x = add %val_x, %one
+
+        // Store (值类型写入，无需写屏障)
+        store %field_x_ptr, %new_x
+
+        ret void
+    }
+}
