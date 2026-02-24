@@ -70,7 +70,7 @@ namespace Ryntra::Compiler {
         std::string raw = ctx->STRING_LITERAL()->getText();
         // Remove quotes
         std::string val = raw.substr(1, raw.length() - 2);
-        // TODO: handle escape sequences if needed
+        // TODO: handle escape sequences
         return createNode<StringLiteralNode>(ctx, val);
     }
 
