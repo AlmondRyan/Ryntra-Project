@@ -14,6 +14,16 @@ namespace Ryntra::Compiler {
         Call = 0x05,
         Ret = 0x06,
         Entry = 0x07,
+        // Arithmetic
+        Add = 0x10,
+        Sub = 0x11,
+        Mul = 0x12,
+        Div = 0x13,
+        // Comparison
+        CmpEQ = 0x20,
+        CmpNE = 0x21,
+        CmpLT = 0x22,
+        CmpGT = 0x23,
     };
 
     class BasicBlock;

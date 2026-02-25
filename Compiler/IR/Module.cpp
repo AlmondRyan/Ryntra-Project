@@ -43,7 +43,7 @@ namespace Ryntra::Compiler {
         for (const auto &c : constantObjects) {
             // @str0 = constant string "..."
             // Ensure constant string is quoted
-            ss << "    @" << c->getName() << " = constant " << c->getType()->toString() << " " << c->getInitValue() << "\n";
+            ss << "    @" << c->getName() << " = constant " << c->getType()->toString() << " \"" << c->getInitValue() << "\"\n";
         }
 
         // 3. Defined functions

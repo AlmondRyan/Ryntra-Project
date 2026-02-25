@@ -1,8 +1,8 @@
 #include "AST/ASTBuilder.h"
 #include "Compiler/IR/HLIRBuilder.h"
-// #include "Compiler/IR/LLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
 #include "Semantic/SemanticAnalyzer.h"
+#include "VM/VM.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
@@ -10,49 +10,10 @@
 #include <iostream>
 #include <sstream>
 
-// void manuallyCreateIR() {
-//     using namespace Ryntra::Compiler;
-//     auto module = std::make_unique<Module>("HelloWorld");
-//     IRBuilder builder(module.get());
-//
-//     // Create `external func @__builtin_print(string) -> void`
-//     std::vector<Type*> printArgs = { Type::getStringTy() }; // Argument
-//     Function *printFunc = builder.CreateExternalFunction("__builtin_print", Type::getVoidTy(), printArgs);
-//
-//     // Create `@str0 = constant string "Hello World"
-//     auto *str0 = builder.CreateConstant<ConstantObject>(Type::getStringTy(), "str0", "\"Hello World\"");
-//     auto *str1 = builder.CreateConstant<ConstantObject>(Type::getStringTy(), "str1", "\"Hello World2\"");
-//
-//     // Create Function `func @main() -> i32`
-//     Function *mainFunction = builder.CreateFunction("main", Type::getInt32Ty());
-//
-//     // Create `entry:` basic block
-//     BasicBlock *entry = builder.CreateBasicBlock("entry", mainFunction);
-//     builder.SetInsertPoint(entry);
-//
-//     // Create `%0 : load @str0`
-//     auto *loadInst1 = builder.CreateLoad(str0);
-//     auto *loadInst2 = builder.CreateLoad(str1);
-//
-//     // Create `call @__builtin_print(%0)`
-//     std::vector<Value*> callArgs = { loadInst1 };
-//     builder.CreateCall(printFunc, callArgs);
-//
-//     std::vector<Value*> callArgs2 = {loadInst2};
-//     builder.CreateCall(printFunc, callArgs2);
-//
-//     // Create `ret i32 0`
-//     auto *const0 = builder.CreateConstant<ConstantInt>(0);
-//     builder.CreateRet(const0);
-//
-//     std::cout << module->print() << std::endl;
-// }
-
 int main() {
     try {
         std::string Source = R"(
 public int main() {
-    __builtin_print("hello world!");
     __builtin_print("hello world!2");
     return 0;
 })";
@@ -110,15 +71,9 @@ public int main() {
                 std::cout << "HLIR Output:" << std::endl;
                 std::cout << module->print() << std::endl;
                 std::cout << "====================================================" << std::endl;
-                //
-                // std::cout << "VM Execution:" << std::endl;
-                // Ryntra::Compiler::VM::Assembler assembler;
-                // auto vmProgram = assembler.assemble(module.get());
-                //
-                // Ryntra::Compiler::VM::Interpreter interpreter;
-                // interpreter.execute(vmProgram);
 
-                // manuallyCreateIR();
+                Ryntra::Compiler::VM::VM virtualMachine;
+                Ryntra::Compiler::VM::RuntimeValue result = virtualMachine.run(module.get(), "main");
             }
         }
 

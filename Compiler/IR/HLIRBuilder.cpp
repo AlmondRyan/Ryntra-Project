@@ -68,7 +68,7 @@ namespace Ryntra::Compiler::IR {
 
     void HLIRBuilder::visit(Semantic::TypedStringLiteralNode &node) {
         // 1. Check if we already have this string constant to avoid duplicates
-        std::string val = "\"" + node.getValue() + "\"";
+        std::string val = node.getValue();
         ConstantObject *global = nullptr;
         for (const auto &co : module->getConstantObjects()) {
             if (co->getInitValue() == val) {

@@ -12,27 +12,22 @@ namespace Ryntra::Compiler {
         }
 
         switch (opcode) {
-        case OpCode::Load:
-            ss << "load";
-            break;
-        case OpCode::Call:
-            ss << "call";
-            break;
-        case OpCode::Ret:
-            ss << "ret";
-            break;
-        case OpCode::Module:
-            ss << "module";
-            break;
-        case OpCode::External:
-            ss << "external";
-            break;
-        case OpCode::Constant:
-            ss << "constant";
-            break;
-        default:
-            ss << "unknown_op";
-            break;
+        case OpCode::Load: ss << "load"; break;
+        case OpCode::Call: ss << "call"; break;
+        case OpCode::Ret: ss << "ret"; break;
+        case OpCode::Module: ss << "module"; break;
+        case OpCode::External: ss << "external"; break;
+        case OpCode::Constant: ss << "constant"; break;
+        case OpCode::Entry: ss << "entry"; break;
+        case OpCode::Add: ss << "add"; break;
+        case OpCode::Sub: ss << "sub"; break;
+        case OpCode::Mul: ss << "mul"; break;
+        case OpCode::Div: ss << "div"; break;
+        case OpCode::CmpEQ: ss << "cmpeq"; break;
+        case OpCode::CmpNE: ss << "cmpne"; break;
+        case OpCode::CmpLT: ss << "cmplt"; break;
+        case OpCode::CmpGT: ss << "cmpgt"; break;
+        default: ss << "unknown_op"; break;
         }
 
         if (opcode == OpCode::Call) {

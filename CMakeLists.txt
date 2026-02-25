@@ -68,6 +68,14 @@ set(IR_SOURCE
         Compiler/IR/Value.cpp
 )
 
+set(VM_SOURCE
+        Compiler/VM/Frame.h
+        Compiler/VM/RuntimeValue.h
+        Compiler/VM/Stack.h
+        Compiler/VM/VM.cpp
+        Compiler/VM/VM.h
+)
+
 find_package(antlr4-runtime REQUIRED)
 
 add_executable(RyntraProject
@@ -77,6 +85,7 @@ add_executable(RyntraProject
         ${UTILITY_SOURCE}
         ${SEMANTIC_SOURCE}
         ${IR_SOURCE}
+        ${VM_SOURCE}
 )
 
 add_dependencies(RyntraProject GenerateAllNodesVisitor)

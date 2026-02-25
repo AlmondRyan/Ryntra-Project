@@ -117,12 +117,6 @@ namespace Ryntra::Compiler::Semantic {
         
         if (typedExpr) {
             if (currentFunctionReturnType) {
-                // Check return type mismatch
-                // Allow exact match or if expected is void (but return with value? usually error in C-like, but maybe void functions can return void expression?)
-                // Assuming strict match for now.
-                // Special case: if return type is void, expression should ideally be empty or void type.
-                // But AST ReturnNode has expression.
-                
                 std::string expectedType = currentFunctionReturnType->toString();
                 std::string actualType = typedExpr->getType()->toString();
                 
@@ -186,14 +180,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError("Semantic Error: Identifier '" + name + "' is not defined.", node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
         } else {
-            // Determine type from symbol
-            // Currently SymbolTable only has FunctionSymbol, but in future it might have VariableSymbol
             if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
-                // It's a function reference? Or just an identifier that happens to be a function name?
-                // In this language, maybe identifiers are only used for calls?
-                // If it's just an identifier node, it might be a variable or a function reference.
-                // Since we don't have first-class functions yet, let's treat it as unknown or just return the function type if possible.
-                // Construct function type
                  auto retType = TypeFactory::getPrimitive(funcSym->getReturnType());
                  std::vector<std::shared_ptr<Type>> paramTypes;
                  for(const auto& p : funcSym->getParamTypes()) {
@@ -201,8 +188,6 @@ namespace Ryntra::Compiler::Semantic {
                  }
                  type = TypeFactory::getFunction(retType, paramTypes);
             } else {
-                // Generic symbol (variable?)
-                // Assuming "int" for now as we don't have variable declarations in AST
                 type = TypeFactory::getPrimitive("int"); 
             }
         }
@@ -261,9 +246,6 @@ namespace Ryntra::Compiler::Semantic {
             }
         }
 
-        // Create Typed Identifier for the function name
-        // We create a fresh TypedIdentifierNode for the function name in the call
-        // The type of this identifier is the FunctionType
         std::vector<std::shared_ptr<Type>> paramTypeObjs;
         for(const auto& pt : expectedParamTypes) paramTypeObjs.push_back(TypeFactory::getPrimitive(pt));
         auto funcType = TypeFactory::getFunction(returnType, paramTypeObjs);
@@ -279,5 +261,4 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(TypeSpecifierNode &node) {
         lastType = TypeFactory::getPrimitive(node.getName());
     }
-
 }
