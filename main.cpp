@@ -77,6 +77,7 @@ public int main() {
             }
         }
 
+        std::cout << std::endl;
         return 0;
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
