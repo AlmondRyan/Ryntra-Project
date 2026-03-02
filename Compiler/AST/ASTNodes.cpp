@@ -120,4 +120,30 @@ namespace Ryntra::Compiler {
         return ss.str();
     }
 
+    void VariableDeclarationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<VariableDeclarationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string VariableDeclarationNode::toString() const {
+        std::stringstream ss;
+        ss << "(VariableDeclaration " << type->toString() << " " << name->toString();
+        if (initializer) {
+            ss << " " << initializer->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void VariableNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<VariableNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string VariableNode::toString() const {
+        return "(Variable " + name->toString() + ")";
+    }
+
 } // namespace Ryntra::Compiler

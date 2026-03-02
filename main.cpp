@@ -14,7 +14,8 @@ int main() {
     try {
         std::string Source = R"(
 public int main() {
-    __builtin_print("hello world!2");
+    int a = 10;
+    __builtin_print(a);
     return 0;
 })";
 
