@@ -6,54 +6,91 @@
 
 namespace Ryntra::Compiler::Semantic {
 
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    // Map a type-name string to an STType::TypePtr (SymbolTable type system)
+    TypePtr SemanticAnalyzer::makeSTType(const std::string& name) {
+        if (name == "void")   return std::make_shared<STType::VoidType>();
+        if (name == "string") return std::make_shared<STType::StringType>();
+        // int / int32 both map to Int32
+        return std::make_shared<STType::Int32Type>();
+    }
+
+    // Convert STType::Type -> TypeSystem::Type (used by TypedAST nodes)
+    std::shared_ptr<Type> SemanticAnalyzer::toTypedType(const TypePtr& stType) {
+        if (!stType) return TypeFactory::getPrimitive("unknown");
+        switch (stType->getKind()) {
+            case STType::TypeKind::Void:   return TypeFactory::getVoid();
+            case STType::TypeKind::String: return TypeFactory::getPrimitive("string");
+            case STType::TypeKind::Int32:  return TypeFactory::getPrimitive("int");
+            default:                       return TypeFactory::getPrimitive("unknown");
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Public API
+    // ---------------------------------------------------------------------------
+
     void SemanticAnalyzer::analyze(const std::shared_ptr<IASTNode>& root) {
         if (!root) return;
         root->accept(*this);
-        // The result for ProgramNode will be stored in typedProgram
     }
 
+    // ---------------------------------------------------------------------------
+    // Visitors
+    // ---------------------------------------------------------------------------
+
     void SemanticAnalyzer::visit(ProgramNode &node) {
-        // First pass: Register all functions
+        // First pass: register all user-defined functions
         for (const auto &func : node.getFunctions()) {
-            std::vector<std::string> paramTypes; 
-            // Assuming no parameters for user defined functions as per current AST structure
-            // In a real scenario, we would parse parameters here.
-            
-            auto funcName = func->getName()->getName();
+            auto funcName      = func->getName()->getName();
             auto returnTypeName = func->getReturnType()->getName();
-            
-            // Basic conflict check
+            auto returnType    = makeSTType(returnTypeName);
+
             if (symbolTable.resolve(funcName)) {
-                 ErrorHandler::getInstance().makeError("Semantic Error: Function '" + funcName + "' is already defined.", func->getLocation());
-                 continue;
+                ErrorHandler::getInstance().makeError(
+                    "Semantic Error: Function '" + funcName + "' is already defined.",
+                    func->getLocation());
+                continue;
             }
 
-            symbolTable.define(std::make_shared<FunctionSymbol>(funcName, returnTypeName, paramTypes), func->getLocation());
+            // Parameter types will be populated when we visit the function body;
+            // for now register with empty param list so calls can resolve the symbol.
+            symbolTable.define(
+                std::make_shared<FunctionSymbol>(funcName, returnType, std::vector<TypePtr>{}),
+                func->getLocation());
         }
 
-        // Register built-in functions if not present (simple hack for now if they are not in AST)
-        // For example: print(string)
+        // Register print() built-in if not already present
+        // (__builtin_print is registered by SymbolTable constructor)
         if (!symbolTable.resolve("print")) {
-             symbolTable.define(std::make_shared<FunctionSymbol>("print", "void", std::vector<std::string>{"string"}), SourceLocation{0,0});
-        }
-        if (!symbolTable.resolve("__builtin_print")) {
-             symbolTable.define(std::make_shared<FunctionSymbol>("__builtin_print", "void", std::vector<std::string>{"string"}), SourceLocation{0,0});
+            std::vector<TypePtr> params{ std::make_shared<STType::StringType>() };
+            symbolTable.define(
+                std::make_shared<FunctionSymbol>("print",
+                    std::make_shared<STType::VoidType>(), std::move(params)),
+                SourceLocation{0, 0});
         }
 
-        // Check for main function
+        // Validate main
         auto mainSym = symbolTable.resolve("main");
         if (!mainSym) {
-            ErrorHandler::getInstance().makeError("Semantic Error: 'main' function is not defined.", node.getLocation());
+            ErrorHandler::getInstance().makeError(
+                "Semantic Error: 'main' function is not defined.", node.getLocation());
         } else {
             auto mainFuncSym = std::dynamic_pointer_cast<FunctionSymbol>(mainSym);
             if (!mainFuncSym) {
-                 ErrorHandler::getInstance().makeError("Semantic Error: 'main' is not a function.", node.getLocation());
-            } else if (mainFuncSym->getReturnType() != "int") {
-                ErrorHandler::getInstance().makeError("Semantic Error: 'main' function must return 'int'.", node.getLocation());
+                ErrorHandler::getInstance().makeError(
+                    "Semantic Error: 'main' is not a function.", node.getLocation());
+            } else if (!mainFuncSym->getReturnType() ||
+                       mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Int32) {
+                ErrorHandler::getInstance().makeError(
+                    "Semantic Error: 'main' function must return 'int'.", node.getLocation());
             }
         }
 
-        // Second pass: Analyze bodies and build Typed AST
+        // Second pass: analyse bodies
         std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> typedFunctions;
         for (const auto &func : node.getFunctions()) {
             func->accept(*this);
@@ -61,38 +98,30 @@ namespace Ryntra::Compiler::Semantic {
                 typedFunctions.push_back(typedFunc);
             }
         }
-        
+
         typedProgram = std::make_shared<TypedProgramNode>(std::move(typedFunctions));
         typedProgram->setLocation(node.getLocation());
         lastNode = typedProgram;
     }
 
     void SemanticAnalyzer::visit(FunctionDefinitionNode &node) {
-        // Resolve return type
         node.getReturnType()->accept(*this);
-        auto returnType = lastType;
-        if (!returnType) {
-            returnType = TypeFactory::getPrimitive("void"); // Default/Error fallback
-        }
+        auto returnType = lastType ? lastType : makeSTType("void");
         currentFunctionReturnType = returnType;
 
         auto funcName = node.getName()->getName();
 
-        // Enter function scope
         symbolTable.enterScope();
-        
-        // Visit body
         node.getBody()->accept(*this);
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
-        
         symbolTable.exitScope();
-        
+
         if (typedBody) {
-            auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(funcName, returnType, typedBody);
+            auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(
+                funcName, toTypedType(returnType), typedBody);
             typedFunc->setLocation(node.getLocation());
             lastNode = typedFunc;
 
-            // Check for main function return
             if (funcName == "main") {
                 bool hasReturn = false;
                 for (const auto& stmt : typedBody->getStatements()) {
@@ -102,11 +131,13 @@ namespace Ryntra::Compiler::Semantic {
                     }
                 }
                 if (!hasReturn) {
-                    ErrorHandler::getInstance().makeError("Semantic Error: 'main' function must explicitly return a value.", node.getLocation());
+                    ErrorHandler::getInstance().makeError(
+                        "Semantic Error: 'main' function must explicitly return a value.",
+                        node.getLocation());
                 }
             }
         } else {
-            lastNode = nullptr; // Error case
+            lastNode = nullptr;
         }
         currentFunctionReturnType = nullptr;
     }
@@ -114,17 +145,20 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(ReturnNode &node) {
         node.getValue()->accept(*this);
         auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
-        
+
         if (typedExpr) {
             if (currentFunctionReturnType) {
-                std::string expectedType = currentFunctionReturnType->toString();
-                std::string actualType = typedExpr->getType()->toString();
-                
-                if (expectedType != actualType && actualType != "unknown") {
-                     ErrorHandler::getInstance().makeError("Semantic Error: Return type mismatch. Expected '" + expectedType + "', but got '" + actualType + "'.", node.getLocation());
+                auto expectedTyped = toTypedType(currentFunctionReturnType);
+                auto actualType    = typedExpr->getType();
+
+                if (!expectedTyped->equals(*actualType) && actualType->toString() != "unknown") {
+                    ErrorHandler::getInstance().makeError(
+                        "Semantic Error: Return type mismatch. Expected '" +
+                        expectedTyped->toString() + "', but got '" +
+                        actualType->toString() + "'.",
+                        node.getLocation());
                 }
             }
-            
             auto typedReturn = std::make_shared<TypedReturnNode>(typedExpr);
             typedReturn->setLocation(node.getLocation());
             lastNode = typedReturn;
@@ -158,40 +192,42 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(StringLiteralNode &node) {
-        auto type = TypeFactory::getPrimitive("string");
-        auto typedNode = std::make_shared<TypedStringLiteralNode>(node.getValue(), type);
+        auto stType    = std::make_shared<STType::StringType>();
+        auto typedNode = std::make_shared<TypedStringLiteralNode>(
+            node.getValue(), toTypedType(stType));
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
     }
 
     void SemanticAnalyzer::visit(IntegerLiteralNode &node) {
-        auto type = TypeFactory::getPrimitive("int");
-        auto typedNode = std::make_shared<TypedIntegerLiteralNode>(node.getValue(), type);
+        auto stType    = std::make_shared<STType::Int32Type>();
+        auto typedNode = std::make_shared<TypedIntegerLiteralNode>(
+            node.getValue(), toTypedType(stType));
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
     }
 
     void SemanticAnalyzer::visit(IdentifierNode &node) {
         auto name = node.getName();
-        auto sym = symbolTable.resolve(name);
-        
+        auto sym  = symbolTable.resolve(name);
+
         std::shared_ptr<Type> type;
         if (!sym) {
-            ErrorHandler::getInstance().makeError("Semantic Error: Identifier '" + name + "' is not defined.", node.getLocation());
+            ErrorHandler::getInstance().makeError(
+                "Semantic Error: Identifier '" + name + "' is not defined.",
+                node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
+        } else if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
+            std::vector<std::shared_ptr<Type>> paramTypes;
+            for (const auto& p : funcSym->getParamTypes())
+                paramTypes.push_back(toTypedType(p));
+            type = TypeFactory::getFunction(toTypedType(funcSym->getReturnType()), paramTypes);
+        } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
+            type = toTypedType(varSym->getType());
         } else {
-            if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
-                 auto retType = TypeFactory::getPrimitive(funcSym->getReturnType());
-                 std::vector<std::shared_ptr<Type>> paramTypes;
-                 for(const auto& p : funcSym->getParamTypes()) {
-                     paramTypes.push_back(TypeFactory::getPrimitive(p));
-                 }
-                 type = TypeFactory::getFunction(retType, paramTypes);
-            } else {
-                type = TypeFactory::getPrimitive("int"); 
-            }
+            type = TypeFactory::getPrimitive("unknown");
         }
-        
+
         auto typedNode = std::make_shared<TypedIdentifierNode>(name, type);
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
@@ -201,55 +237,66 @@ namespace Ryntra::Compiler::Semantic {
         auto funcNameNode = node.getFunctionName();
         std::string funcName = funcNameNode->getName();
 
-        // Resolve function
         auto sym = symbolTable.resolve(funcName);
-        std::shared_ptr<Type> returnType = TypeFactory::getPrimitive("void"); // Default
-        std::vector<std::string> expectedParamTypes;
+        TypePtr stReturnType;
+        std::vector<TypePtr> expectedParamTypes;
 
         if (!sym) {
-            ErrorHandler::getInstance().makeError("Semantic Error: Function '" + funcName + "' is not defined.", node.getLocation());
-            returnType = TypeFactory::getPrimitive("unknown");
+            ErrorHandler::getInstance().makeError(
+                "Semantic Error: Function '" + funcName + "' is not defined.",
+                node.getLocation());
+            stReturnType = makeSTType("unknown");
         } else {
             auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym);
             if (!funcSym) {
-                 ErrorHandler::getInstance().makeError("Semantic Error: '" + funcName + "' is not a function.", node.getLocation());
-                 returnType = TypeFactory::getPrimitive("unknown");
+                ErrorHandler::getInstance().makeError(
+                    "Semantic Error: '" + funcName + "' is not a function.",
+                    node.getLocation());
+                stReturnType = makeSTType("unknown");
             } else {
-                returnType = TypeFactory::getPrimitive(funcSym->getReturnType());
+                stReturnType       = funcSym->getReturnType();
                 expectedParamTypes = funcSym->getParamTypes();
             }
         }
 
+        auto returnType = toTypedType(stReturnType);
+
         // Process arguments
-        std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
         const auto& args = node.getArguments();
-        
         if (sym && args.size() != expectedParamTypes.size()) {
-             ErrorHandler::getInstance().makeError("Semantic Error: Function '" + funcName + "' expects " + std::to_string(expectedParamTypes.size()) + " arguments, but got " + std::to_string(args.size()) + ".", node.getLocation());
+            ErrorHandler::getInstance().makeError(
+                "Semantic Error: Function '" + funcName + "' expects " +
+                std::to_string(expectedParamTypes.size()) + " arguments, but got " +
+                std::to_string(args.size()) + ".",
+                node.getLocation());
         }
 
+        std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
         for (size_t i = 0; i < args.size(); ++i) {
             args[i]->accept(*this);
             auto typedArg = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
-            if (typedArg) {
-                typedArgs.push_back(typedArg);
-                
-                // Type check
-                if (i < expectedParamTypes.size()) {
-                    std::string expectedTypeStr = expectedParamTypes[i];
-                    std::string actualTypeStr = typedArg->getType()->toString();
-                    
-                    if (expectedTypeStr != actualTypeStr && expectedTypeStr != "any" && actualTypeStr != "unknown") {
-                         ErrorHandler::getInstance().makeError("Semantic Error: Argument " + std::to_string(i+1) + " expects type '" + expectedTypeStr + "', but got '" + actualTypeStr + "'.", args[i]->getLocation());
-                    }
+            if (!typedArg) continue;
+            typedArgs.push_back(typedArg);
+
+            if (i < expectedParamTypes.size()) {
+                auto expectedTyped = toTypedType(expectedParamTypes[i]);
+                auto actualType    = typedArg->getType();
+                if (!expectedTyped->equals(*actualType) &&
+                    actualType->toString() != "unknown") {
+                    ErrorHandler::getInstance().makeError(
+                        "Semantic Error: Argument " + std::to_string(i + 1) +
+                        " expects type '" + expectedTyped->toString() +
+                        "', but got '" + actualType->toString() + "'.",
+                        args[i]->getLocation());
                 }
             }
         }
 
         std::vector<std::shared_ptr<Type>> paramTypeObjs;
-        for(const auto& pt : expectedParamTypes) paramTypeObjs.push_back(TypeFactory::getPrimitive(pt));
+        for (const auto& pt : expectedParamTypes)
+            paramTypeObjs.push_back(toTypedType(pt));
         auto funcType = TypeFactory::getFunction(returnType, paramTypeObjs);
-        
+
         auto typedFuncName = std::make_shared<TypedIdentifierNode>(funcName, funcType);
         typedFuncName->setLocation(funcNameNode->getLocation());
 
@@ -259,6 +306,7 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(TypeSpecifierNode &node) {
-        lastType = TypeFactory::getPrimitive(node.getName());
+        lastType = makeSTType(node.getName());
     }
-}
+
+} // namespace Ryntra::Compiler::Semantic

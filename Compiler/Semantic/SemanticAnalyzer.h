@@ -32,8 +32,14 @@ namespace Ryntra::Compiler::Semantic {
 
         // Intermediate state for building the Typed AST
         std::shared_ptr<ITypedASTNode> lastNode;
-        std::shared_ptr<Type> lastType; // For TypeSpecifierNode result
-        std::shared_ptr<Type> currentFunctionReturnType;
+        TypePtr lastType;                  // STType::Type result from TypeSpecifierNode
+        TypePtr currentFunctionReturnType; // STType::Type of the current function
+
+        // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
+        static std::shared_ptr<Type> toTypedType(const TypePtr& stType);
+
+        // Build a TypePtr from a type-name string
+        static TypePtr makeSTType(const std::string& name);
     };
 
 }

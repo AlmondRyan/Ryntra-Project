@@ -64,7 +64,7 @@ public int main() {
                 std::cout << "====================================================" << std::endl;
 
                 // Generate IR
-                std::cout << "\nGenerating High-Level IR (SSA IR)..." << std::endl << std::endl;
+                std::cout << "\nGenerating IR..." << std::endl << std::endl;
                 Ryntra::Compiler::IR::HLIRBuilder irBuilder;
                 typedAST->accept(irBuilder);
 

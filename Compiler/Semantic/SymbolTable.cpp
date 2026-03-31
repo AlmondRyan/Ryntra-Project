@@ -7,13 +7,22 @@ namespace Ryntra::Compiler::Semantic {
     SymbolTable::SymbolTable() {
         enterScope(); // Global scope
 
-        // vvv This definitely not the final version, it just a placeholder that type is declared in string. vvv
-        define(std::make_shared<FunctionSymbol>("__builtin_print", "void", std::vector<std::string>{"string"}),
+        auto voidType = std::make_shared<STType::VoidType>();
+        // auto int32Type = std::make_shared<Type::Int32Type>();
+        auto stringType = std::make_shared<STType::StringType>();
+
+        std::vector<TypePtr> paramTypes;
+        paramTypes.push_back(stringType);
+        
+        define(std::make_shared<FunctionSymbol>("__builtin_print", voidType, std::move(paramTypes)),
             SourceLocation(0, 0));
     }
 
     void SymbolTable::enterScope() {
-        scopes.emplace_back();
+        auto scope = std::make_unique<Scope>();
+        scope->parent = scopes.empty() ? nullptr : scopes.back().get();
+        scope->kind = Scope::Kind::Global;
+        scopes.emplace_back(std::move(scope));
     }
 
     void SymbolTable::exitScope() {
@@ -30,21 +39,18 @@ namespace Ryntra::Compiler::Semantic {
             return;
         }
         auto& currentScope = scopes.back();
-        if (currentScope.find(symbol->getName()) != currentScope.end()) {
+        if (currentScope->find(symbol->getName()) != nullptr) {
              ErrorHandler::getInstance().makeError("Symbol '" + symbol->getName() + "' is already defined in the current scope.", location);
              return;
         }
-        currentScope[symbol->getName()] = std::move(symbol);
+        currentScope->symbols[symbol->getName()] = std::move(symbol);
     }
 
     std::shared_ptr<Symbol> SymbolTable::resolve(const std::string& name) {
-        for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
-            auto found = it->find(name);
-            if (found != it->end()) {
-                return found->second;
-            }
+        if (scopes.empty()) {
+            return nullptr;
         }
-        return nullptr;
+        return scopes.back()->find(name);
     }
 
 }
