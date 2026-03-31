@@ -1,5 +1,5 @@
 #include "AST/ASTBuilder.h"
-#include "Compiler/IR/HLIRBuilder.h"
+// #include "Compiler/IR/HLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
 #include "Semantic/SemanticAnalyzer.h"
 #include "VM/VM.h"
@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
 int main() {
     try {
         std::string Source = R"(
@@ -64,17 +63,17 @@ public int main() {
                 std::cout << "====================================================" << std::endl;
 
                 // Generate IR
-                std::cout << "\nGenerating IR..." << std::endl << std::endl;
-                Ryntra::Compiler::IR::HLIRBuilder irBuilder;
-                typedAST->accept(irBuilder);
-
-                auto module = irBuilder.takeModule();
-                std::cout << "HLIR Output:" << std::endl;
-                std::cout << module->print() << std::endl;
-                std::cout << "====================================================" << std::endl;
-
-                Ryntra::Compiler::VM::VM virtualMachine;
-                Ryntra::Compiler::VM::RuntimeValue result = virtualMachine.run(module.get(), "main");
+                // std::cout << "\nGenerating IR..." << std::endl << std::endl;
+                // Ryntra::Compiler::IR::HLIRBuilder irBuilder;
+                // typedAST->accept(irBuilder);
+                //
+                // auto module = irBuilder.takeModule();
+                // std::cout << "HLIR Output:" << std::endl;
+                // std::cout << module->print() << std::endl;
+                // std::cout << "====================================================" << std::endl;
+                //
+                // Ryntra::Compiler::VM::VM virtualMachine;
+                // Ryntra::Compiler::VM::RuntimeValue result = virtualMachine.run(module.get(), "main");
             }
         }
 
