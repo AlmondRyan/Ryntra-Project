@@ -2,7 +2,7 @@
 // #include "Compiler/IR/HLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
 #include "Semantic/SemanticAnalyzer.h"
-#include "VM/VM.h"
+// #include "VM/VM.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
@@ -11,11 +11,10 @@
 #include <sstream>
 int main() {
     try {
-        std::string Source = R"(
+         std::string Source = R"(
 public int main() {
-    int a = 10;
-    __builtin_print(a);
-    return 0;
+     __builtin_print("Hello World");
+     return 0;
 })";
 
         std::cout << "Source: ";
