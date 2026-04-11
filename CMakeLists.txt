@@ -9,7 +9,7 @@ set(antlr4-runtime_DIR "C:/vcpkg/vcpkg/vcpkg/installed/x64-windows/share/antlr4-
 
 set(GEN_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/GenAllNodesVisitor")
 set(GEN_SCRIPT "${GEN_SCRIPT_DIR}/GenAllNodesVisitor.py")
-set(GENERATED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
+set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader")
 
 add_custom_command(
@@ -45,6 +45,19 @@ set(UTILITY_SOURCE
 set(SEMANTIC_SOURCE
         Compiler/Semantic/SymbolTable.cpp
         Compiler/Semantic/SemanticAnalyzer.cpp
+)
+
+set(IR_SOURCE
+        Compiler/IR/IRBuilder.h
+        Compiler/IR/IRBuilder.cpp
+        Compiler/IR/Type.h
+        Compiler/IR/Value.h
+        Compiler/IR/Instruction.h
+        Compiler/IR/Constant.h
+        Compiler/IR/BasicBlock.h
+        Compiler/IR/Function.h
+        Compiler/IR/Module.h
+        Compiler/IR/ImmediateValue.h
 )
 
 find_package(antlr4-runtime REQUIRED)

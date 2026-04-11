@@ -1,0 +1,11 @@
+module HelloWorld {
+    external func @__builtin_print(string) -> void
+    @unnamed0 = global constant string "Hello World\0"
+
+    func @main() -> i32 {
+    entry:
+        %0 = loadc @unnamed0
+        call @__builtin_print(%0)
+        ret i32 0
+    }
+}

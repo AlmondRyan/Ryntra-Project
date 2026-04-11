@@ -1,17 +1,45 @@
 #include "AST/ASTBuilder.h"
-// #include "Compiler/IR/HLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include "IR/BasicBlock.h"
+#include "IR/IRBuilder.h"
 #include "Semantic/SemanticAnalyzer.h"
-// #include "VM/VM.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+void manuallyGenIR() {
+    using namespace Ryntra::IR;
+    IRBuilder builder;
+
+    auto module = builder.createModule("Hello World");
+    auto printFunc = builder.createFunction(
+        "__builtin_print",
+        Type::getVoidType(),
+        {Function::Parameter("string", Type::getStringType())},
+        true);
+
+    auto stringConst = builder.createGlobalConstant(
+        Type::getStringType(),
+        "Hello World\0"
+    );
+
+    auto mainFunc = builder.createFunction("main", Type::getInt32Type());
+    auto entryBlock = builder.createBasicBlock("entry");
+    builder.setInsertPoint(entryBlock);
+
+    auto loadInst = builder.createLoadConstant("0", stringConst);
+    auto callInst = builder.createCall("", printFunc, { loadInst });
+    auto retInst = builder.createReturnInt32("", 0);
+    mainFunc->addBasicBlock(entryBlock);
+    std::cout << module->toString() << std::endl;
+}
+
 int main() {
     try {
-         std::string Source = R"(
+        std::string Source = R"(
 public int main() {
      __builtin_print("Hello World");
      return 0;
@@ -61,18 +89,7 @@ public int main() {
                 std::cout << std::endl;
                 std::cout << "====================================================" << std::endl;
 
-                // Generate IR
-                // std::cout << "\nGenerating IR..." << std::endl << std::endl;
-                // Ryntra::Compiler::IR::HLIRBuilder irBuilder;
-                // typedAST->accept(irBuilder);
-                //
-                // auto module = irBuilder.takeModule();
-                // std::cout << "HLIR Output:" << std::endl;
-                // std::cout << module->print() << std::endl;
-                // std::cout << "====================================================" << std::endl;
-                //
-                // Ryntra::Compiler::VM::VM virtualMachine;
-                // Ryntra::Compiler::VM::RuntimeValue result = virtualMachine.run(module.get(), "main");
+                manuallyGenIR();
             }
         }
 
