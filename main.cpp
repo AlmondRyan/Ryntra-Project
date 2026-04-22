@@ -2,7 +2,10 @@
 #include "ErrorHandler/ErrorHandler.h"
 #include "IR/BasicBlock.h"
 #include "IR/IRBuilder.h"
+#include "IR/IRGenerator.h"
 #include "Semantic/SemanticAnalyzer.h"
+#include "VM/BytecodeGenerator.h"
+#include "VM/VirtualMachine.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
@@ -34,14 +37,14 @@ void manuallyGenIR() {
     auto callInst = builder.createCall("", printFunc, { loadInst });
     auto retInst = builder.createReturnInt32("", 0);
     mainFunc->addBasicBlock(entryBlock);
-    std::cout << module->toString() << std::endl;
 }
 
 int main() {
     try {
         std::string Source = R"(
 public int main() {
-     __builtin_print("Hello World");
+     __builtin_print("Hello World\n");
+     __builtin_print("Hello 2");
      return 0;
 })";
 
@@ -89,7 +92,26 @@ public int main() {
                 std::cout << std::endl;
                 std::cout << "====================================================" << std::endl;
 
-                manuallyGenIR();
+                Ryntra::IR::IRGenerator irGen;
+                auto module = irGen.generate(*typedAST, "HelloWorld");
+                std::cout << module->toString() << std::endl;
+                std::cout << "====================================================" << std::endl;
+
+                // Generate bytecode and execute
+                Ryntra::VM::BytecodeGenerator bcGen;
+                auto bytecode = bcGen.generate(module);
+                
+                std::cout << "Executing VM..." << std::endl;
+                Ryntra::VM::VirtualMachine vm;
+                vm.load(bytecode, bcGen.getConstantPool());
+                auto result = vm.execute("main");
+                
+                std::cout << "\nProgram exited with code: ";
+                if (result.isInt32()) {
+                    std::cout << result.asInt32() << std::endl;
+                } else {
+                    std::cout << "0" << std::endl;
+                }
             }
         }
 

@@ -18,9 +18,12 @@ namespace Ryntra::IR {
 
         virtual std::string toString() const = 0;
 
+        // Global values (constants, functions) use @; local SSA values use %
         virtual std::string getReferenceName() const {
             return name_.empty() ? "" : "@" + name_;
         }
+
+        virtual bool isLocal() const { return false; }
 
     protected:
         std::shared_ptr<Type> type_;

@@ -50,6 +50,8 @@ set(SEMANTIC_SOURCE
 set(IR_SOURCE
         Compiler/IR/IRBuilder.h
         Compiler/IR/IRBuilder.cpp
+        Compiler/IR/IRGenerator.h
+        Compiler/IR/IRGenerator.cpp
         Compiler/IR/Type.h
         Compiler/IR/Value.h
         Compiler/IR/Instruction.h
@@ -58,6 +60,15 @@ set(IR_SOURCE
         Compiler/IR/Function.h
         Compiler/IR/Module.h
         Compiler/IR/ImmediateValue.h
+)
+
+set(VM_SOURCE
+        Compiler/VM/VMValue.h
+        Compiler/VM/Bytecode.h
+        Compiler/VM/BytecodeGenerator.h
+        Compiler/VM/BytecodeGenerator.cpp
+        Compiler/VM/VirtualMachine.h
+        Compiler/VM/VirtualMachine.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)

@@ -50,16 +50,28 @@ namespace Ryntra::IR {
         std::string toString() const {
             std::string result = "module " + name_ + " {\n\n";
 
+            // 1. External function declarations first
+            bool hasExternals = false;
+            for (const auto &function : functions_) {
+                if (function->isExternal()) {
+                    result += "    " + function->toString() + "\n";
+                    hasExternals = true;
+                }
+            }
+            if (hasExternals)
+                result += "\n";
+
+            // 2. Global constants
             for (const auto &constant : constants_) {
                 result += "    " + constant->toString() + "\n";
             }
-
-            if (!constants_.empty()) {
+            if (!constants_.empty())
                 result += "\n";
-            }
 
+            // 3. Defined functions
             for (const auto &function : functions_) {
-                result += "    " + function->toString() + "\n\n";
+                if (!function->isExternal())
+                    result += "    " + function->toString() + "\n\n";
             }
 
             result += "}\n";
