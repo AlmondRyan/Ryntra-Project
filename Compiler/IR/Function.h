@@ -1,36 +1,89 @@
 #pragma once
 
 #include "BasicBlock.h"
+#include "Type.h"
 #include "Value.h"
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace Ryntra::Compiler {
-    class Module; // Forward declaration
-
+namespace Ryntra::IR {
     class Function : public Value {
     public:
-        Function(const std::string &name, Type *retType, Module *parent, std::vector<Type *> argTypes = {});
+        struct Parameter {
+            std::string name;
+            std::shared_ptr<Type> type;
 
-        Module *getParent() const { return parent; }
-        Type *getReturnType() const { return getType(); }
-        const std::vector<std::unique_ptr<BasicBlock>> &getBasicBlocks() const { return basicBlocks; }
-        const std::vector<Type *> &getArgTypes() const { return argTypes; }
+            Parameter(const std::string &name, std::shared_ptr<Type> type)
+                : name(name), type(type) {}
+        };
 
-        BasicBlock *addBasicBlock(std::unique_ptr<BasicBlock> bb);
+        Function(const std::string &name,
+                 std::shared_ptr<Type> returnType,
+                 const std::vector<Parameter> &parameters = {},
+                 bool isExternal = false)
+            : Value(std::make_shared<FunctionType>(returnType, extractParamTypes(parameters)), name),
+              returnType_(returnType),
+              parameters_(parameters),
+              isExternal_(isExternal) {}
 
-        bool isDeclaration() const { return basicBlocks.empty(); }
+        std::shared_ptr<Type> getReturnType() const { return returnType_; }
+        const std::vector<Parameter> &getParameters() const { return parameters_; }
+        bool isExternal() const { return isExternal_; }
 
-        // Print the function definition
-        std::string print() const;
+        void addBasicBlock(std::shared_ptr<BasicBlock> block) {
+            basicBlocks_.push_back(block);
+        }
 
-        // Returns function name as operand (e.g. "@main")
-        std::string toString() const override { return "@" + getName(); }
+        const std::vector<std::shared_ptr<BasicBlock>> &getBasicBlocks() const {
+            return basicBlocks_;
+        }
+
+        std::shared_ptr<BasicBlock> getEntryBlock() const {
+            return basicBlocks_.empty() ? nullptr : basicBlocks_[0];
+        }
+
+        std::string toString() const override {
+            std::string result;
+
+            if (isExternal_) {
+                result = "external ";
+            }
+
+            result += "func @" + name_ + "(";
+
+            for (size_t i = 0; i < parameters_.size(); ++i) {
+                if (i > 0)
+                    result += ", ";
+                result += parameters_[i].type->toString();
+            }
+
+            result += ") -> " + returnType_->toString();
+
+            if (!isExternal_ && !basicBlocks_.empty()) {
+                result += " {\n";
+                for (const auto &block : basicBlocks_) {
+                    result += block->toString();
+                }
+                result += "}";
+            }
+
+            return result;
+        }
 
     private:
-        Module *parent;
-        std::vector<std::unique_ptr<BasicBlock>> basicBlocks;
-        std::vector<Type *> argTypes;
+        static std::vector<std::shared_ptr<Type>> extractParamTypes(const std::vector<Parameter> &params) {
+            std::vector<std::shared_ptr<Type>> types;
+            for (const auto &param : params) {
+                types.push_back(param.type);
+            }
+            return types;
+        }
+
+    private:
+        std::shared_ptr<Type> returnType_;
+        std::vector<Parameter> parameters_;
+        std::vector<std::shared_ptr<BasicBlock>> basicBlocks_;
+        bool isExternal_;
     };
-} // namespace Ryntra::Compiler
+} // namespace Ryntra::IR

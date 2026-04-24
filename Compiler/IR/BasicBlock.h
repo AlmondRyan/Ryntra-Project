@@ -1,30 +1,39 @@
 #pragma once
 
 #include "Instruction.h"
-#include "Value.h"
-#include <list>
+#include "Type.h"
 #include <memory>
 #include <string>
+#include <vector>
 
-namespace Ryntra::Compiler {
-    class Function; // Forward declaration
+namespace Ryntra::IR {
+    class Value;
 
-    class BasicBlock : public Value {
+    class BasicBlock {
     public:
-        BasicBlock(const std::string &name, Function *parent);
+        BasicBlock(const std::string &name) : name_(name) {}
 
-        Function *getParent() const { return parent; }
-        const std::list<std::unique_ptr<Instruction>> &getInstructions() const { return instructions; }
+        const std::string &getName() const { return name_; }
+        void setName(const std::string &name) { name_ = name; }
 
-        Instruction *addInstruction(std::unique_ptr<Instruction> inst);
+        void addInstruction(std::shared_ptr<Instruction> instruction) {
+            instructions_.push_back(instruction);
+        }
 
-        std::string print() const;
+        const std::vector<std::shared_ptr<Instruction>> &getInstructions() const {
+            return instructions_;
+        }
 
-        // Returns label name as operand (e.g. "%entry")
-        std::string toString() const override { return "%" + getName(); }
+        std::string toString() const {
+            std::string result = name_ + ":\n";
+            for (const auto &inst : instructions_) {
+                result += "    " + inst->toString() + "\n";
+            }
+            return result;
+        }
 
     private:
-        Function *parent;
-        std::list<std::unique_ptr<Instruction>> instructions;
+        std::string name_;
+        std::vector<std::shared_ptr<Instruction>> instructions_;
     };
-} // namespace Ryntra::Compiler
+} // namespace Ryntra::IR

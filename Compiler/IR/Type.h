@@ -1,26 +1,159 @@
 #pragma once
 
+#include <memory>
 #include <string>
+#include <vector>
 
-namespace Ryntra::Compiler {
-    enum class TypeID {
-        Void,
-        Integer32,
-        String
-    };
-
+namespace Ryntra::IR {
     class Type {
     public:
-        Type(TypeID id) : id(id) {}
-        TypeID getID() const { return id; }
+        enum class Kind {
+            Void,
+            Int32,
+            String,
+            Function,
+            Pointer
+        };
 
-        static Type *getVoidTy();
-        static Type *getInt32Ty();
-        static Type *getStringTy();
+        Type(Kind kind) : kind_(kind) {}
+        virtual ~Type() = default;
 
-        std::string toString() const;
+        Kind getKind() const { return kind_; }
+
+        virtual std::string toString() const = 0;
+        virtual bool isEqual(const Type *other) const = 0;
+
+        bool isVoid() const { return kind_ == Kind::Void; }
+        bool isInt32() const { return kind_ == Kind::Int32; }
+        bool isString() const { return kind_ == Kind::String; }
+        bool isFunction() const { return kind_ == Kind::Function; }
+        bool isPointer() const { return kind_ == Kind::Pointer; }
+
+        static std::shared_ptr<Type> getVoidType();
+        static std::shared_ptr<Type> getInt32Type();
+        static std::shared_ptr<Type> getStringType();
 
     private:
-        TypeID id;
+        Kind kind_;
     };
-} // namespace Ryntra::Compiler
+
+    class VoidType : public Type {
+    public:
+        VoidType() : Type(Kind::Void) {}
+
+        std::string toString() const override {
+            return "void";
+        }
+
+        bool isEqual(const Type *other) const override {
+            return other->isVoid();
+        }
+    };
+
+    class Int32Type : public Type {
+    public:
+        Int32Type() : Type(Kind::Int32) {}
+
+        std::string toString() const override {
+            return "i32";
+        }
+
+        bool isEqual(const Type *other) const override {
+            return other->isInt32();
+        }
+    };
+
+    class StringType : public Type {
+    public:
+        StringType() : Type(Kind::String) {}
+
+        std::string toString() const override {
+            return "string";
+        }
+
+        bool isEqual(const Type *other) const override {
+            return other->isString();
+        }
+    };
+
+    class FunctionType : public Type {
+    public:
+        FunctionType(std::shared_ptr<Type> returnType,
+                     std::vector<std::shared_ptr<Type>> paramTypes)
+            : Type(Kind::Function),
+              returnType_(returnType),
+              paramTypes_(paramTypes) {}
+
+        std::shared_ptr<Type> getReturnType() const { return returnType_; }
+        const std::vector<std::shared_ptr<Type>> &getParamTypes() const { return paramTypes_; }
+
+        std::string toString() const override {
+            std::string result = "(";
+            for (size_t i = 0; i < paramTypes_.size(); ++i) {
+                if (i > 0)
+                    result += ", ";
+                result += paramTypes_[i]->toString();
+            }
+            result += ") -> " + returnType_->toString();
+            return result;
+        }
+
+        bool isEqual(const Type *other) const override {
+            if (!other->isFunction())
+                return false;
+            const FunctionType *funcType = static_cast<const FunctionType *>(other);
+
+            if (!returnType_->isEqual(funcType->returnType_.get()))
+                return false;
+            if (paramTypes_.size() != funcType->paramTypes_.size())
+                return false;
+
+            for (size_t i = 0; i < paramTypes_.size(); ++i) {
+                if (!paramTypes_[i]->isEqual(funcType->paramTypes_[i].get()))
+                    return false;
+            }
+            return true;
+        }
+
+    private:
+        std::shared_ptr<Type> returnType_;
+        std::vector<std::shared_ptr<Type>> paramTypes_;
+    };
+
+    class PointerType : public Type {
+    public:
+        PointerType(std::shared_ptr<Type> baseType)
+            : Type(Kind::Pointer), baseType_(baseType) {}
+
+        std::shared_ptr<Type> getBaseType() const { return baseType_; }
+
+        std::string toString() const override {
+            return baseType_->toString() + "*";
+        }
+
+        bool isEqual(const Type *other) const override {
+            if (!other->isPointer())
+                return false;
+            const PointerType *ptrType = static_cast<const PointerType *>(other);
+            return baseType_->isEqual(ptrType->baseType_.get());
+        }
+
+    private:
+        std::shared_ptr<Type> baseType_;
+    };
+
+    inline std::shared_ptr<Type> Type::getVoidType() {
+        static std::shared_ptr<Type> voidType = std::make_shared<VoidType>();
+        return voidType;
+    }
+
+    inline std::shared_ptr<Type> Type::getInt32Type() {
+        static std::shared_ptr<Type> int32Type = std::make_shared<Int32Type>();
+        return int32Type;
+    }
+
+    inline std::shared_ptr<Type> Type::getStringType() {
+        static std::shared_ptr<Type> stringType = std::make_shared<StringType>();
+        return stringType;
+    }
+} // namespace Ryntra::IR

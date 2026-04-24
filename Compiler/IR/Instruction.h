@@ -1,82 +1,100 @@
 #pragma once
 
-#include "SourceLocation/SourceLocation.h"
 #include "Value.h"
-#include <string>
+#include <memory>
 #include <vector>
 
-namespace Ryntra::Compiler {
-    enum class OpCode {
-        Module = 0x01,
-        External = 0x02,
-        Constant = 0x03,
-        Load = 0x04,
-        Call = 0x05,
-        Ret = 0x06,
-        Entry = 0x07,
-        // Arithmetic
-        Add = 0x10,
-        Sub = 0x11,
-        Mul = 0x12,
-        Div = 0x13,
-        // Comparison
-        CmpEQ = 0x20,
-        CmpNE = 0x21,
-        CmpLT = 0x22,
-        CmpGT = 0x23,
-    };
-
-    class BasicBlock;
-    class Function;
-
+namespace Ryntra::IR {
     class Instruction : public Value {
     public:
-        Instruction(Type *ty, OpCode op, const std::string &name = "", BasicBlock *parent = nullptr)
-            : Value(ty, name), opcode(op), parent(parent) {}
+        enum class Opcode {
+            LoadConstant,
+            Call,
+            Return,
+            Add,
+            Sub,
+            Mul,
+            Div
+        };
 
-        virtual ~Instruction() = default;
+        Instruction(Opcode opcode, std::shared_ptr<Type> type,
+                    const std::vector<std::shared_ptr<Value>> &operands = {},
+                    const std::string &name = "")
+            : Value(type, name), opcode_(opcode), operands_(operands) {}
 
-        OpCode getOpCode() const { return opcode; }
+        Opcode getOpcode() const { return opcode_; }
+        const std::vector<std::shared_ptr<Value>> &getOperands() const { return operands_; }
 
-        void setSourceLocation(const SourceLocation &loc) { location = loc; }
-        SourceLocation getSourceLocation() const { return location; }
+        // SSA instructions are local values — reference with %
+        std::string getReferenceName() const override {
+            return name_.empty() ? "" : "%" + name_;
+        }
+        bool isLocal() const override { return true; }
 
-        BasicBlock *getParent() const { return parent; }
-        void setParent(BasicBlock *bb) { parent = bb; }
+        std::string toString() const override {
+            std::string result;
 
-        const std::vector<Value *> &getOperands() const { return operands; }
-        void addOperand(Value *v) { operands.push_back(v); }
-        void setOperand(size_t index, Value *v) {
-            if (index < operands.size())
-                operands[index] = v;
-            else
-                operands.push_back(v);
+            // ret never produces a value; call only produces one when non-void
+            bool hasResult = !name_.empty()
+                && opcode_ != Opcode::Return
+                && !(opcode_ == Opcode::Call && type_->isVoid());
+
+            if (hasResult) {
+                result = "%" + name_ + " = ";
+            }
+
+            switch (opcode_) {
+            case Opcode::LoadConstant:
+                result += "loadc ";
+                for (const auto &op : operands_)
+                    result += op->getReferenceName();
+                break;
+
+            case Opcode::Call: {
+                result += "call ";
+                // operands[0] is the callee (Function), rest are args
+                result += operands_[0]->getReferenceName() + "(";
+                for (size_t i = 1; i < operands_.size(); ++i) {
+                    if (i > 1) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                result += ")";
+                break;
+            }
+
+            case Opcode::Return:
+                result += "ret ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+
+            case Opcode::Add:
+            case Opcode::Sub:
+            case Opcode::Mul:
+            case Opcode::Div: {
+                switch (opcode_) {
+                case Opcode::Add: result += "add "; break;
+                case Opcode::Sub: result += "sub "; break;
+                case Opcode::Mul: result += "mul "; break;
+                case Opcode::Div: result += "div "; break;
+                default: break;
+                }
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            default:
+                break;
+            }
+
+            return result;
         }
 
-        std::string print() const;
-
-        std::string toString() const override { return "%" + getName(); }
-
-    protected:
-        OpCode opcode;
-        std::vector<Value *> operands;
-        SourceLocation location;
-        BasicBlock *parent;
+    private:
+        Opcode opcode_;
+        std::vector<std::shared_ptr<Value>> operands_;
     };
-
-    // 3. Define specific instructions
-    class LoadInst : public Instruction {
-    public:
-        LoadInst(Value *ptr, const std::string &name = "", BasicBlock *parent = nullptr);
-    };
-
-    class CallInst : public Instruction {
-    public:
-        CallInst(Function *func, const std::vector<Value *> &args, const std::string &name = "", BasicBlock *parent = nullptr);
-    };
-
-    class RetInst : public Instruction {
-    public:
-        RetInst(Value *val = nullptr, BasicBlock *parent = nullptr);
-    };
-} // namespace Ryntra::Compiler
+} // namespace Ryntra::IR

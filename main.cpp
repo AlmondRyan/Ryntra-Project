@@ -1,8 +1,11 @@
 #include "AST/ASTBuilder.h"
-#include "Compiler/IR/HLIRBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include "IR/BasicBlock.h"
+#include "IR/IRBuilder.h"
+#include "IR/IRGenerator.h"
 #include "Semantic/SemanticAnalyzer.h"
-#include "VM/VM.h"
+#include "VM/BytecodeGenerator.h"
+#include "VM/VirtualMachine.h"
 #include <antlr/RyntraLexer.h>
 #include <antlr/RyntraParser.h>
 #include <antlr4-runtime.h>
@@ -10,12 +13,39 @@
 #include <iostream>
 #include <sstream>
 
+void manuallyGenIR() {
+    using namespace Ryntra::IR;
+    IRBuilder builder;
+
+    auto module = builder.createModule("Hello World");
+    auto printFunc = builder.createFunction(
+        "__builtin_print",
+        Type::getVoidType(),
+        {Function::Parameter("string", Type::getStringType())},
+        true);
+
+    auto stringConst = builder.createGlobalConstant(
+        Type::getStringType(),
+        "Hello World\0"
+    );
+
+    auto mainFunc = builder.createFunction("main", Type::getInt32Type());
+    auto entryBlock = builder.createBasicBlock("entry");
+    builder.setInsertPoint(entryBlock);
+
+    auto loadInst = builder.createLoadConstant("0", stringConst);
+    auto callInst = builder.createCall("", printFunc, { loadInst });
+    auto retInst = builder.createReturnInt32("", 0);
+    mainFunc->addBasicBlock(entryBlock);
+}
+
 int main() {
     try {
         std::string Source = R"(
 public int main() {
-    __builtin_print("hello world!2");
-    return 0;
+     __builtin_print("Hello World\n");
+     __builtin_print("Hello 2");
+     return 0;
 })";
 
         std::cout << "Source: ";
@@ -62,18 +92,26 @@ public int main() {
                 std::cout << std::endl;
                 std::cout << "====================================================" << std::endl;
 
-                // Generate IR
-                std::cout << "\nGenerating High-Level IR (SSA IR)..." << std::endl << std::endl;
-                Ryntra::Compiler::IR::HLIRBuilder irBuilder;
-                typedAST->accept(irBuilder);
-
-                auto module = irBuilder.takeModule();
-                std::cout << "HLIR Output:" << std::endl;
-                std::cout << module->print() << std::endl;
+                Ryntra::IR::IRGenerator irGen;
+                auto module = irGen.generate(*typedAST, "HelloWorld");
+                std::cout << module->toString() << std::endl;
                 std::cout << "====================================================" << std::endl;
 
-                Ryntra::Compiler::VM::VM virtualMachine;
-                Ryntra::Compiler::VM::RuntimeValue result = virtualMachine.run(module.get(), "main");
+                // Generate bytecode and execute
+                Ryntra::VM::BytecodeGenerator bcGen;
+                auto bytecode = bcGen.generate(module);
+                
+                std::cout << "Executing VM..." << std::endl;
+                Ryntra::VM::VirtualMachine vm;
+                vm.load(bytecode, bcGen.getConstantPool());
+                auto result = vm.execute("main");
+                
+                std::cout << "\nProgram exited with code: ";
+                if (result.isInt32()) {
+                    std::cout << result.asInt32() << std::endl;
+                } else {
+                    std::cout << "0" << std::endl;
+                }
             }
         }
 

@@ -5,43 +5,60 @@
 #include "Function.h"
 #include "Instruction.h"
 #include "Module.h"
-#include "Type.h"
-#include "Value.h"
+#include <memory>
+#include <string>
 
-namespace Ryntra::Compiler {
+namespace Ryntra::IR {
     class IRBuilder {
     public:
-        IRBuilder(Module *m) : module(m), insertBlock(nullptr) {}
+        IRBuilder();
 
-        void SetInsertPoint(BasicBlock *bb) { insertBlock = bb; }
-        BasicBlock *GetInsertBlock() const { return insertBlock; }
+        std::shared_ptr<Module> createModule(const std::string &name);
 
-        Function *CreateFunction(const std::string &name, Type *retType, std::vector<Type *> argTypes = {});
-        Function *CreateExternalFunction(const std::string &name, Type *retType, std::vector<Type *> argTypes);
+        std::shared_ptr<Function> createFunction(const std::string &name,
+                                                 std::shared_ptr<Type> returnType,
+                                                 const std::vector<Function::Parameter> &parameters = {},
+                                                 bool isExternal = false);
 
-        BasicBlock *CreateBasicBlock(const std::string &name, Function *parent = nullptr);
+        std::shared_ptr<BasicBlock> createBasicBlock(const std::string &name);
 
-        template <typename T, typename... Args>
-        T *CreateConstant(Args &&...args) {
-            auto c = std::make_unique<T>(std::forward<Args>(args)...);
-            T *ptr = c.get();
-            if constexpr (std::is_same_v<T, ConstantObject>) {
-                module->addConstantObject(std::move(c));
-            } else {
-                module->addConstant(std::move(c));
-            }
-            return ptr;
-        }
+        std::shared_ptr<Constant> createGlobalConstant(const std::string &name,
+                                                       std::shared_ptr<Type> type,
+                                                       Constant::ValueType value);
 
-        Instruction *CreateLoad(ConstantObject *global);
-        Instruction *CreateCall(Function *func, const std::vector<Value *> &args);
-        Instruction *CreateRet(Value *val);
+        std::shared_ptr<Constant> createGlobalConstant(std::shared_ptr<Type> type,
+                                                       Constant::ValueType value);
+
+        std::shared_ptr<Instruction> createLoadConstant(const std::string &name,
+                                                        std::shared_ptr<Constant> constant);
+
+        std::shared_ptr<Instruction> createCall(const std::string &name,
+                                                std::shared_ptr<Function> function,
+                                                const std::vector<std::shared_ptr<Value>> &args);
+
+        std::shared_ptr<Instruction> createReturn(const std::string &name,
+                                                  std::shared_ptr<Value> value = nullptr);
+
+        std::shared_ptr<Instruction> createReturnInt32(const std::string &name,
+                                                       int32_t value);
+
+        std::shared_ptr<Instruction> createBinaryOp(Instruction::Opcode opcode,
+                                                    const std::string &name,
+                                                    std::shared_ptr<Value> lhs,
+                                                    std::shared_ptr<Value> rhs);
+
+        void setInsertPoint(std::shared_ptr<BasicBlock> block);
+        std::shared_ptr<BasicBlock> getInsertPoint() const;
+
+        void addInstruction(std::shared_ptr<Instruction> instruction);
+
+        std::shared_ptr<Module> getModule() const { return currentModule_; }
+
+        std::string generateUniqueName(const std::string &base = "temp");
 
     private:
-        std::string getNextRegisterName();
-
-        Module *module;
-        BasicBlock *insertBlock;
-        size_t nextRegisterId = 0;
+        std::shared_ptr<Module> currentModule_;
+        std::shared_ptr<BasicBlock> currentBlock_;
+        int unnamedCounter_;
     };
-} // namespace Ryntra::Compiler
+} // namespace Ryntra::IR

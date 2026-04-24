@@ -12,6 +12,7 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
+EQUAL: '=';
 
 // Lexical Objects
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
@@ -38,8 +39,13 @@ block
     ;
 
 statement
-    : expression SEMICOLON
+    : variableDeclaration SEMICOLON
+    | expression SEMICOLON
     | returnStatement
+    ;
+
+variableDeclaration
+    : typeSpecifier IDENTIFIER (EQUAL expression)?
     ;
 
 returnStatement
@@ -48,6 +54,7 @@ returnStatement
 
 expression
     : IDENTIFIER LPAREN argumentList? RPAREN # FunctionCall
+    | IDENTIFIER                             # VariableReference
     | STRING_LITERAL                         # StringLiteral
     | INTEGER_LITERAL                        # IntegerLiteral
     ;

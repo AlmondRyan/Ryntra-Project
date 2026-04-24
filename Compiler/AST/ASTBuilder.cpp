@@ -29,6 +29,9 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<StatementNode> ASTBuilder::visitStatement(Ryntra::antlr::RyntraParser::StatementContext *ctx) {
+        if (ctx->variableDeclaration()) {
+            return visitVariableDeclaration(ctx->variableDeclaration());
+        }
         if (ctx->returnStatement()) {
             return visitReturnStatement(ctx->returnStatement());
         }
@@ -47,6 +50,9 @@ namespace Ryntra::Compiler {
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {
         if (auto *callCtx = dynamic_cast<Ryntra::antlr::RyntraParser::FunctionCallContext *>(ctx)) {
             return visitFunctionCall(callCtx);
+        }
+        if (auto *varCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(ctx)) {
+            return visitVariableReference(varCtx);
         }
         if (auto *strCtx = dynamic_cast<Ryntra::antlr::RyntraParser::StringLiteralContext *>(ctx)) {
             return visitStringLiteral(strCtx);
@@ -85,6 +91,21 @@ namespace Ryntra::Compiler {
             args.push_back(visitExpression(exprCtx));
         }
         return args;
+    }
+
+    std::shared_ptr<VariableDeclarationNode> ASTBuilder::visitVariableDeclaration(Ryntra::antlr::RyntraParser::VariableDeclarationContext *ctx) {
+        auto type = visitTypeSpecifier(ctx->typeSpecifier());
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        std::shared_ptr<ExpressionNode> initializer = nullptr;
+        if (ctx->EQUAL() && ctx->expression()) {
+            initializer = visitExpression(ctx->expression());
+        }
+        return createNode<VariableDeclarationNode>(ctx, std::move(type), std::move(nameNode), std::move(initializer));
+    }
+
+    std::shared_ptr<VariableNode> ASTBuilder::visitVariableReference(Ryntra::antlr::RyntraParser::VariableReferenceContext *ctx) {
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        return createNode<VariableNode>(ctx, std::move(nameNode));
     }
 
 } // namespace Ryntra::Compiler

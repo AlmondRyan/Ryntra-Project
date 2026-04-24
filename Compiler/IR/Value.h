@@ -1,21 +1,32 @@
 #pragma once
 
 #include "Type.h"
+#include <memory>
 #include <string>
 
-namespace Ryntra::Compiler {
+namespace Ryntra::IR {
     class Value {
     public:
-        virtual ~Value() = default;
-        Type *getType() const { return type; }
-        std::string getName() const { return name; }
-        void setName(const std::string &n) { name = n; }
+        Value(std::shared_ptr<Type> type, const std::string &name = "")
+            : type_(type), name_(name) {}
 
-        virtual std::string toString() const;
+        virtual ~Value() = default;
+
+        std::shared_ptr<Type> getType() const { return type_; }
+        const std::string &getName() const { return name_; }
+        void setName(const std::string &name) { name_ = name; }
+
+        virtual std::string toString() const = 0;
+
+        // Global values (constants, functions) use @; local SSA values use %
+        virtual std::string getReferenceName() const {
+            return name_.empty() ? "" : "@" + name_;
+        }
+
+        virtual bool isLocal() const { return false; }
 
     protected:
-        Value(Type *ty, const std::string &name = "") : type(ty), name(name) {}
-        Type *type;
-        std::string name;
+        std::shared_ptr<Type> type_;
+        std::string name_;
     };
-} // namespace Ryntra::Compiler
+} // namespace Ryntra::IR

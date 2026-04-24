@@ -9,7 +9,7 @@ set(antlr4-runtime_DIR "C:/vcpkg/vcpkg/vcpkg/installed/x64-windows/share/antlr4-
 
 set(GEN_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/GenAllNodesVisitor")
 set(GEN_SCRIPT "${GEN_SCRIPT_DIR}/GenAllNodesVisitor.py")
-set(GENERATED_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
+set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader")
 
 add_custom_command(
@@ -48,32 +48,27 @@ set(SEMANTIC_SOURCE
 )
 
 set(IR_SOURCE
-        Compiler/IR/BasicBlock.cpp
-        Compiler/IR/BasicBlock.h
-        Compiler/IR/Constant.cpp
-        Compiler/IR/Constant.h
-        Compiler/IR/Function.cpp
-        Compiler/IR/Function.h
-        Compiler/IR/HLIRBuilder.cpp
-        Compiler/IR/HLIRBuilder.h
-        Compiler/IR/Instruction.h
-        Compiler/IR/Instruction.cpp
-        Compiler/IR/IRBuilder.cpp
         Compiler/IR/IRBuilder.h
-        Compiler/IR/Module.cpp
-        Compiler/IR/Module.h
-        Compiler/IR/Type.cpp
+        Compiler/IR/IRBuilder.cpp
+        Compiler/IR/IRGenerator.h
+        Compiler/IR/IRGenerator.cpp
         Compiler/IR/Type.h
         Compiler/IR/Value.h
-        Compiler/IR/Value.cpp
+        Compiler/IR/Instruction.h
+        Compiler/IR/Constant.h
+        Compiler/IR/BasicBlock.h
+        Compiler/IR/Function.h
+        Compiler/IR/Module.h
+        Compiler/IR/ImmediateValue.h
 )
 
 set(VM_SOURCE
-        Compiler/VM/Frame.h
-        Compiler/VM/RuntimeValue.h
-        Compiler/VM/Stack.h
-        Compiler/VM/VM.cpp
-        Compiler/VM/VM.h
+        Compiler/VM/VMValue.h
+        Compiler/VM/Bytecode.h
+        Compiler/VM/BytecodeGenerator.h
+        Compiler/VM/BytecodeGenerator.cpp
+        Compiler/VM/VirtualMachine.h
+        Compiler/VM/VirtualMachine.cpp
 )
 
 find_package(antlr4-runtime REQUIRED)

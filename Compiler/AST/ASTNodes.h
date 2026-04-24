@@ -146,4 +146,31 @@ namespace Ryntra::Compiler {
     private:
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
     };
+
+    class VariableDeclarationNode : public StatementNode {
+    public:
+        VariableDeclarationNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name, std::shared_ptr<ExpressionNode> init)
+            : type(std::move(type)), name(std::move(name)), initializer(std::move(init)) {}
+        std::shared_ptr<TypeSpecifierNode> getType() const { return type; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        std::shared_ptr<ExpressionNode> getInitializer() const { return initializer; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> type;
+        std::shared_ptr<IdentifierNode> name;
+        std::shared_ptr<ExpressionNode> initializer;
+    };
+
+    class VariableNode : public ExpressionNode {
+    public:
+        VariableNode(std::shared_ptr<IdentifierNode> name) : name(std::move(name)) {}
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> name;
+    };
 } // namespace Ryntra::Compiler

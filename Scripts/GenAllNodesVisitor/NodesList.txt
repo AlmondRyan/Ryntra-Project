@@ -8,3 +8,5 @@ FunctionDefinitionNode
 ProgramNode
 ReturnNode
 IntegerLiteralNode
+VariableNode
+VariableDeclarationNode
