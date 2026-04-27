@@ -14,11 +14,8 @@ namespace Ryntra::VM {
     public:
         VirtualMachine();
 
-        // Load all functions and the shared constant pool from BytecodeGenerator output
         void load(const std::vector<std::shared_ptr<BytecodeFunction>>& funcs,
                   const std::vector<VMValue>& constantPool);
-
-        void registerNativeFunction(const std::string& name, NativeFunction func);
 
         VMValue execute(const std::string& entryPoint = "main");
 
@@ -27,9 +24,11 @@ namespace Ryntra::VM {
 
         std::vector<VMValue> stack_;
         std::vector<VMValue> constantPool_;
-        std::vector<std::shared_ptr<BytecodeFunction>> functionList_;  // indexed by position
+        std::vector<std::shared_ptr<BytecodeFunction>> functionList_;
         std::unordered_map<std::string, std::shared_ptr<BytecodeFunction>> functionMap_;
-        std::unordered_map<std::string, NativeFunction> nativeFunctions_;
+
+        // Indexed builtin table — index matches BytecodeGenerator::getBuiltinIndex
+        std::vector<NativeFunction> builtins_;
 
         void push(const VMValue& value);
         VMValue pop();

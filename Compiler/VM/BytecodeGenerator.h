@@ -22,6 +22,7 @@ namespace Ryntra::VM {
 
         int32_t addConstant(const VMValue& value);
         int32_t getFunctionIndex(const std::string& name);
+        int32_t getBuiltinIndex(const std::string& name);
 
         std::vector<VMValue> constantPool_;
         std::vector<std::shared_ptr<BytecodeFunction>> functions_;

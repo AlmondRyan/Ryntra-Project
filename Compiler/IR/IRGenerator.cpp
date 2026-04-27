@@ -90,7 +90,7 @@ namespace Ryntra::IR {
             Type::getStringType(),
             node.getValue());
         lastValue_ = builder_.createLoadConstant(
-            builder_.generateUniqueName("str"), constant);
+            builder_.generateUniqueName(""), constant);
     }
 
     void IRGenerator::visit(Sem::TypedIntegerLiteralNode &node) {
@@ -136,7 +136,7 @@ namespace Ryntra::IR {
 
         // Only assign an SSA name when the call produces a value (non-void return)
         bool isVoidCall = callee->getReturnType()->isVoid();
-        std::string callName = isVoidCall ? "" : builder_.generateUniqueName("call");
+        std::string callName = isVoidCall ? "" : builder_.generateUniqueName("");
         auto callInst = builder_.createCall(callName, callee, argValues);
         lastValue_ = isVoidCall ? nullptr : callInst;
     }

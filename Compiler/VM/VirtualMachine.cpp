@@ -4,18 +4,20 @@
 
 namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
-        // Register built-in functions
-        registerNativeFunction("__builtin_print", [](const std::vector<VMValue>& args) -> VMValue {
-            if (!args.empty() && args[0].isString()) {
-                // Strip the null terminator that Ryntra strings carry
-                const std::string& s = args[0].asString();
-                for (char c : s) {
-                    if (c == '\0') break;
-                    std::cout << c;
+        // Builtin table — index must match BytecodeGenerator::getBuiltinIndex
+        builtins_ = {
+            // 0: __builtin_print
+            [](const std::vector<VMValue>& args) -> VMValue {
+                if (!args.empty() && args[0].isString()) {
+                    const std::string& s = args[0].asString();
+                    for (char c : s) {
+                        if (c == '\0') break;
+                        std::cout << c;
+                    }
                 }
-            }
-            return VMValue(); // void
-        });
+                return VMValue();
+            },
+        };
     }
 
     void VirtualMachine::load(const std::vector<std::shared_ptr<BytecodeFunction>>& funcs,
@@ -29,9 +31,6 @@ namespace Ryntra::VM {
         }
     }
 
-    void VirtualMachine::registerNativeFunction(const std::string& name, NativeFunction func) {
-        nativeFunctions_[name] = func;
-    }
 
     VMValue VirtualMachine::execute(const std::string& entryPoint) {
         auto it = functionMap_.find(entryPoint);
@@ -42,13 +41,6 @@ namespace Ryntra::VM {
     }
 
     VMValue VirtualMachine::executeFunction(BytecodeFunction* func, const std::vector<VMValue>& args) {
-        if (func->isExternal) {
-            auto it = nativeFunctions_.find(func->name);
-            if (it != nativeFunctions_.end()) {
-                return it->second(args);
-            }
-            throw std::runtime_error("Native function not implemented: " + func->name);
-        }
 
         size_t ip = 0;
         while (ip < func->instructions.size()) {
@@ -80,6 +72,17 @@ namespace Ryntra::VM {
                 if (!result.isVoid()) {
                     push(result);
                 }
+                break;
+            }
+
+            case OpCode::BCall: {
+                if (inst.operand < 0 || inst.operand >= static_cast<int32_t>(builtins_.size())) {
+                    throw std::runtime_error("Invalid builtin index: " + std::to_string(inst.operand));
+                }
+                std::vector<VMValue> callArgs;
+                if (!stack_.empty()) callArgs.push_back(pop());
+                VMValue result = builtins_[inst.operand](callArgs);
+                if (!result.isVoid()) push(result);
                 break;
             }
 

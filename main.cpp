@@ -44,7 +44,6 @@ int main() {
         std::string Source = R"(
 public int main() {
      __builtin_print("Hello World\n");
-     __builtin_print("Hello 2");
      return 0;
 })";
 

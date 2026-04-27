@@ -7,7 +7,8 @@
 namespace Ryntra::VM {
     enum class OpCode : uint8_t {
         LoadConst,      // Load constant onto stack
-        Call,           // Call function
+        Call,           // Call user-defined function by index
+        BCall,          // Call builtin function by builtin table index (0=print, ...)
         Return,         // Return from function
         Add,            // Add two values
         Sub,            // Subtract

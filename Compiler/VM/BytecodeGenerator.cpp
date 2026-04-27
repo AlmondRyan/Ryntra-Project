@@ -68,14 +68,18 @@ namespace Ryntra::VM {
         }
 
         case IR::Instruction::Opcode::Call: {
-            // operands[0] = callee Function, operands[1..] = args
-            // Args are already on the stack from prior LoadConst/Call instructions.
-            // We just need to emit the Call with the function index.
             if (!operands.empty()) {
                 auto callee = std::dynamic_pointer_cast<IR::Function>(operands[0]);
                 if (callee) {
-                    int32_t funcIdx = getFunctionIndex(callee->getName());
-                    currentFunction_->addInstruction(OpCode::Call, funcIdx);
+                    const std::string& name = callee->getName();
+                    if (name.rfind("__builtin_", 0) == 0) {
+                        // Builtin call — resolve to index in the builtin table
+                        int32_t builtinIdx = getBuiltinIndex(name);
+                        currentFunction_->addInstruction(OpCode::BCall, builtinIdx);
+                    } else {
+                        int32_t funcIdx = getFunctionIndex(name);
+                        currentFunction_->addInstruction(OpCode::Call, funcIdx);
+                    }
                 }
             }
             break;
@@ -133,5 +137,16 @@ namespace Ryntra::VM {
             return it->second;
         }
         throw std::runtime_error("Unknown function: " + name);
+    }
+
+    int32_t BytecodeGenerator::getBuiltinIndex(const std::string& name) {
+        // Canonical builtin table — order defines the BCall index
+        static const std::vector<std::string> builtinTable = {
+            "__builtin_print",  // 0
+        };
+        for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
+            if (builtinTable[i] == name) return i;
+        }
+        throw std::runtime_error("Unknown builtin: " + name);
     }
 } // namespace Ryntra::VM
