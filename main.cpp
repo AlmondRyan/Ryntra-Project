@@ -13,23 +13,15 @@
 #include <iostream>
 #include <sstream>
 
-int main() {
+int main(int argc, char **argv) {
     try {
-        std::string Source = R"(
-public int main() {
-    int a = 1145;
-    int b = 1919;
-    int c = 7891;
-    int d = 7891;
-    __builtin_print(a);
-    __builtin_print(" ");
-    __builtin_print(b);
-    __builtin_print(" ");
-    __builtin_print(c);
-    __builtin_print(" ");
-    __builtin_print(d);
-    return 0;
-})";
+        std::string Source;
+
+        std::ifstream sourceFile(argv[1]);
+        if (sourceFile.is_open()) {
+            Source = std::string((std::istreambuf_iterator<char>(sourceFile)),
+                                 std::istreambuf_iterator<char>());
+        }
 
         std::cout << "Source: ";
         std::cout << Source << std::endl;
@@ -83,12 +75,12 @@ public int main() {
                 // Generate bytecode and execute
                 Ryntra::VM::BytecodeGenerator bcGen;
                 auto bytecode = bcGen.generate(module);
-                
+
                 std::cout << "Executing VM..." << std::endl;
                 Ryntra::VM::VirtualMachine vm;
                 vm.load(bytecode, bcGen.getConstantPool());
                 auto result = vm.execute("main");
-                
+
                 std::cout << "\nProgram exited with code: ";
                 if (result.isInt32()) {
                     std::cout << result.asInt32() << std::endl;
