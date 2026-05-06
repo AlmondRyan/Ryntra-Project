@@ -67,13 +67,48 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::Constant: {
+            // Value is materialized at the use site (Call), not eagerly
+            break;
+        }
+
         case IR::Instruction::Opcode::Call: {
             if (!operands.empty()) {
                 auto callee = std::dynamic_pointer_cast<IR::Function>(operands[0]);
                 if (callee) {
                     const std::string& name = callee->getName();
                     if (name.rfind("__builtin_", 0) == 0) {
-                        // Builtin call — resolve to index in the builtin table
+                        // Push argument values onto the stack before the call
+                        for (size_t i = 1; i < operands.size(); ++i) {
+                            if (auto argInst = std::dynamic_pointer_cast<IR::Instruction>(operands[i])) {
+                                if (argInst->getOpcode() == IR::Instruction::Opcode::Constant) {
+                                    auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(argInst->getOperands()[0]);
+                                    if (imm) {
+                                        VMValue val;
+                                        if (imm->getType()->isInt32()) {
+                                            std::string repr = imm->toString();
+                                            auto spacePos = repr.find(' ');
+                                            if (spacePos != std::string::npos) {
+                                                val = VMValue(std::stoi(repr.substr(spacePos + 1)));
+                                            }
+                                        }
+                                        int32_t poolIdx = addConstant(val);
+                                        currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
+                                    }
+                                }
+                            } else if (auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[i])) {
+                                VMValue val;
+                                if (imm->getType()->isInt32()) {
+                                    std::string repr = imm->toString();
+                                    auto spacePos = repr.find(' ');
+                                    if (spacePos != std::string::npos) {
+                                        val = VMValue(std::stoi(repr.substr(spacePos + 1)));
+                                    }
+                                }
+                                int32_t poolIdx = addConstant(val);
+                                currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
+                            }
+                        }
                         int32_t builtinIdx = getBuiltinIndex(name);
                         currentFunction_->addInstruction(OpCode::BCall, builtinIdx);
                     } else {
@@ -145,7 +180,8 @@ namespace Ryntra::VM {
             "__builtin_print",  // 0
         };
         for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
-            if (builtinTable[i] == name) return i;
+            if (name == builtinTable[i] ||
+                (name.rfind(builtinTable[i] + "_", 0) == 0)) return i;
         }
         throw std::runtime_error("Unknown builtin: " + name);
     }

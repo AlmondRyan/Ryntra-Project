@@ -20,6 +20,8 @@ namespace Ryntra::Compiler::Semantic {
     class TypedFunctionCallNode;
     class TypedExpressionStatementNode;
     class TypedReturnNode;
+    class TypedVariableNode;
+    class TypedVariableDeclarationNode;
 
     class ITypedVisitor {
     public:
@@ -33,6 +35,8 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedIntegerLiteralNode &node) = 0;
         virtual void visit(TypedIdentifierNode &node) = 0;
         virtual void visit(TypedFunctionCallNode &node) = 0;
+        virtual void visit(TypedVariableNode &node) = 0;
+        virtual void visit(TypedVariableDeclarationNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -145,6 +149,23 @@ namespace Ryntra::Compiler::Semantic {
         std::vector<std::shared_ptr<TypedExpressionNode>> arguments;
     };
 
+    class TypedVariableNode : public TypedExpressionNode {
+    public:
+        TypedVariableNode(std::string name, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), name(std::move(name)) {}
+
+        const std::string &getName() const { return name; }
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedVariable(" + name + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string name;
+    };
+
     class TypedExpressionStatementNode : public TypedStatementNode {
     public:
         explicit TypedExpressionStatementNode(std::shared_ptr<TypedExpressionNode> expr)
@@ -179,6 +200,31 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::shared_ptr<TypedExpressionNode> value;
+    };
+
+    class TypedVariableDeclarationNode : public TypedStatementNode {
+    public:
+        TypedVariableDeclarationNode(std::string name, std::shared_ptr<Type> type, std::shared_ptr<TypedExpressionNode> init)
+            : name(std::move(name)), type(std::move(type)), initializer(std::move(init)) {}
+
+        const std::string &getName() const { return name; }
+        std::shared_ptr<Type> getType() const { return type; }
+        std::shared_ptr<TypedExpressionNode> getInitializer() const { return initializer; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedVariableDeclaration(" + name + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            if (initializer) {
+                initializer->dump(indent + 1);
+            }
+        }
+
+    private:
+        std::string name;
+        std::shared_ptr<Type> type;
+        std::shared_ptr<TypedExpressionNode> initializer;
     };
 
     class TypedBlockNode : public TypedStatementNode {

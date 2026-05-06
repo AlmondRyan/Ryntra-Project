@@ -71,6 +71,25 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createConstant(const std::string &name,
+                                                           std::shared_ptr<Type> type,
+                                                           std::shared_ptr<Value> value) {
+        std::vector<std::shared_ptr<Value>> operands;
+        if (value) operands.push_back(value);
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Constant,
+            type,
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
     std::shared_ptr<Instruction> IRBuilder::createCall(const std::string &name,
                                                        std::shared_ptr<Function> function,
                                                        const std::vector<std::shared_ptr<Value>> &args) {

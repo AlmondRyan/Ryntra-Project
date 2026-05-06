@@ -32,6 +32,10 @@ namespace Ryntra::IR {
         std::shared_ptr<Instruction> createLoadConstant(const std::string &name,
                                                         std::shared_ptr<Constant> constant);
 
+        std::shared_ptr<Instruction> createConstant(const std::string &name,
+                                                    std::shared_ptr<Type> type,
+                                                    std::shared_ptr<Value> value);
+
         std::shared_ptr<Instruction> createCall(const std::string &name,
                                                 std::shared_ptr<Function> function,
                                                 const std::vector<std::shared_ptr<Value>> &args);

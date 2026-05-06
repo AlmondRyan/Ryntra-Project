@@ -8,11 +8,15 @@ namespace Ryntra::VM {
         builtins_ = {
             // 0: __builtin_print
             [](const std::vector<VMValue>& args) -> VMValue {
-                if (!args.empty() && args[0].isString()) {
-                    const std::string& s = args[0].asString();
-                    for (char c : s) {
-                        if (c == '\0') break;
-                        std::cout << c;
+                if (!args.empty()) {
+                    if (args[0].isString()) {
+                        const std::string& s = args[0].asString();
+                        for (char c : s) {
+                            if (c == '\0') break;
+                            std::cout << c;
+                        }
+                    } else if (args[0].isInt32()) {
+                        std::cout << args[0].asInt32();
                     }
                 }
                 return VMValue();

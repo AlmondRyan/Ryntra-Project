@@ -11,8 +11,7 @@ namespace Ryntra::IR {
             Void,
             Int32,
             String,
-            Function,
-            Pointer
+            Function
         };
 
         Type(Kind kind) : kind_(kind) {}
@@ -27,7 +26,6 @@ namespace Ryntra::IR {
         bool isInt32() const { return kind_ == Kind::Int32; }
         bool isString() const { return kind_ == Kind::String; }
         bool isFunction() const { return kind_ == Kind::Function; }
-        bool isPointer() const { return kind_ == Kind::Pointer; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
@@ -118,28 +116,6 @@ namespace Ryntra::IR {
     private:
         std::shared_ptr<Type> returnType_;
         std::vector<std::shared_ptr<Type>> paramTypes_;
-    };
-
-    class PointerType : public Type {
-    public:
-        PointerType(std::shared_ptr<Type> baseType)
-            : Type(Kind::Pointer), baseType_(baseType) {}
-
-        std::shared_ptr<Type> getBaseType() const { return baseType_; }
-
-        std::string toString() const override {
-            return baseType_->toString() + "*";
-        }
-
-        bool isEqual(const Type *other) const override {
-            if (!other->isPointer())
-                return false;
-            const PointerType *ptrType = static_cast<const PointerType *>(other);
-            return baseType_->isEqual(ptrType->baseType_.get());
-        }
-
-    private:
-        std::shared_ptr<Type> baseType_;
     };
 
     inline std::shared_ptr<Type> Type::getVoidType() {

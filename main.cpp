@@ -13,38 +13,22 @@
 #include <iostream>
 #include <sstream>
 
-void manuallyGenIR() {
-    using namespace Ryntra::IR;
-    IRBuilder builder;
-
-    auto module = builder.createModule("Hello World");
-    auto printFunc = builder.createFunction(
-        "__builtin_print",
-        Type::getVoidType(),
-        {Function::Parameter("string", Type::getStringType())},
-        true);
-
-    auto stringConst = builder.createGlobalConstant(
-        Type::getStringType(),
-        "Hello World\0"
-    );
-
-    auto mainFunc = builder.createFunction("main", Type::getInt32Type());
-    auto entryBlock = builder.createBasicBlock("entry");
-    builder.setInsertPoint(entryBlock);
-
-    auto loadInst = builder.createLoadConstant("0", stringConst);
-    auto callInst = builder.createCall("", printFunc, { loadInst });
-    auto retInst = builder.createReturnInt32("", 0);
-    mainFunc->addBasicBlock(entryBlock);
-}
-
 int main() {
     try {
         std::string Source = R"(
 public int main() {
-     __builtin_print("Hello World\n");
-     return 0;
+    int a = 1145;
+    int b = 1919;
+    int c = 7891;
+    int d = 7891;
+    __builtin_print(a);
+    __builtin_print(" ");
+    __builtin_print(b);
+    __builtin_print(" ");
+    __builtin_print(c);
+    __builtin_print(" ");
+    __builtin_print(d);
+    return 0;
 })";
 
         std::cout << "Source: ";

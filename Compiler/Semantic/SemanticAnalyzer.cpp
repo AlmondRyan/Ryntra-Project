@@ -5,12 +5,6 @@
 #include "ErrorHandler/ErrorHandler.h"
 
 namespace Ryntra::Compiler::Semantic {
-
-    // ---------------------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------------------
-
-    // Map a type-name string to an STType::TypePtr (SymbolTable type system)
     TypePtr SemanticAnalyzer::makeSTType(const std::string& name) {
         if (name == "void")   return std::make_shared<STType::VoidType>();
         if (name == "string") return std::make_shared<STType::StringType>();
@@ -18,7 +12,6 @@ namespace Ryntra::Compiler::Semantic {
         return std::make_shared<STType::Int32Type>();
     }
 
-    // Convert STType::Type -> TypeSystem::Type (used by TypedAST nodes)
     std::shared_ptr<Type> SemanticAnalyzer::toTypedType(const TypePtr& stType) {
         if (!stType) return TypeFactory::getPrimitive("unknown");
         switch (stType->getKind()) {
@@ -29,18 +22,10 @@ namespace Ryntra::Compiler::Semantic {
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Public API
-    // ---------------------------------------------------------------------------
-
     void SemanticAnalyzer::analyze(const std::shared_ptr<IASTNode>& root) {
         if (!root) return;
         root->accept(*this);
     }
-
-    // ---------------------------------------------------------------------------
-    // Visitors
-    // ---------------------------------------------------------------------------
 
     void SemanticAnalyzer::visit(ProgramNode &node) {
         // First pass: register all user-defined functions
@@ -51,20 +36,16 @@ namespace Ryntra::Compiler::Semantic {
 
             if (symbolTable.resolve(funcName)) {
                 ErrorHandler::getInstance().makeError(
-                    "Semantic Error: Function '" + funcName + "' is already defined.",
+                    "[RCE001]: Function '" + funcName + "' is already defined.",
                     func->getLocation());
                 continue;
             }
 
-            // Parameter types will be populated when we visit the function body;
-            // for now register with empty param list so calls can resolve the symbol.
             symbolTable.define(
                 std::make_shared<FunctionSymbol>(funcName, returnType, std::vector<TypePtr>{}),
                 func->getLocation());
         }
 
-        // Register print() built-in if not already present
-        // (__builtin_print is registered by SymbolTable constructor)
         if (!symbolTable.resolve("print")) {
             std::vector<TypePtr> params{ std::make_shared<STType::StringType>() };
             symbolTable.define(
@@ -73,24 +54,23 @@ namespace Ryntra::Compiler::Semantic {
                 SourceLocation{0, 0});
         }
 
-        // Validate main
         auto mainSym = symbolTable.resolve("main");
         if (!mainSym) {
             ErrorHandler::getInstance().makeError(
-                "Semantic Error: 'main' function is not defined.", node.getLocation());
+                "[RCE002]: 'main' function is not defined.", node.getLocation());
         } else {
             auto mainFuncSym = std::dynamic_pointer_cast<FunctionSymbol>(mainSym);
             if (!mainFuncSym) {
                 ErrorHandler::getInstance().makeError(
-                    "Semantic Error: 'main' is not a function.", node.getLocation());
+                    "[RCE003]: 'main' is not a function.", node.getLocation());
             } else if (!mainFuncSym->getReturnType() ||
                        mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Int32) {
                 ErrorHandler::getInstance().makeError(
-                    "Semantic Error: 'main' function must return 'int'.", node.getLocation());
+                    "[RCE004]: 'main' function must return 'int'.", node.getLocation());
             }
         }
 
-        // Second pass: analyse bodies
+        // Second pass: analyze bodies
         std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> typedFunctions;
         for (const auto &func : node.getFunctions()) {
             func->accept(*this);
@@ -132,7 +112,7 @@ namespace Ryntra::Compiler::Semantic {
                 }
                 if (!hasReturn) {
                     ErrorHandler::getInstance().makeError(
-                        "Semantic Error: 'main' function must explicitly return a value.",
+                        "[RCE005]: 'main' function must explicitly return a value.",
                         node.getLocation());
                 }
             }
@@ -153,7 +133,7 @@ namespace Ryntra::Compiler::Semantic {
 
                 if (!expectedTyped->equals(*actualType) && actualType->toString() != "unknown") {
                     ErrorHandler::getInstance().makeError(
-                        "Semantic Error: Return type mismatch. Expected '" +
+                        "[RCE006]: Return type mismatch. Expected '" +
                         expectedTyped->toString() + "', but got '" +
                         actualType->toString() + "'.",
                         node.getLocation());
@@ -214,7 +194,7 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<Type> type;
         if (!sym) {
             ErrorHandler::getInstance().makeError(
-                "Semantic Error: Identifier '" + name + "' is not defined.",
+                "[RCE007]: Identifier '" + name + "' is not defined.",
                 node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
         } else if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
@@ -222,6 +202,12 @@ namespace Ryntra::Compiler::Semantic {
             for (const auto& p : funcSym->getParamTypes())
                 paramTypes.push_back(toTypedType(p));
             type = TypeFactory::getFunction(toTypedType(funcSym->getReturnType()), paramTypes);
+        } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(sym)) {
+            auto firstOverload = overloadSet->getFunctions().front();
+            std::vector<std::shared_ptr<Type>> paramTypes;
+            for (const auto& p : firstOverload->getParamTypes())
+                paramTypes.push_back(toTypedType(p));
+            type = TypeFactory::getFunction(toTypedType(firstOverload->getReturnType()), paramTypes);
         } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
             type = toTypedType(varSym->getType());
         } else {
@@ -238,45 +224,90 @@ namespace Ryntra::Compiler::Semantic {
         std::string funcName = funcNameNode->getName();
 
         auto sym = symbolTable.resolve(funcName);
+
+        // Process arguments first to get their typed AST nodes
+        const auto& args = node.getArguments();
+        std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
+        for (size_t i = 0; i < args.size(); ++i) {
+            args[i]->accept(*this);
+            auto typedArg = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+            typedArgs.push_back(typedArg);
+        }
+
         TypePtr stReturnType;
         std::vector<TypePtr> expectedParamTypes;
 
         if (!sym) {
             ErrorHandler::getInstance().makeError(
-                "Semantic Error: Function '" + funcName + "' is not defined.",
+                "[RCE008]: Function '" + funcName + "' is not defined.",
                 node.getLocation());
             stReturnType = makeSTType("unknown");
-        } else {
-            auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym);
-            if (!funcSym) {
+        } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(sym)) {
+            bool found = false;
+            for (const auto& overload : overloadSet->getFunctions()) {
+                if (overload->getParamTypes().size() != args.size()) continue;
+
+                bool match = true;
+                for (size_t i = 0; i < args.size(); ++i) {
+                    if (!typedArgs[i]) { match = false; break; }
+                    auto expectedTyped = toTypedType(overload->getParamTypes()[i]);
+                    if (!expectedTyped->equals(*typedArgs[i]->getType()) &&
+                        typedArgs[i]->getType()->toString() != "unknown") {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match) {
+                    stReturnType = overload->getReturnType();
+                    expectedParamTypes = overload->getParamTypes();
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                std::string expectedTypes;
+                for (const auto& overload : overloadSet->getFunctions()) {
+                    if (!expectedTypes.empty()) expectedTypes += " or ";
+                    expectedTypes += "'" + toTypedType(overload->getParamTypes()[0])->toString() + "'";
+                }
                 ErrorHandler::getInstance().makeError(
-                    "Semantic Error: '" + funcName + "' is not a function.",
+                    "[RCE009]: No matching overload for function '" + funcName +
+                    "'. Expected " + expectedTypes + " argument, but got '" +
+                    (typedArgs.empty() || !typedArgs[0] ? "unknown" : typedArgs[0]->getType()->toString()) + "'.",
                     node.getLocation());
                 stReturnType = makeSTType("unknown");
-            } else {
-                stReturnType       = funcSym->getReturnType();
-                expectedParamTypes = funcSym->getParamTypes();
+                if (!overloadSet->getFunctions().empty()) {
+                    expectedParamTypes = overloadSet->getFunctions()[0]->getParamTypes();
+                }
             }
+        } else if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
+            stReturnType       = funcSym->getReturnType();
+            expectedParamTypes = funcSym->getParamTypes();
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE010]: '" + funcName + "' is not a function.",
+                node.getLocation());
+            stReturnType = makeSTType("unknown");
         }
 
         auto returnType = toTypedType(stReturnType);
 
-        // Process arguments
-        const auto& args = node.getArguments();
-        if (sym && args.size() != expectedParamTypes.size()) {
+        // Check argument count
+        if (sym && args.size() != expectedParamTypes.size() &&
+            !std::dynamic_pointer_cast<OverloadSet>(sym)) {
             ErrorHandler::getInstance().makeError(
-                "Semantic Error: Function '" + funcName + "' expects " +
+                "[RCE011]: Function '" + funcName + "' expects " +
                 std::to_string(expectedParamTypes.size()) + " arguments, but got " +
                 std::to_string(args.size()) + ".",
                 node.getLocation());
         }
 
-        std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
-        for (size_t i = 0; i < args.size(); ++i) {
-            args[i]->accept(*this);
-            auto typedArg = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        // Type checking for each argument
+        for (size_t i = 0; i < typedArgs.size(); ++i) {
+            auto typedArg = typedArgs[i];
             if (!typedArg) continue;
-            typedArgs.push_back(typedArg);
 
             if (i < expectedParamTypes.size()) {
                 auto expectedTyped = toTypedType(expectedParamTypes[i]);
@@ -284,7 +315,7 @@ namespace Ryntra::Compiler::Semantic {
                 if (!expectedTyped->equals(*actualType) &&
                     actualType->toString() != "unknown") {
                     ErrorHandler::getInstance().makeError(
-                        "Semantic Error: Argument " + std::to_string(i + 1) +
+                        "[RCE012]: Argument " + std::to_string(i + 1) +
                         " expects type '" + expectedTyped->toString() +
                         "', but got '" + actualType->toString() + "'.",
                         args[i]->getLocation());
@@ -307,6 +338,62 @@ namespace Ryntra::Compiler::Semantic {
 
     void SemanticAnalyzer::visit(TypeSpecifierNode &node) {
         lastType = makeSTType(node.getName());
+    }
+
+    void SemanticAnalyzer::visit(VariableDeclarationNode &node) {
+        auto varName = node.getName()->getName();
+
+        node.getType()->accept(*this);
+        auto varType = lastType ? lastType : makeSTType("unknown");
+
+        std::shared_ptr<TypedExpressionNode> typedInit = nullptr;
+        if (node.getInitializer()) {
+            node.getInitializer()->accept(*this);
+            typedInit = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+            if (typedInit) {
+                auto expectedTyped = toTypedType(varType);
+                auto actualType = typedInit->getType();
+                if (!expectedTyped->equals(*actualType) && actualType->toString() != "unknown") {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE012]: Variable '" + varName + "' expects type '" +
+                        expectedTyped->toString() + "', but initializer has type '" +
+                        actualType->toString() + "'.",
+                        node.getLocation());
+                }
+            }
+        }
+
+        auto varSym = std::make_shared<VariableSymbol>(varName, varType);
+        symbolTable.define(varSym, node.getLocation());
+
+        auto typedDecl = std::make_shared<TypedVariableDeclarationNode>(varName, toTypedType(varType), typedInit);
+        typedDecl->setLocation(node.getLocation());
+        lastNode = typedDecl;
+    }
+
+    void SemanticAnalyzer::visit(VariableNode &node) {
+        auto varName = node.getName()->getName();
+        auto sym = symbolTable.resolve(varName);
+
+        std::shared_ptr<Type> type;
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE013]: Variable '" + varName + "' is not defined.",
+                node.getLocation());
+            type = TypeFactory::getPrimitive("unknown");
+        } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
+            type = toTypedType(varSym->getType());
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE014]: '" + varName + "' is not a variable.",
+                node.getLocation());
+            type = TypeFactory::getPrimitive("unknown");
+        }
+
+        auto typedVar = std::make_shared<TypedVariableNode>(varName, type);
+        typedVar->setLocation(node.getLocation());
+        lastNode = typedVar;
     }
 
 } // namespace Ryntra::Compiler::Semantic

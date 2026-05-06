@@ -119,7 +119,19 @@ namespace Ryntra::IR {
             if (lastValue_) argValues.push_back(lastValue_);
         }
 
-        auto it = functionMap_.find(calleeName);
+        // Mangle __builtin_ function names based on argument types
+        std::string actualName = calleeName;
+        if (calleeName.rfind("__builtin_", 0) == 0 && !argValues.empty()) {
+            std::string suffix;
+            auto argType = argValues[0]->getType();
+            if (argType->isInt32())
+                suffix = "i32";
+            else if (argType->isString())
+                suffix = "string";
+            actualName = calleeName + "_" + suffix;
+        }
+
+        auto it = functionMap_.find(actualName);
         std::shared_ptr<Function> callee;
         if (it != functionMap_.end()) {
             callee = it->second;
@@ -130,8 +142,8 @@ namespace Ryntra::IR {
             for (size_t i = 0; i < argValues.size(); ++i) {
                 params.emplace_back("p" + std::to_string(i), argValues[i]->getType());
             }
-            callee = builder_.createFunction(calleeName, retType, params, /*isExternal=*/true);
-            functionMap_[calleeName] = callee;
+            callee = builder_.createFunction(actualName, retType, params, /*isExternal=*/true);
+            functionMap_[actualName] = callee;
         }
 
         // Only assign an SSA name when the call produces a value (non-void return)
@@ -139,5 +151,33 @@ namespace Ryntra::IR {
         std::string callName = isVoidCall ? "" : builder_.generateUniqueName("");
         auto callInst = builder_.createCall(callName, callee, argValues);
         lastValue_ = isVoidCall ? nullptr : callInst;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedVariableDeclarationNode &node) {
+        if (node.getInitializer()) {
+            node.getInitializer()->accept(*this);
+            if (lastValue_) {
+                auto varName = node.getName();
+                if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                    auto constInst = builder_.createConstant(
+                        builder_.generateUniqueName(""),
+                        lastValue_->getType(),
+                        lastValue_);
+                    variableMap_[varName] = constInst;
+                } else {
+                    variableMap_[varName] = lastValue_;
+                }
+                lastValue_ = nullptr;
+            }
+        }
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedVariableNode &node) {
+        auto it = variableMap_.find(node.getName());
+        if (it != variableMap_.end()) {
+            lastValue_ = it->second;
+        } else {
+            lastValue_ = nullptr;
+        }
     }
 } // namespace Ryntra::IR

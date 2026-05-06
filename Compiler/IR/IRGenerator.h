@@ -23,7 +23,8 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedIntegerLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedIdentifierNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionCallNode &node) override;
-
+        void visit(Compiler::Semantic::TypedVariableNode &node) override;
+        void visit(Compiler::Semantic::TypedVariableDeclarationNode &node) override;
     private:
         IRBuilder builder_;
 
@@ -32,6 +33,9 @@ namespace Ryntra::IR {
 
         // Map from function name -> IR Function (for call resolution)
         std::unordered_map<std::string, std::shared_ptr<Function>> functionMap_;
+
+        // Map from variable name -> IR Value (for variable references)
+        std::unordered_map<std::string, std::shared_ptr<Value>> variableMap_;
 
         // Convert a Semantic::Type to an IR::Type
         static std::shared_ptr<Type> toIRType(const std::shared_ptr<Compiler::Semantic::Type> &semType);

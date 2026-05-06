@@ -9,6 +9,7 @@ namespace Ryntra::IR {
     public:
         enum class Opcode {
             LoadConstant,
+            Constant,
             Call,
             Return,
             Add,
@@ -46,6 +47,12 @@ namespace Ryntra::IR {
             switch (opcode_) {
             case Opcode::LoadConstant:
                 result += "loadc ";
+                for (const auto &op : operands_)
+                    result += op->getReferenceName();
+                break;
+
+            case Opcode::Constant:
+                result += "constant ";
                 for (const auto &op : operands_)
                     result += op->getReferenceName();
                 break;
