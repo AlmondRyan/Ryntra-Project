@@ -80,9 +80,26 @@ namespace Ryntra::Compiler {
 
     std::shared_ptr<StringLiteralNode> ASTBuilder::visitStringLiteral(Ryntra::antlr::RyntraParser::StringLiteralContext *ctx) {
         std::string raw = ctx->STRING_LITERAL()->getText();
-        // Remove quotes
-        std::string val = raw.substr(1, raw.length() - 2);
-        // TODO: handle escape sequences
+        // Remove surrounding quotes
+        std::string inner = raw.substr(1, raw.length() - 2);
+        // Process escape sequences
+        std::string val;
+        val.reserve(inner.size());
+        for (size_t i = 0; i < inner.size(); ++i) {
+            if (inner[i] == '\\' && i + 1 < inner.size()) {
+                switch (inner[i + 1]) {
+                case 'n':  val += '\n'; ++i; break;
+                case 't':  val += '\t'; ++i; break;
+                case 'r':  val += '\r'; ++i; break;
+                case '0':  val += '\0'; ++i; break;
+                case '\\': val += '\\'; ++i; break;
+                case '"':  val += '"';  ++i; break;
+                default:   val += inner[i]; break;
+                }
+            } else {
+                val += inner[i];
+            }
+        }
         return createNode<StringLiteralNode>(ctx, val);
     }
 
