@@ -48,6 +48,12 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {
+        if (auto *binCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BinaryExpressionContext *>(ctx)) {
+            return visitBinaryExpression(binCtx);
+        }
+        if (auto *parenCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ParenthesizedExpressionContext *>(ctx)) {
+            return visitExpression(parenCtx->expression());
+        }
         if (auto *callCtx = dynamic_cast<Ryntra::antlr::RyntraParser::FunctionCallContext *>(ctx)) {
             return visitFunctionCall(callCtx);
         }
@@ -106,6 +112,21 @@ namespace Ryntra::Compiler {
     std::shared_ptr<VariableNode> ASTBuilder::visitVariableReference(Ryntra::antlr::RyntraParser::VariableReferenceContext *ctx) {
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
         return createNode<VariableNode>(ctx, std::move(nameNode));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitBinaryExpression(Ryntra::antlr::RyntraParser::BinaryExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+
+        BinaryOpType op;
+        if (ctx->PLUS()) op = BinaryOpType::Add;
+        else if (ctx->MINUS()) op = BinaryOpType::Sub;
+        else if (ctx->MUL()) op = BinaryOpType::Mul;
+        else if (ctx->DIV()) op = BinaryOpType::Div;
+        else if (ctx->MOD()) op = BinaryOpType::Mod;
+        else op = BinaryOpType::Add;
+
+        return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
     }
 
 } // namespace Ryntra::Compiler

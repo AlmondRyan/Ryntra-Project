@@ -383,4 +383,40 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedVar;
     }
 
+    void SemanticAnalyzer::visit(BinaryOpNode &node) {
+        node.getLeft()->accept(*this);
+        auto typedLeft = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        node.getRight()->accept(*this);
+        auto typedRight = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (!typedLeft || !typedRight) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto intType = TypeFactory::getPrimitive("int");
+        bool leftIsInt = typedLeft->getType()->equals(*intType);
+        bool rightIsInt = typedRight->getType()->equals(*intType);
+
+        if (!leftIsInt) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE015]: Left operand of binary expression must be 'int', but got '" +
+                typedLeft->getType()->toString() + "'.",
+                node.getLeft()->getLocation());
+        }
+        if (!rightIsInt) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE016]: Right operand of binary expression must be 'int', but got '" +
+                typedRight->getType()->toString() + "'.",
+                node.getRight()->getLocation());
+        }
+
+        auto resultType = (leftIsInt && rightIsInt) ? intType : TypeFactory::getPrimitive("unknown");
+
+        auto typedBinOp = std::make_shared<TypedBinaryOpNode>(typedLeft, node.getOp(), typedRight, resultType);
+        typedBinOp->setLocation(node.getLocation());
+        lastNode = typedBinOp;
+    }
+
 } // namespace Ryntra::Compiler::Semantic

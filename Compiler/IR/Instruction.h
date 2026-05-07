@@ -15,7 +15,8 @@ namespace Ryntra::IR {
             Add,
             Sub,
             Mul,
-            Div
+            Div,
+            Mod
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -78,12 +79,14 @@ namespace Ryntra::IR {
             case Opcode::Add:
             case Opcode::Sub:
             case Opcode::Mul:
-            case Opcode::Div: {
+            case Opcode::Div:
+            case Opcode::Mod: {
                 switch (opcode_) {
                 case Opcode::Add: result += "add "; break;
                 case Opcode::Sub: result += "sub "; break;
                 case Opcode::Mul: result += "mul "; break;
                 case Opcode::Div: result += "div "; break;
+                case Opcode::Mod: result += "mod "; break;
                 default: break;
                 }
                 for (size_t i = 0; i < operands_.size(); ++i) {

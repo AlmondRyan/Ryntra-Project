@@ -14,6 +14,11 @@ RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
 EQUAL: '=';
+PLUS: '+';
+MINUS: '-';
+MUL: '*';
+DIV: '/';
+MOD: '%';
 
 // Lexical Objects
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
@@ -55,10 +60,13 @@ returnStatement
     ;
 
 expression
-    : IDENTIFIER LPAREN argumentList? RPAREN # FunctionCall
-    | IDENTIFIER                             # VariableReference
-    | STRING_LITERAL                         # StringLiteral
-    | INTEGER_LITERAL                        # IntegerLiteral
+    : LPAREN expression RPAREN                              # ParenthesizedExpression
+    | left=expression op=(MUL|DIV|MOD) right=expression     # BinaryExpression
+    | left=expression op=(PLUS|MINUS) right=expression      # BinaryExpression
+    | IDENTIFIER LPAREN argumentList? RPAREN                # FunctionCall
+    | IDENTIFIER                                            # VariableReference
+    | STRING_LITERAL                                        # StringLiteral
+    | INTEGER_LITERAL                                       # IntegerLiteral
     ;
 
 argumentList

@@ -188,4 +188,29 @@ namespace Ryntra::IR {
             lastValue_ = nullptr;
         }
     }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedBinaryOpNode &node) {
+        node.getLeft()->accept(*this);
+        auto lhs = lastValue_;
+
+        node.getRight()->accept(*this);
+        auto rhs = lastValue_;
+
+        if (!lhs || !rhs) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        Instruction::Opcode irOp;
+        switch (node.getOp()) {
+        case Compiler::BinaryOpType::Add: irOp = Instruction::Opcode::Add; break;
+        case Compiler::BinaryOpType::Sub: irOp = Instruction::Opcode::Sub; break;
+        case Compiler::BinaryOpType::Mul: irOp = Instruction::Opcode::Mul; break;
+        case Compiler::BinaryOpType::Div: irOp = Instruction::Opcode::Div; break;
+        case Compiler::BinaryOpType::Mod: irOp = Instruction::Opcode::Mod; break;
+        }
+
+        auto result = builder_.createBinaryOp(irOp, builder_.generateUniqueName(""), lhs, rhs);
+        lastValue_ = result;
+    }
 } // namespace Ryntra::IR

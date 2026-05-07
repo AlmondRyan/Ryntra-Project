@@ -45,12 +45,32 @@ namespace Ryntra::VM {
         }
     }
 
+    void BytecodeGenerator::pushOperandValue(const std::shared_ptr<IR::Value>& operand) {
+        if (auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(operand)) {
+            VMValue val;
+            if (imm->getType()->isInt32()) {
+                std::string repr = imm->toString();
+                auto spacePos = repr.find(' ');
+                if (spacePos != std::string::npos) {
+                    val = VMValue(std::stoi(repr.substr(spacePos + 1)));
+                }
+            }
+            int32_t poolIdx = addConstant(val);
+            currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
+        } else if (auto argInst = std::dynamic_pointer_cast<IR::Instruction>(operand)) {
+            if (argInst->getOpcode() == IR::Instruction::Opcode::Constant) {
+                if (!argInst->getOperands().empty()) {
+                    pushOperandValue(argInst->getOperands()[0]);
+                }
+            }
+        }
+    }
+
     void BytecodeGenerator::generateInstruction(const std::shared_ptr<IR::Instruction>& inst) {
         const auto& operands = inst->getOperands();
 
         switch (inst->getOpcode()) {
         case IR::Instruction::Opcode::LoadConstant: {
-            // operands[0] is a Constant
             if (!operands.empty()) {
                 auto constant = std::dynamic_pointer_cast<IR::Constant>(operands[0]);
                 if (constant) {
@@ -68,7 +88,7 @@ namespace Ryntra::VM {
         }
 
         case IR::Instruction::Opcode::Constant: {
-            // Value is materialized at the use site (Call), not eagerly
+            // Value is materialized at the use site, not eagerly
             break;
         }
 
@@ -80,38 +100,15 @@ namespace Ryntra::VM {
                     if (name.rfind("__builtin_", 0) == 0) {
                         // Push argument values onto the stack before the call
                         for (size_t i = 1; i < operands.size(); ++i) {
-                            if (auto argInst = std::dynamic_pointer_cast<IR::Instruction>(operands[i])) {
-                                if (argInst->getOpcode() == IR::Instruction::Opcode::Constant) {
-                                    auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(argInst->getOperands()[0]);
-                                    if (imm) {
-                                        VMValue val;
-                                        if (imm->getType()->isInt32()) {
-                                            std::string repr = imm->toString();
-                                            auto spacePos = repr.find(' ');
-                                            if (spacePos != std::string::npos) {
-                                                val = VMValue(std::stoi(repr.substr(spacePos + 1)));
-                                            }
-                                        }
-                                        int32_t poolIdx = addConstant(val);
-                                        currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
-                                    }
-                                }
-                            } else if (auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[i])) {
-                                VMValue val;
-                                if (imm->getType()->isInt32()) {
-                                    std::string repr = imm->toString();
-                                    auto spacePos = repr.find(' ');
-                                    if (spacePos != std::string::npos) {
-                                        val = VMValue(std::stoi(repr.substr(spacePos + 1)));
-                                    }
-                                }
-                                int32_t poolIdx = addConstant(val);
-                                currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
-                            }
+                            pushOperandValue(operands[i]);
                         }
                         int32_t builtinIdx = getBuiltinIndex(name);
                         currentFunction_->addInstruction(OpCode::BCall, builtinIdx);
                     } else {
+                        // Push arguments for user-defined function calls
+                        for (size_t i = 1; i < operands.size(); ++i) {
+                            pushOperandValue(operands[i]);
+                        }
                         int32_t funcIdx = getFunctionIndex(name);
                         currentFunction_->addInstruction(OpCode::Call, funcIdx);
                     }
@@ -122,39 +119,32 @@ namespace Ryntra::VM {
 
         case IR::Instruction::Opcode::Return: {
             if (!operands.empty()) {
-                // If the return value is an ImmediateValue (e.g. ret i32 0), push it first
-                auto imm = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[0]);
-                if (imm) {
-                    VMValue val;
-                    if (imm->getType()->isInt32()) {
-                        // toString() returns "i32 <literal>", extract the number
-                        std::string repr = imm->toString();
-                        auto spacePos = repr.find(' ');
-                        if (spacePos != std::string::npos) {
-                            val = VMValue(std::stoi(repr.substr(spacePos + 1)));
-                        }
-                    }
-                    int32_t poolIdx = addConstant(val);
-                    currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
-                }
-                // Otherwise the value is already on the stack (result of prior instruction)
+                pushOperandValue(operands[0]);
             }
             currentFunction_->addInstruction(OpCode::Return);
             break;
         }
 
         case IR::Instruction::Opcode::Add:
-            currentFunction_->addInstruction(OpCode::Add);
-            break;
         case IR::Instruction::Opcode::Sub:
-            currentFunction_->addInstruction(OpCode::Sub);
-            break;
         case IR::Instruction::Opcode::Mul:
-            currentFunction_->addInstruction(OpCode::Mul);
-            break;
         case IR::Instruction::Opcode::Div:
-            currentFunction_->addInstruction(OpCode::Div);
+        case IR::Instruction::Opcode::Mod: {
+            for (const auto& op : operands) {
+                pushOperandValue(op);
+            }
+            OpCode bcOp;
+            switch (inst->getOpcode()) {
+            case IR::Instruction::Opcode::Add: bcOp = OpCode::Add; break;
+            case IR::Instruction::Opcode::Sub: bcOp = OpCode::Sub; break;
+            case IR::Instruction::Opcode::Mul: bcOp = OpCode::Mul; break;
+            case IR::Instruction::Opcode::Div: bcOp = OpCode::Div; break;
+            case IR::Instruction::Opcode::Mod: bcOp = OpCode::Mod; break;
+            default: bcOp = OpCode::Add; break;
+            }
+            currentFunction_->addInstruction(bcOp);
             break;
+        }
 
         default:
             break;
@@ -175,7 +165,6 @@ namespace Ryntra::VM {
     }
 
     int32_t BytecodeGenerator::getBuiltinIndex(const std::string& name) {
-        // Canonical builtin table — order defines the BCall index
         static const std::vector<std::string> builtinTable = {
             "__builtin_print",  // 0
         };

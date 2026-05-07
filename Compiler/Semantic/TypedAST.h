@@ -2,6 +2,7 @@
 
 #include "TypeSystem.h"
 #include "SourceLocation/SourceLocation.h"
+#include "../AST/ASTNodes.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -22,6 +23,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedReturnNode;
     class TypedVariableNode;
     class TypedVariableDeclarationNode;
+    class TypedBinaryOpNode;
 
     class ITypedVisitor {
     public:
@@ -37,6 +39,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedFunctionCallNode &node) = 0;
         virtual void visit(TypedVariableNode &node) = 0;
         virtual void visit(TypedVariableDeclarationNode &node) = 0;
+        virtual void visit(TypedBinaryOpNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -225,6 +228,44 @@ namespace Ryntra::Compiler::Semantic {
         std::string name;
         std::shared_ptr<Type> type;
         std::shared_ptr<TypedExpressionNode> initializer;
+    };
+
+    class TypedBinaryOpNode : public TypedExpressionNode {
+    public:
+        TypedBinaryOpNode(std::shared_ptr<TypedExpressionNode> left, BinaryOpType op, std::shared_ptr<TypedExpressionNode> right, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), left(std::move(left)), op(op), right(std::move(right)) {}
+
+        std::shared_ptr<TypedExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<TypedExpressionNode> getRight() const { return right; }
+        BinaryOpType getOp() const { return op; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override {
+            std::string opStr;
+            switch (op) {
+            case BinaryOpType::Add: opStr = "+"; break;
+            case BinaryOpType::Sub: opStr = "-"; break;
+            case BinaryOpType::Mul: opStr = "*"; break;
+            case BinaryOpType::Div: opStr = "/"; break;
+            case BinaryOpType::Mod: opStr = "%"; break;
+            }
+            return "TypedBinaryOp(" + opStr + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Left:" << std::endl;
+            left->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Right:" << std::endl;
+            right->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> left;
+        BinaryOpType op;
+        std::shared_ptr<TypedExpressionNode> right;
     };
 
     class TypedBlockNode : public TypedStatementNode {

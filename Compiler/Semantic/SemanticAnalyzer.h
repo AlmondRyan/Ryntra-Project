@@ -27,6 +27,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(ReturnNode &node) override;
         void visit(VariableNode &node) override;
         void visit(VariableDeclarationNode &node) override;
+        void visit(BinaryOpNode &node) override;
 
     private:
         SymbolTable symbolTable;

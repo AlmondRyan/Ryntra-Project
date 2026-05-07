@@ -146,4 +146,22 @@ namespace Ryntra::Compiler {
         return "(Variable " + name->toString() + ")";
     }
 
+    void BinaryOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BinaryOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BinaryOpNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case BinaryOpType::Add: opStr = "+"; break;
+        case BinaryOpType::Sub: opStr = "-"; break;
+        case BinaryOpType::Mul: opStr = "*"; break;
+        case BinaryOpType::Div: opStr = "/"; break;
+        case BinaryOpType::Mod: opStr = "%"; break;
+        }
+        return "(BinaryOp " + left->toString() + " " + opStr + " " + right->toString() + ")";
+    }
+
 } // namespace Ryntra::Compiler

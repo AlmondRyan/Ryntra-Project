@@ -20,6 +20,8 @@ namespace Ryntra::VM {
         void generateBasicBlock(const std::shared_ptr<IR::BasicBlock>& block);
         void generateInstruction(const std::shared_ptr<IR::Instruction>& inst);
 
+        void pushOperandValue(const std::shared_ptr<IR::Value>& operand);
+
         int32_t addConstant(const VMValue& value);
         int32_t getFunctionIndex(const std::string& name);
         int32_t getBuiltinIndex(const std::string& name);

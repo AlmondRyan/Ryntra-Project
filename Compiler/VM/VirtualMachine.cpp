@@ -118,6 +118,12 @@ namespace Ryntra::VM {
                     push(VMValue(a.asInt32() / b.asInt32()));
                 break;
             }
+            case OpCode::Mod: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32() && b.asInt32() != 0)
+                    push(VMValue(a.asInt32() % b.asInt32()));
+                break;
+            }
 
             case OpCode::Pop:
                 if (!stack_.empty()) pop();

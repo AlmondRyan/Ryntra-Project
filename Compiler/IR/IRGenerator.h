@@ -25,6 +25,7 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedFunctionCallNode &node) override;
         void visit(Compiler::Semantic::TypedVariableNode &node) override;
         void visit(Compiler::Semantic::TypedVariableDeclarationNode &node) override;
+        void visit(Compiler::Semantic::TypedBinaryOpNode &node) override;
     private:
         IRBuilder builder_;
 

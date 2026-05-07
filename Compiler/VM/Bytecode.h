@@ -14,6 +14,7 @@ namespace Ryntra::VM {
         Sub,            // Subtract
         Mul,            // Multiply
         Div,            // Divide
+        Mod,            // Modulo
         Pop,            // Pop value from stack
         Halt            // Stop execution
     };

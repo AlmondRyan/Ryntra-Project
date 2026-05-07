@@ -3,6 +3,7 @@
 #include "ASTVisitor.h"
 #include "SourceLocation/SourceLocation.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -172,5 +173,29 @@ namespace Ryntra::Compiler {
 
     private:
         std::shared_ptr<IdentifierNode> name;
+    };
+
+    enum class BinaryOpType : uint8_t {
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod
+    };
+
+    class BinaryOpNode : public ExpressionNode {
+    public:
+        BinaryOpNode(std::shared_ptr<ExpressionNode> left, BinaryOpType op, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), op(op), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        BinaryOpType getOp() const { return op; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        BinaryOpType op;
+        std::shared_ptr<ExpressionNode> right;
     };
 } // namespace Ryntra::Compiler
