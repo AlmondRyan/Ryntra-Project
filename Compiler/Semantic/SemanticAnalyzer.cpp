@@ -63,10 +63,12 @@ namespace Ryntra::Compiler::Semantic {
             if (!mainFuncSym) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE003]: 'main' is not a function.", node.getLocation());
-            } else if (!mainFuncSym->getReturnType() ||
-                       mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Int32) {
+            } else if (!mainFuncSym->getReturnType()) {
                 ErrorHandler::getInstance().makeError(
-                    "[RCE004]: 'main' function must return 'int'.", node.getLocation());
+                    "[RCE004]: 'main' function must have a return type.", node.getLocation());
+            } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE004]: 'main' function must return 'void'. 'int main()' is not allowed.", node.getLocation());
             }
         }
 
@@ -101,21 +103,6 @@ namespace Ryntra::Compiler::Semantic {
                 funcName, toTypedType(returnType), typedBody);
             typedFunc->setLocation(node.getLocation());
             lastNode = typedFunc;
-
-            if (funcName == "main") {
-                bool hasReturn = false;
-                for (const auto& stmt : typedBody->getStatements()) {
-                    if (std::dynamic_pointer_cast<TypedReturnNode>(stmt)) {
-                        hasReturn = true;
-                        break;
-                    }
-                }
-                if (!hasReturn) {
-                    ErrorHandler::getInstance().makeError(
-                        "[RCE005]: 'main' function must explicitly return a value.",
-                        node.getLocation());
-                }
-            }
         } else {
             lastNode = nullptr;
         }

@@ -65,6 +65,14 @@ namespace Ryntra::IR {
         builder_.setInsertPoint(entry);
 
         node.getBody()->accept(*this);
+
+        if (irFunc->getReturnType()->isVoid()) {
+            auto &insts = entry->getInstructions();
+            if (insts.empty() ||
+                insts.back()->getOpcode() != Instruction::Opcode::Return) {
+                builder_.createReturn("");
+            }
+        }
     }
 
     void IRGenerator::visit(Sem::TypedBlockNode &node) {

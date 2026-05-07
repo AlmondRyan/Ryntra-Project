@@ -3,6 +3,7 @@ grammar Ryntra;
 // Keywords
 PUBLIC: 'public';
 INT: 'int';
+VOID: 'void';
 RETURN: 'return';
 
 // Symbols & Operators
@@ -32,6 +33,7 @@ functionDefinition
 
 typeSpecifier
     : INT
+    | VOID
     ;
 
 block
