@@ -13,7 +13,12 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
-EQUAL: '=';
+ASSIGN: '=';
+ADD_ASSIGN: '+=';
+SUB_ASSIGN: '-=';
+MUL_ASSIGN: '*=';
+DIV_ASSIGN: '/=';
+MOD_ASSIGN: '%=';
 PLUS: '+';
 MINUS: '-';
 MUL: '*';
@@ -52,7 +57,7 @@ statement
     ;
 
 variableDeclaration
-    : typeSpecifier IDENTIFIER (EQUAL expression)?
+    : typeSpecifier IDENTIFIER (ASSIGN expression)?
     ;
 
 returnStatement
@@ -63,6 +68,7 @@ expression
     : LPAREN expression RPAREN                              # ParenthesizedExpression
     | left=expression op=(MUL|DIV|MOD) right=expression     # BinaryExpression
     | left=expression op=(PLUS|MINUS) right=expression      # BinaryExpression
+    | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN) right=expression  # AssignmentExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                # FunctionCall
     | IDENTIFIER                                            # VariableReference
     | STRING_LITERAL                                        # StringLiteral

@@ -48,6 +48,9 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {
+        if (auto *assignCtx = dynamic_cast<Ryntra::antlr::RyntraParser::AssignmentExpressionContext *>(ctx)) {
+            return visitAssignmentExpression(assignCtx);
+        }
         if (auto *binCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BinaryExpressionContext *>(ctx)) {
             return visitBinaryExpression(binCtx);
         }
@@ -120,7 +123,7 @@ namespace Ryntra::Compiler {
         auto type = visitTypeSpecifier(ctx->typeSpecifier());
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
         std::shared_ptr<ExpressionNode> initializer = nullptr;
-        if (ctx->EQUAL() && ctx->expression()) {
+        if (ctx->ASSIGN() && ctx->expression()) {
             initializer = visitExpression(ctx->expression());
         }
         return createNode<VariableDeclarationNode>(ctx, std::move(type), std::move(nameNode), std::move(initializer));
@@ -144,6 +147,35 @@ namespace Ryntra::Compiler {
         else op = BinaryOpType::Add;
 
         return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
+    }
+
+    std::shared_ptr<AssignmentNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {
+        auto rhs = visitExpression(ctx->right);
+
+        auto leftExprCtx = ctx->left;
+        auto varRefCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(leftExprCtx);
+        if (!varRefCtx) {
+            return nullptr;
+        }
+        auto lhsName = createNode<IdentifierNode>(varRefCtx->IDENTIFIER(), varRefCtx->IDENTIFIER()->getText());
+
+        if (ctx->ASSIGN()) {
+            return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+        }
+
+        BinaryOpType binOp;
+        if (ctx->ADD_ASSIGN()) binOp = BinaryOpType::Add;
+        else if (ctx->SUB_ASSIGN()) binOp = BinaryOpType::Sub;
+        else if (ctx->MUL_ASSIGN()) binOp = BinaryOpType::Mul;
+        else if (ctx->DIV_ASSIGN()) binOp = BinaryOpType::Div;
+        else if (ctx->MOD_ASSIGN()) binOp = BinaryOpType::Mod;
+        else return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+
+        auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));
+        varRef->setLocation(lhsName->getLocation());
+        auto binExpr = std::make_shared<BinaryOpNode>(std::move(varRef), binOp, std::move(rhs));
+        binExpr->setLocation(lhsName->getLocation());
+        return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(binExpr));
     }
 
 } // namespace Ryntra::Compiler

@@ -198,4 +198,18 @@ namespace Ryntra::Compiler {
         BinaryOpType op;
         std::shared_ptr<ExpressionNode> right;
     };
+
+    class AssignmentNode : public ExpressionNode {
+    public:
+        AssignmentNode(std::shared_ptr<IdentifierNode> lhs, std::shared_ptr<ExpressionNode> rhs)
+            : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+        std::shared_ptr<IdentifierNode> getLHS() const { return lhs; }
+        std::shared_ptr<ExpressionNode> getRHS() const { return rhs; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> lhs;
+        std::shared_ptr<ExpressionNode> rhs;
+    };
 } // namespace Ryntra::Compiler

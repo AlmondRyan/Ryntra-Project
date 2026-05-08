@@ -22,6 +22,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
         std::shared_ptr<BinaryOpNode> visitBinaryExpression(antlr::RyntraParser::BinaryExpressionContext *ctx);
+        std::shared_ptr<AssignmentNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:

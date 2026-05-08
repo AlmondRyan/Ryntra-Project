@@ -24,6 +24,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedVariableNode;
     class TypedVariableDeclarationNode;
     class TypedBinaryOpNode;
+    class TypedAssignmentNode;
 
     class ITypedVisitor {
     public:
@@ -40,6 +41,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedVariableNode &node) = 0;
         virtual void visit(TypedVariableDeclarationNode &node) = 0;
         virtual void visit(TypedBinaryOpNode &node) = 0;
+        virtual void visit(TypedAssignmentNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -266,6 +268,29 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> left;
         BinaryOpType op;
         std::shared_ptr<TypedExpressionNode> right;
+    };
+
+    class TypedAssignmentNode : public TypedExpressionNode {
+    public:
+        TypedAssignmentNode(std::string variableName, std::shared_ptr<TypedExpressionNode> rhs, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)), rhs(std::move(rhs)) {}
+
+        const std::string &getVariableName() const { return variableName; }
+        std::shared_ptr<TypedExpressionNode> getRHS() const { return rhs; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedAssign(" + variableName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "RHS:" << std::endl;
+            rhs->dump(indent + 2);
+        }
+
+    private:
+        std::string variableName;
+        std::shared_ptr<TypedExpressionNode> rhs;
     };
 
     class TypedBlockNode : public TypedStatementNode {

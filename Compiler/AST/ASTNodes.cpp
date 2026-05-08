@@ -164,4 +164,14 @@ namespace Ryntra::Compiler {
         return "(BinaryOp " + left->toString() + " " + opStr + " " + right->toString() + ")";
     }
 
+    void AssignmentNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string AssignmentNode::toString() const {
+        return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
+    }
+
 } // namespace Ryntra::Compiler

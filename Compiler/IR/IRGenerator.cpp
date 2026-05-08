@@ -213,4 +213,20 @@ namespace Ryntra::IR {
         auto result = builder_.createBinaryOp(irOp, builder_.generateUniqueName(""), lhs, rhs);
         lastValue_ = result;
     }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {
+        node.getRHS()->accept(*this);
+        if (lastValue_) {
+            auto varName = node.getVariableName();
+            if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                auto constInst = builder_.createConstant(
+                    builder_.generateUniqueName(""),
+                    lastValue_->getType(),
+                    lastValue_);
+                variableMap_[varName] = constInst;
+            } else {
+                variableMap_[varName] = lastValue_;
+            }
+        }
+    }
 } // namespace Ryntra::IR

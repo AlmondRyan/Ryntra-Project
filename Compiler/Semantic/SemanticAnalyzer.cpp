@@ -419,4 +419,49 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedBinOp;
     }
 
+    void SemanticAnalyzer::visit(AssignmentNode &node) {
+        auto varName = node.getLHS()->getName();
+        auto sym = symbolTable.resolve(varName);
+
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE017]: Variable '" + varName + "' is not defined.",
+                node.getLHS()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
+        if (!varSym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE018]: '" + varName + "' is not a variable.",
+                node.getLHS()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getRHS()->accept(*this);
+        auto typedRHS = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (!typedRHS) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varType = toTypedType(varSym->getType());
+        auto rhsType = typedRHS->getType();
+
+        if (!varType->equals(*rhsType) && rhsType->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE019]: Cannot assign value of type '" + rhsType->toString() +
+                "' to variable '" + varName + "' of type '" + varType->toString() + "'.",
+                node.getRHS()->getLocation());
+        }
+
+        auto resultType = varType->equals(*rhsType) ? varType : TypeFactory::getPrimitive("unknown");
+        auto typedAssign = std::make_shared<TypedAssignmentNode>(varName, typedRHS, resultType);
+        typedAssign->setLocation(node.getLocation());
+        lastNode = typedAssign;
+    }
+
 } // namespace Ryntra::Compiler::Semantic
