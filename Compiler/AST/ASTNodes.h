@@ -180,7 +180,12 @@ namespace Ryntra::Compiler {
         Sub,
         Mul,
         Div,
-        Mod
+        Mod,
+        BitAnd,
+        BitOr,
+        BitXor,
+        Shl,
+        Shr
     };
 
     class BinaryOpNode : public ExpressionNode {
@@ -197,6 +202,24 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> left;
         BinaryOpType op;
         std::shared_ptr<ExpressionNode> right;
+    };
+
+    enum class UnaryOpType : uint8_t {
+        BitNot  // ~
+    };
+
+    class UnaryOpNode : public ExpressionNode {
+    public:
+        UnaryOpNode(UnaryOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        UnaryOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        UnaryOpType op;
+        std::shared_ptr<ExpressionNode> operand;
     };
 
     class AssignmentNode : public ExpressionNode {

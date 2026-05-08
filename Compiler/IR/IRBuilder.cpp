@@ -153,6 +153,28 @@ namespace Ryntra::IR {
         return createReturn(name, immediate);
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createUnaryOp(Instruction::Opcode opcode,
+                                                           const std::string &name,
+                                                           std::shared_ptr<Value> operand) {
+        if (!operand) {
+            return nullptr;
+        }
+
+        std::vector<std::shared_ptr<Value>> operands = {operand};
+
+        auto instruction = std::make_shared<Instruction>(
+            opcode,
+            operand->getType(),
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
     std::shared_ptr<Instruction> IRBuilder::createBinaryOp(Instruction::Opcode opcode,
                                                            const std::string &name,
                                                            std::shared_ptr<Value> lhs,

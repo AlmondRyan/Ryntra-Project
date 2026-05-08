@@ -46,10 +46,14 @@ namespace Ryntra::IR {
         std::shared_ptr<Instruction> createReturnInt32(const std::string &name,
                                                        int32_t value);
 
-        std::shared_ptr<Instruction> createBinaryOp(Instruction::Opcode opcode,
+        std::shared_ptr<Instruction> createUnaryOp(Instruction::Opcode opcode,
                                                     const std::string &name,
-                                                    std::shared_ptr<Value> lhs,
-                                                    std::shared_ptr<Value> rhs);
+                                                    std::shared_ptr<Value> operand);
+
+        std::shared_ptr<Instruction> createBinaryOp(Instruction::Opcode opcode,
+                                                     const std::string &name,
+                                                     std::shared_ptr<Value> lhs,
+                                                     std::shared_ptr<Value> rhs);
 
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;

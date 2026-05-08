@@ -24,6 +24,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedVariableNode;
     class TypedVariableDeclarationNode;
     class TypedBinaryOpNode;
+    class TypedUnaryOpNode;
     class TypedAssignmentNode;
 
     class ITypedVisitor {
@@ -41,6 +42,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedVariableNode &node) = 0;
         virtual void visit(TypedVariableDeclarationNode &node) = 0;
         virtual void visit(TypedBinaryOpNode &node) = 0;
+        virtual void visit(TypedUnaryOpNode &node) = 0;
         virtual void visit(TypedAssignmentNode &node) = 0;
     };
 
@@ -250,6 +252,11 @@ namespace Ryntra::Compiler::Semantic {
             case BinaryOpType::Mul: opStr = "*"; break;
             case BinaryOpType::Div: opStr = "/"; break;
             case BinaryOpType::Mod: opStr = "%"; break;
+            case BinaryOpType::BitAnd: opStr = "&"; break;
+            case BinaryOpType::BitOr:  opStr = "|"; break;
+            case BinaryOpType::BitXor: opStr = "^"; break;
+            case BinaryOpType::Shl:    opStr = "<<"; break;
+            case BinaryOpType::Shr:    opStr = ">>"; break;
             }
             return "TypedBinaryOp(" + opStr + "): " + type->toString();
         }
@@ -268,6 +275,35 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> left;
         BinaryOpType op;
         std::shared_ptr<TypedExpressionNode> right;
+    };
+
+    class TypedUnaryOpNode : public TypedExpressionNode {
+    public:
+        TypedUnaryOpNode(UnaryOpType op, std::shared_ptr<TypedExpressionNode> operand, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), op(op), operand(std::move(operand)) {}
+
+        UnaryOpType getOp() const { return op; }
+        std::shared_ptr<TypedExpressionNode> getOperand() const { return operand; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override {
+            std::string opStr;
+            switch (op) {
+            case UnaryOpType::BitNot: opStr = "~"; break;
+            }
+            return "TypedUnaryOp(" + opStr + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Operand:" << std::endl;
+            operand->dump(indent + 2);
+        }
+
+    private:
+        UnaryOpType op;
+        std::shared_ptr<TypedExpressionNode> operand;
     };
 
     class TypedAssignmentNode : public TypedExpressionNode {

@@ -16,7 +16,13 @@ namespace Ryntra::IR {
             Sub,
             Mul,
             Div,
-            Mod
+            Mod,
+            BitNot,     // ~
+            BitAnd,     // &
+            BitOr,      // |
+            BitXor,     // ^
+            Shl,        // <<
+            Shr         // >>
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -80,19 +86,36 @@ namespace Ryntra::IR {
             case Opcode::Sub:
             case Opcode::Mul:
             case Opcode::Div:
-            case Opcode::Mod: {
+            case Opcode::Mod:
+            case Opcode::BitAnd:
+            case Opcode::BitOr:
+            case Opcode::BitXor:
+            case Opcode::Shl:
+            case Opcode::Shr: {
                 switch (opcode_) {
                 case Opcode::Add: result += "add "; break;
                 case Opcode::Sub: result += "sub "; break;
                 case Opcode::Mul: result += "mul "; break;
                 case Opcode::Div: result += "div "; break;
                 case Opcode::Mod: result += "mod "; break;
+                case Opcode::BitAnd: result += "bitand "; break;
+                case Opcode::BitOr:  result += "bitor ";  break;
+                case Opcode::BitXor: result += "bitxor "; break;
+                case Opcode::Shl:    result += "shl ";    break;
+                case Opcode::Shr:    result += "shr ";    break;
                 default: break;
                 }
                 for (size_t i = 0; i < operands_.size(); ++i) {
                     if (i > 0) result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
+                break;
+            }
+
+            case Opcode::BitNot: {
+                result += "bitnot ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
                 break;
             }
 

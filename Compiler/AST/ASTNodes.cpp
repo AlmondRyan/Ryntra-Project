@@ -160,8 +160,27 @@ namespace Ryntra::Compiler {
         case BinaryOpType::Mul: opStr = "*"; break;
         case BinaryOpType::Div: opStr = "/"; break;
         case BinaryOpType::Mod: opStr = "%"; break;
+        case BinaryOpType::BitAnd: opStr = "&"; break;
+        case BinaryOpType::BitOr:  opStr = "|"; break;
+        case BinaryOpType::BitXor: opStr = "^"; break;
+        case BinaryOpType::Shl:    opStr = "<<"; break;
+        case BinaryOpType::Shr:    opStr = ">>"; break;
         }
         return "(BinaryOp " + left->toString() + " " + opStr + " " + right->toString() + ")";
+    }
+
+    void UnaryOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<UnaryOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string UnaryOpNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case UnaryOpType::BitNot: opStr = "~"; break;
+        }
+        return "(UnaryOp " + opStr + " " + operand->toString() + ")";
     }
 
     void AssignmentNode::accept(IVisitor &visitor) {

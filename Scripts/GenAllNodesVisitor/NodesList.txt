@@ -11,4 +11,5 @@ IntegerLiteralNode
 VariableNode
 VariableDeclarationNode
 BinaryOpNode
+UnaryOpNode
 AssignmentNode

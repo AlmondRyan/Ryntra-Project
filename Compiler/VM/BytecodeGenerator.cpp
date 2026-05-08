@@ -125,11 +125,25 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::BitNot: {
+            // Unary: push the single operand
+            for (const auto& op : operands) {
+                pushOperandValue(op);
+            }
+            currentFunction_->addInstruction(OpCode::BitNot);
+            break;
+        }
+
         case IR::Instruction::Opcode::Add:
         case IR::Instruction::Opcode::Sub:
         case IR::Instruction::Opcode::Mul:
         case IR::Instruction::Opcode::Div:
-        case IR::Instruction::Opcode::Mod: {
+        case IR::Instruction::Opcode::Mod:
+        case IR::Instruction::Opcode::BitAnd:
+        case IR::Instruction::Opcode::BitOr:
+        case IR::Instruction::Opcode::BitXor:
+        case IR::Instruction::Opcode::Shl:
+        case IR::Instruction::Opcode::Shr: {
             for (const auto& op : operands) {
                 pushOperandValue(op);
             }
@@ -140,6 +154,11 @@ namespace Ryntra::VM {
             case IR::Instruction::Opcode::Mul: bcOp = OpCode::Mul; break;
             case IR::Instruction::Opcode::Div: bcOp = OpCode::Div; break;
             case IR::Instruction::Opcode::Mod: bcOp = OpCode::Mod; break;
+            case IR::Instruction::Opcode::BitAnd: bcOp = OpCode::BitAnd; break;
+            case IR::Instruction::Opcode::BitOr: bcOp = OpCode::BitOr; break;
+            case IR::Instruction::Opcode::BitXor: bcOp = OpCode::BitXor; break;
+            case IR::Instruction::Opcode::Shl: bcOp = OpCode::Shl; break;
+            case IR::Instruction::Opcode::Shr: bcOp = OpCode::Shr; break;
             default: bcOp = OpCode::Add; break;
             }
             currentFunction_->addInstruction(bcOp);

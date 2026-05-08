@@ -125,6 +125,37 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::BitNot: {
+                auto a = pop();
+                if (a.isInt32()) push(VMValue(~a.asInt32()));
+                break;
+            }
+            case OpCode::BitAnd: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() & b.asInt32()));
+                break;
+            }
+            case OpCode::BitOr: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() | b.asInt32()));
+                break;
+            }
+            case OpCode::BitXor: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() ^ b.asInt32()));
+                break;
+            }
+            case OpCode::Shl: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() << (b.asInt32() & 31)));
+                break;
+            }
+            case OpCode::Shr: {
+                auto b = pop(); auto a = pop();
+                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() >> (b.asInt32() & 31)));
+                break;
+            }
+
             case OpCode::Pop:
                 if (!stack_.empty()) pop();
                 break;

@@ -51,8 +51,26 @@ namespace Ryntra::Compiler {
         if (auto *assignCtx = dynamic_cast<Ryntra::antlr::RyntraParser::AssignmentExpressionContext *>(ctx)) {
             return visitAssignmentExpression(assignCtx);
         }
-        if (auto *binCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BinaryExpressionContext *>(ctx)) {
-            return visitBinaryExpression(binCtx);
+        if (auto *mulDivModCtx = dynamic_cast<Ryntra::antlr::RyntraParser::MulDivModExpressionContext *>(ctx)) {
+            return visitMulDivModExpression(mulDivModCtx);
+        }
+        if (auto *plusMinusCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PlusMinusExpressionContext *>(ctx)) {
+            return visitPlusMinusExpression(plusMinusCtx);
+        }
+        if (auto *shiftCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ShiftExpressionContext *>(ctx)) {
+            return visitShiftExpression(shiftCtx);
+        }
+        if (auto *bitAndCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitAndExpressionContext *>(ctx)) {
+            return visitBitAndExpression(bitAndCtx);
+        }
+        if (auto *bitXorCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitXorExpressionContext *>(ctx)) {
+            return visitBitXorExpression(bitXorCtx);
+        }
+        if (auto *bitOrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitOrExpressionContext *>(ctx)) {
+            return visitBitOrExpression(bitOrCtx);
+        }
+        if (auto *unaryCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryExpressionContext *>(ctx)) {
+            return visitUnaryExpression(unaryCtx);
         }
         if (auto *parenCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ParenthesizedExpressionContext *>(ctx)) {
             return visitExpression(parenCtx->expression());
@@ -134,19 +152,59 @@ namespace Ryntra::Compiler {
         return createNode<VariableNode>(ctx, std::move(nameNode));
     }
 
-    std::shared_ptr<BinaryOpNode> ASTBuilder::visitBinaryExpression(Ryntra::antlr::RyntraParser::BinaryExpressionContext *ctx) {
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitMulDivModExpression(Ryntra::antlr::RyntraParser::MulDivModExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+
+        BinaryOpType op;
+        if (ctx->MUL()) op = BinaryOpType::Mul;
+        else if (ctx->DIV()) op = BinaryOpType::Div;
+        else if (ctx->MOD()) op = BinaryOpType::Mod;
+        else op = BinaryOpType::Mul;
+
+        return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitPlusMinusExpression(Ryntra::antlr::RyntraParser::PlusMinusExpressionContext *ctx) {
         auto left = visitExpression(ctx->left);
         auto right = visitExpression(ctx->right);
 
         BinaryOpType op;
         if (ctx->PLUS()) op = BinaryOpType::Add;
         else if (ctx->MINUS()) op = BinaryOpType::Sub;
-        else if (ctx->MUL()) op = BinaryOpType::Mul;
-        else if (ctx->DIV()) op = BinaryOpType::Div;
-        else if (ctx->MOD()) op = BinaryOpType::Mod;
         else op = BinaryOpType::Add;
 
         return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
+    }
+
+    std::shared_ptr<UnaryOpNode> ASTBuilder::visitUnaryExpression(Ryntra::antlr::RyntraParser::UnaryExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<UnaryOpNode>(ctx, UnaryOpType::BitNot, std::move(operand));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitShiftExpression(Ryntra::antlr::RyntraParser::ShiftExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        BinaryOpType op = ctx->SHL() ? BinaryOpType::Shl : BinaryOpType::Shr;
+        return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitBitAndExpression(Ryntra::antlr::RyntraParser::BitAndExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        return createNode<BinaryOpNode>(ctx, std::move(left), BinaryOpType::BitAnd, std::move(right));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitBitXorExpression(Ryntra::antlr::RyntraParser::BitXorExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        return createNode<BinaryOpNode>(ctx, std::move(left), BinaryOpType::BitXor, std::move(right));
+    }
+
+    std::shared_ptr<BinaryOpNode> ASTBuilder::visitBitOrExpression(Ryntra::antlr::RyntraParser::BitOrExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        return createNode<BinaryOpNode>(ctx, std::move(left), BinaryOpType::BitOr, std::move(right));
     }
 
     std::shared_ptr<AssignmentNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {
@@ -169,6 +227,11 @@ namespace Ryntra::Compiler {
         else if (ctx->MUL_ASSIGN()) binOp = BinaryOpType::Mul;
         else if (ctx->DIV_ASSIGN()) binOp = BinaryOpType::Div;
         else if (ctx->MOD_ASSIGN()) binOp = BinaryOpType::Mod;
+        else if (ctx->AND_ASSIGN()) binOp = BinaryOpType::BitAnd;
+        else if (ctx->OR_ASSIGN()) binOp = BinaryOpType::BitOr;
+        else if (ctx->XOR_ASSIGN()) binOp = BinaryOpType::BitXor;
+        else if (ctx->SHL_ASSIGN()) binOp = BinaryOpType::Shl;
+        else if (ctx->SHR_ASSIGN()) binOp = BinaryOpType::Shr;
         else return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
 
         auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));

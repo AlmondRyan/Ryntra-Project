@@ -3,3 +3,5 @@ cmake-build-debug/
 cmake-build/release/
 ANTLR/antlr-generated
 .venv/
+build/
+.idea/

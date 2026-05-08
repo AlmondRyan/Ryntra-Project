@@ -189,6 +189,26 @@ namespace Ryntra::IR {
         }
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedUnaryOpNode &node) {
+        node.getOperand()->accept(*this);
+        auto operand = lastValue_;
+        if (!operand) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        Instruction::Opcode irOp;
+        switch (node.getOp()) {
+        case Compiler::UnaryOpType::BitNot: irOp = Instruction::Opcode::BitNot; break;
+        default:
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto result = builder_.createUnaryOp(irOp, builder_.generateUniqueName(""), operand);
+        lastValue_ = result;
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedBinaryOpNode &node) {
         node.getLeft()->accept(*this);
         auto lhs = lastValue_;
@@ -208,6 +228,11 @@ namespace Ryntra::IR {
         case Compiler::BinaryOpType::Mul: irOp = Instruction::Opcode::Mul; break;
         case Compiler::BinaryOpType::Div: irOp = Instruction::Opcode::Div; break;
         case Compiler::BinaryOpType::Mod: irOp = Instruction::Opcode::Mod; break;
+        case Compiler::BinaryOpType::BitAnd: irOp = Instruction::Opcode::BitAnd; break;
+        case Compiler::BinaryOpType::BitOr: irOp = Instruction::Opcode::BitOr; break;
+        case Compiler::BinaryOpType::BitXor: irOp = Instruction::Opcode::BitXor; break;
+        case Compiler::BinaryOpType::Shl: irOp = Instruction::Opcode::Shl; break;
+        case Compiler::BinaryOpType::Shr: irOp = Instruction::Opcode::Shr; break;
         }
 
         auto result = builder_.createBinaryOp(irOp, builder_.generateUniqueName(""), lhs, rhs);

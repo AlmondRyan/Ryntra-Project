@@ -383,6 +383,29 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedVar;
     }
 
+    void SemanticAnalyzer::visit(UnaryOpNode &node) {
+        node.getOperand()->accept(*this);
+        auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedOperand) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto intType = TypeFactory::getPrimitive("int");
+        if (!typedOperand->getType()->equals(*intType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE020]: Unary operator '~' requires 'int' operand, but got '" +
+                typedOperand->getType()->toString() + "'.",
+                node.getOperand()->getLocation());
+        }
+
+        auto resultType = intType;  // ~int -> int
+        auto typedUnary = std::make_shared<TypedUnaryOpNode>(
+            node.getOp(), typedOperand, resultType);
+        typedUnary->setLocation(node.getLocation());
+        lastNode = typedUnary;
+    }
+
     void SemanticAnalyzer::visit(BinaryOpNode &node) {
         node.getLeft()->accept(*this);
         auto typedLeft = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);

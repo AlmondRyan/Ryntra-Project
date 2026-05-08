@@ -15,6 +15,12 @@ namespace Ryntra::VM {
         Mul,            // Multiply
         Div,            // Divide
         Mod,            // Modulo
+        BitNot,         // Bitwise NOT (~)
+        BitAnd,         // Bitwise AND (&)
+        BitOr,          // Bitwise OR (|)
+        BitXor,         // Bitwise XOR (^)
+        Shl,            // Shift left (<<)
+        Shr,            // Shift right (>>)
         Pop,            // Pop value from stack
         Halt            // Stop execution
     };
