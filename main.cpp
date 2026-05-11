@@ -62,10 +62,10 @@ int main(int argc, char **argv) {
         } else {
             std::cout << "Semantic Analysis Passed." << std::endl;
             if (auto typedAST = analyzer.getTypedAST()) {
-                std::cout << "Typed AST:" << std::endl;
-                typedAST->dump();
-                std::cout << std::endl;
-                std::cout << "====================================================" << std::endl;
+                // std::cout << "Typed AST:" << std::endl;
+                // typedAST->dump();
+                // std::cout << std::endl;
+                // std::cout << "====================================================" << std::endl;
 
                 Ryntra::IR::IRGenerator irGen;
                 auto module = irGen.generate(*typedAST, "HelloWorld");

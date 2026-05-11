@@ -63,6 +63,11 @@ namespace Ryntra::Compiler::Semantic {
             TypeKind getKind() const override { return TypeKind::Int32; }
         };
 
+        class Int64Type : public Type {
+        public:
+            TypeKind getKind() const override { return TypeKind::Int64; }
+        };
+
         class StringType : public Type {
         public:
             TypeKind getKind() const override { return TypeKind::String; }

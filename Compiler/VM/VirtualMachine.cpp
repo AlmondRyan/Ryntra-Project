@@ -6,7 +6,7 @@ namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
         // Builtin table — index must match BytecodeGenerator::getBuiltinIndex
         builtins_ = {
-            // 0: __builtin_print
+            // 0: __builtin_print (generic, handles all types at runtime)
             [](const std::vector<VMValue>& args) -> VMValue {
                 if (!args.empty()) {
                     if (args[0].isString()) {
@@ -17,7 +17,23 @@ namespace Ryntra::VM {
                         }
                     } else if (args[0].isInt32()) {
                         std::cout << args[0].asInt32();
+                    } else if (args[0].isInt64()) {
+                        std::cout << args[0].asInt64();
                     }
+                }
+                return VMValue();
+            },
+            // 1: __builtin_print_i32 — prints int32
+            [](const std::vector<VMValue>& args) -> VMValue {
+                if (!args.empty() && args[0].isInt32()) {
+                    std::cout << args[0].asInt32();
+                }
+                return VMValue();
+            },
+            // 2: __builtin_print_i64 — prints int64
+            [](const std::vector<VMValue>& args) -> VMValue {
+                if (!args.empty() && args[0].isInt64()) {
+                    std::cout << args[0].asInt64();
                 }
                 return VMValue();
             },
@@ -99,60 +115,73 @@ namespace Ryntra::VM {
 
             case OpCode::Add: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() + b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() + b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() + b.asInt32()));
                 break;
             }
             case OpCode::Sub: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() - b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() - b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() - b.asInt32()));
                 break;
             }
             case OpCode::Mul: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() * b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() * b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() * b.asInt32()));
                 break;
             }
             case OpCode::Div: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32() && b.asInt32() != 0)
+                if (a.isInt64() && b.isInt64() && b.asInt64() != 0)
+                    push(VMValue(a.asInt64() / b.asInt64()));
+                else if (a.isInt32() && b.isInt32() && b.asInt32() != 0)
                     push(VMValue(a.asInt32() / b.asInt32()));
                 break;
             }
             case OpCode::Mod: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32() && b.asInt32() != 0)
+                if (a.isInt64() && b.isInt64() && b.asInt64() != 0)
+                    push(VMValue(a.asInt64() % b.asInt64()));
+                else if (a.isInt32() && b.isInt32() && b.asInt32() != 0)
                     push(VMValue(a.asInt32() % b.asInt32()));
                 break;
             }
 
             case OpCode::BitNot: {
                 auto a = pop();
-                if (a.isInt32()) push(VMValue(~a.asInt32()));
+                if (a.isInt64()) push(VMValue(~a.asInt64()));
+                else if (a.isInt32()) push(VMValue(~a.asInt32()));
                 break;
             }
             case OpCode::BitAnd: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() & b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() & b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() & b.asInt32()));
                 break;
             }
             case OpCode::BitOr: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() | b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() | b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() | b.asInt32()));
                 break;
             }
             case OpCode::BitXor: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() ^ b.asInt32()));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() ^ b.asInt64()));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() ^ b.asInt32()));
                 break;
             }
             case OpCode::Shl: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() << (b.asInt32() & 31)));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() << (b.asInt64() & 63)));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() << (b.asInt32() & 31)));
                 break;
             }
             case OpCode::Shr: {
                 auto b = pop(); auto a = pop();
-                if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() >> (b.asInt32() & 31)));
+                if (a.isInt64() && b.isInt64()) push(VMValue(a.asInt64() >> (b.asInt64() & 63)));
+                else if (a.isInt32() && b.isInt32()) push(VMValue(a.asInt32() >> (b.asInt32() & 31)));
                 break;
             }
 

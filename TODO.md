@@ -2,7 +2,7 @@
 - ✅ V0.0.2.1 `int` Variable Declaration
 - ✅ V0.0.2.2 `int` Variable Arithmetic Operation (w/ Modulation)
 - ✅ V0.0.2.3 `int` Variable Assignment and Compound Assignment
-- ❌ V0.0.2.4 `int` Variable Bitwise Operation (w/ lshift and rshift)
+- ✅ V0.0.2.4 `int` Variable Bitwise Operation (w/ lshift and rshift)
 - ❌ V0.0.3.1 `long` Variable Declaration
 - ❌ V0.0.3.2 `long` Variable Arithmetic Operation
 - ❌ V0.0.3.3 `long` Variable Bitwise Operation and Assignment

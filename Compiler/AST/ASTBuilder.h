@@ -19,6 +19,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *ctx);
         std::shared_ptr<StringLiteralNode> visitStringLiteral(antlr::RyntraParser::StringLiteralContext *ctx);
         std::shared_ptr<IntegerLiteralNode> visitIntegerLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
+        std::shared_ptr<LongLiteralNode> visitLongLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
         std::shared_ptr<BinaryOpNode> visitMulDivModExpression(antlr::RyntraParser::MulDivModExpressionContext *ctx);

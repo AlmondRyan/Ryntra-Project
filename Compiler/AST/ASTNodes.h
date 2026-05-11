@@ -63,6 +63,17 @@ namespace Ryntra::Compiler {
         int value;
     };
 
+    class LongLiteralNode : public ExpressionNode {
+    public:
+        LongLiteralNode(int64_t value) : value(value) {}
+        int64_t getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        int64_t value;
+    };
+
     class IdentifierNode : public ExpressionNode {
     public:
         IdentifierNode(const std::string &name) : name(name) {}

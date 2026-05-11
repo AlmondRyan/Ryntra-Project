@@ -8,6 +8,7 @@ namespace Ryntra::Compiler::Semantic {
     TypePtr SemanticAnalyzer::makeSTType(const std::string& name) {
         if (name == "void")   return std::make_shared<STType::VoidType>();
         if (name == "string") return std::make_shared<STType::StringType>();
+        if (name == "long")   return std::make_shared<STType::Int64Type>();
         // int / int32 both map to Int32
         return std::make_shared<STType::Int32Type>();
     }
@@ -18,6 +19,7 @@ namespace Ryntra::Compiler::Semantic {
             case STType::TypeKind::Void:   return TypeFactory::getVoid();
             case STType::TypeKind::String: return TypeFactory::getPrimitive("string");
             case STType::TypeKind::Int32:  return TypeFactory::getPrimitive("int");
+            case STType::TypeKind::Int64:  return TypeFactory::getPrimitive("long");
             default:                       return TypeFactory::getPrimitive("unknown");
         }
     }
@@ -46,12 +48,60 @@ namespace Ryntra::Compiler::Semantic {
                 func->getLocation());
         }
 
+        // Register __builtin_print with overloads for string, int, and long
+        if (!symbolTable.resolve("__builtin_print")) {
+            auto overloadSet = std::make_shared<OverloadSet>("__builtin_print");
+
+            // Overload 1: __builtin_print(string)
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::StringType>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            // Overload 2: __builtin_print(int) — already supported via builtin_print_i32
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::Int32Type>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            // Overload 3: __builtin_print(long)
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::Int64Type>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            symbolTable.define(overloadSet, SourceLocation{0, 0});
+        }
+
+        // Also register plain "print" for backward compatibility
         if (!symbolTable.resolve("print")) {
-            std::vector<TypePtr> params{ std::make_shared<STType::StringType>() };
-            symbolTable.define(
-                std::make_shared<FunctionSymbol>("print",
-                    std::make_shared<STType::VoidType>(), std::move(params)),
-                SourceLocation{0, 0});
+            auto overloadSet = std::make_shared<OverloadSet>("print");
+
+            // Overload 1: print(string)
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::StringType>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            // Overload 2: print(int) — already supported via builtin_print_i32
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::Int32Type>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            // Overload 3: print(long)
+            {
+                std::vector<TypePtr> params{ std::make_shared<STType::Int64Type>() };
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("print",
+                    std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            symbolTable.define(overloadSet, SourceLocation{0, 0});
         }
 
         auto mainSym = symbolTable.resolve("main");
@@ -68,7 +118,7 @@ namespace Ryntra::Compiler::Semantic {
                     "[RCE004]: 'main' function must have a return type.", node.getLocation());
             } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
                 ErrorHandler::getInstance().makeError(
-                    "[RCE004]: 'main' function must return 'void'. 'int main()' is not allowed.", node.getLocation());
+                    "[RCE004]: 'main' function must return 'void'.", node.getLocation());
             }
         }
 
@@ -169,6 +219,14 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(IntegerLiteralNode &node) {
         auto stType    = std::make_shared<STType::Int32Type>();
         auto typedNode = std::make_shared<TypedIntegerLiteralNode>(
+            node.getValue(), toTypedType(stType));
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(LongLiteralNode &node) {
+        auto stType    = std::make_shared<STType::Int64Type>();
+        auto typedNode = std::make_shared<TypedLongLiteralNode>(
             node.getValue(), toTypedType(stType));
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
@@ -341,9 +399,12 @@ namespace Ryntra::Compiler::Semantic {
             if (typedInit) {
                 auto expectedTyped = toTypedType(varType);
                 auto actualType = typedInit->getType();
-                if (!expectedTyped->equals(*actualType) && actualType->toString() != "unknown") {
+                // Allow implicit int → long widening promotion
+                bool isAssignable = expectedTyped->equals(*actualType) ||
+                    (actualType->toString() == "int" && expectedTyped->toString() == "long");
+                if (!isAssignable && actualType->toString() != "unknown") {
                     ErrorHandler::getInstance().makeError(
-                        "[RCE012]: Variable '" + varName + "' expects type '" +
+                        "[RCE013]: Variable '" + varName + "' expects type '" +
                         expectedTyped->toString() + "', but initializer has type '" +
                         actualType->toString() + "'.",
                         node.getLocation());
@@ -366,14 +427,14 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<Type> type;
         if (!sym) {
             ErrorHandler::getInstance().makeError(
-                "[RCE013]: Variable '" + varName + "' is not defined.",
+                "[RCE014]: Variable '" + varName + "' is not defined.",
                 node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
         } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
             type = toTypedType(varSym->getType());
         } else {
             ErrorHandler::getInstance().makeError(
-                "[RCE014]: '" + varName + "' is not a variable.",
+                "[RCE015]: '" + varName + "' is not a variable.",
                 node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
         }
@@ -392,14 +453,17 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto intType = TypeFactory::getPrimitive("int");
-        if (!typedOperand->getType()->equals(*intType)) {
+        auto longType = TypeFactory::getPrimitive("long");
+        bool isInt = typedOperand->getType()->equals(*intType);
+        bool isLong = typedOperand->getType()->equals(*longType);
+        if (!isInt && !isLong) {
             ErrorHandler::getInstance().makeError(
-                "[RCE020]: Unary operator '~' requires 'int' operand, but got '" +
+                "[RCE019]: Unary operator '~' requires 'int' or 'long' operand, but got '" +
                 typedOperand->getType()->toString() + "'.",
                 node.getOperand()->getLocation());
         }
 
-        auto resultType = intType;  // ~int -> int
+        auto resultType = isLong ? longType : intType;  // ~int -> int, ~long -> long
         auto typedUnary = std::make_shared<TypedUnaryOpNode>(
             node.getOp(), typedOperand, resultType);
         typedUnary->setLocation(node.getLocation());
@@ -419,23 +483,34 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
         bool leftIsInt = typedLeft->getType()->equals(*intType);
         bool rightIsInt = typedRight->getType()->equals(*intType);
+        bool leftIsLong = typedLeft->getType()->equals(*longType);
+        bool rightIsLong = typedRight->getType()->equals(*longType);
 
-        if (!leftIsInt) {
+        if (!leftIsInt && !leftIsLong) {
             ErrorHandler::getInstance().makeError(
-                "[RCE015]: Left operand of binary expression must be 'int', but got '" +
+                "[RCE016]: Left operand of binary expression must be 'int' or 'long', but got '" +
                 typedLeft->getType()->toString() + "'.",
                 node.getLeft()->getLocation());
         }
-        if (!rightIsInt) {
+        if (!rightIsInt && !rightIsLong) {
             ErrorHandler::getInstance().makeError(
-                "[RCE016]: Right operand of binary expression must be 'int', but got '" +
+                "[RCE017]: Right operand of binary expression must be 'int' or 'long', but got '" +
                 typedRight->getType()->toString() + "'.",
                 node.getRight()->getLocation());
         }
 
-        auto resultType = (leftIsInt && rightIsInt) ? intType : TypeFactory::getPrimitive("unknown");
+        // Result type: long if either operand is long, otherwise int
+        std::shared_ptr<Type> resultType;
+        if ((leftIsLong || rightIsLong) && (leftIsInt || leftIsLong) && (rightIsInt || rightIsLong)) {
+            resultType = longType;
+        } else if (leftIsInt && rightIsInt) {
+            resultType = intType;
+        } else {
+            resultType = TypeFactory::getPrimitive("unknown");
+        }
 
         auto typedBinOp = std::make_shared<TypedBinaryOpNode>(typedLeft, node.getOp(), typedRight, resultType);
         typedBinOp->setLocation(node.getLocation());
@@ -448,7 +523,7 @@ namespace Ryntra::Compiler::Semantic {
 
         if (!sym) {
             ErrorHandler::getInstance().makeError(
-                "[RCE017]: Variable '" + varName + "' is not defined.",
+                "[RCE014]: Variable '" + varName + "' is not defined.",
                 node.getLHS()->getLocation());
             lastNode = nullptr;
             return;
@@ -457,7 +532,7 @@ namespace Ryntra::Compiler::Semantic {
         auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
         if (!varSym) {
             ErrorHandler::getInstance().makeError(
-                "[RCE018]: '" + varName + "' is not a variable.",
+                "[RCE015]: '" + varName + "' is not a variable.",
                 node.getLHS()->getLocation());
             lastNode = nullptr;
             return;
@@ -474,14 +549,17 @@ namespace Ryntra::Compiler::Semantic {
         auto varType = toTypedType(varSym->getType());
         auto rhsType = typedRHS->getType();
 
-        if (!varType->equals(*rhsType) && rhsType->toString() != "unknown") {
+        // Allow implicit int → long widening promotion
+        bool isAssignable = varType->equals(*rhsType) ||
+            (rhsType->toString() == "int" && varType->toString() == "long");
+        if (!isAssignable && rhsType->toString() != "unknown") {
             ErrorHandler::getInstance().makeError(
-                "[RCE019]: Cannot assign value of type '" + rhsType->toString() +
+                "[RCE018]: Cannot assign value of type '" + rhsType->toString() +
                 "' to variable '" + varName + "' of type '" + varType->toString() + "'.",
                 node.getRHS()->getLocation());
         }
 
-        auto resultType = varType->equals(*rhsType) ? varType : TypeFactory::getPrimitive("unknown");
+        auto resultType = isAssignable ? varType : TypeFactory::getPrimitive("unknown");
         auto typedAssign = std::make_shared<TypedAssignmentNode>(varName, typedRHS, resultType);
         typedAssign->setLocation(node.getLocation());
         lastNode = typedAssign;

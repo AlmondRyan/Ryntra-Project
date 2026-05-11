@@ -54,6 +54,12 @@ namespace Ryntra::VM {
                 if (spacePos != std::string::npos) {
                     val = VMValue(std::stoi(repr.substr(spacePos + 1)));
                 }
+            } else if (imm->getType()->isInt64()) {
+                std::string repr = imm->toString();
+                auto spacePos = repr.find(' ');
+                if (spacePos != std::string::npos) {
+                    val = VMValue(static_cast<int64_t>(std::stoll(repr.substr(spacePos + 1))));
+                }
             }
             int32_t poolIdx = addConstant(val);
             currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
@@ -77,6 +83,8 @@ namespace Ryntra::VM {
                     VMValue val;
                     if (constant->getType()->isInt32()) {
                         val = VMValue(std::get<int32_t>(constant->getValue()));
+                    } else if (constant->getType()->isInt64()) {
+                        val = VMValue(std::get<int64_t>(constant->getValue()));
                     } else if (constant->getType()->isString()) {
                         val = VMValue(std::get<std::string>(constant->getValue()));
                     }
@@ -186,6 +194,8 @@ namespace Ryntra::VM {
     int32_t BytecodeGenerator::getBuiltinIndex(const std::string& name) {
         static const std::vector<std::string> builtinTable = {
             "__builtin_print",  // 0
+            "__builtin_print_i32",  // 1 (int32 print)
+            "__builtin_print_i64",  // 2 (int64 print)
         };
         for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
             if (name == builtinTable[i] ||

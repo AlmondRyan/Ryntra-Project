@@ -5,11 +5,12 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <cstdint>
 
 namespace Ryntra::IR {
     class Constant : public Value {
     public:
-        using ValueType = std::variant<int32_t, std::string>;
+        using ValueType = std::variant<int32_t, int64_t, std::string>;
 
         Constant(std::shared_ptr<Type> type, ValueType value, const std::string &name = "")
             : Value(type, name), value_(value) {}
@@ -24,6 +25,8 @@ namespace Ryntra::IR {
 
             if (std::holds_alternative<int32_t>(value_)) {
                 result += std::to_string(std::get<int32_t>(value_));
+            } else if (std::holds_alternative<int64_t>(value_)) {
+                result += std::to_string(std::get<int64_t>(value_));
             } else if (std::holds_alternative<std::string>(value_)) {
                 std::string strValue = std::get<std::string>(value_);
                 result += "\"" + escapeString(strValue) + "\"";
@@ -38,6 +41,10 @@ namespace Ryntra::IR {
 
         static std::shared_ptr<Constant> createStringConstant(const std::string &value, const std::string &name = "") {
             return std::make_shared<Constant>(Type::getStringType(), value, name);
+        }
+
+        static std::shared_ptr<Constant> createInt64Constant(int64_t value, const std::string &name = "") {
+            return std::make_shared<Constant>(Type::getInt64Type(), value, name);
         }
 
     private:

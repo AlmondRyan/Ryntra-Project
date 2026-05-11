@@ -85,6 +85,11 @@ namespace Ryntra::Compiler {
             return visitStringLiteral(strCtx);
         }
         if (auto *intCtx = dynamic_cast<Ryntra::antlr::RyntraParser::IntegerLiteralContext *>(ctx)) {
+            std::string text = intCtx->INTEGER_LITERAL()->getText();
+            // Check for 'L' or 'l' suffix → long literal
+            if (!text.empty() && (text.back() == 'L' || text.back() == 'l')) {
+                return visitLongLiteral(intCtx);
+            }
             return visitIntegerLiteral(intCtx);
         }
         return nullptr; // Should not happen if grammar is covered
@@ -127,6 +132,16 @@ namespace Ryntra::Compiler {
     std::shared_ptr<IntegerLiteralNode> ASTBuilder::visitIntegerLiteral(Ryntra::antlr::RyntraParser::IntegerLiteralContext *ctx) {
         int val = std::stoi(ctx->INTEGER_LITERAL()->getText());
         return createNode<IntegerLiteralNode>(ctx, val);
+    }
+
+    std::shared_ptr<LongLiteralNode> ASTBuilder::visitLongLiteral(Ryntra::antlr::RyntraParser::IntegerLiteralContext *ctx) {
+        std::string text = ctx->INTEGER_LITERAL()->getText();
+        // Strip the 'L' or 'l' suffix before parsing
+        if (!text.empty() && (text.back() == 'L' || text.back() == 'l')) {
+            text.pop_back();
+        }
+        int64_t val = std::stoll(text);
+        return createNode<LongLiteralNode>(ctx, val);
     }
 
     std::vector<std::shared_ptr<ExpressionNode>> ASTBuilder::visitArgumentList(Ryntra::antlr::RyntraParser::ArgumentListContext *ctx) {

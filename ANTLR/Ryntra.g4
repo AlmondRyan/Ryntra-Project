@@ -3,6 +3,7 @@ grammar Ryntra;
 // Keywords
 PUBLIC: 'public';
 INT: 'int';
+LONG: 'long';
 VOID: 'void';
 RETURN: 'return';
 
@@ -43,7 +44,7 @@ SHR_ASSIGN: '>>=';
 // Lexical Objects
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
-INTEGER_LITERAL: [0-9]+;
+INTEGER_LITERAL: [0-9]+ [Ll]?;
 WS: [ \t\r\n]+ -> skip;
 
 // Parser Rules
@@ -58,6 +59,7 @@ functionDefinition
 
 typeSpecifier
     : INT
+    | LONG
     | VOID
     ;
 

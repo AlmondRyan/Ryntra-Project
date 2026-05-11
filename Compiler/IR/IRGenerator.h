@@ -21,6 +21,7 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedReturnNode &node) override;
         void visit(Compiler::Semantic::TypedStringLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedIntegerLiteralNode &node) override;
+        void visit(Compiler::Semantic::TypedLongLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedIdentifierNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionCallNode &node) override;
         void visit(Compiler::Semantic::TypedVariableNode &node) override;

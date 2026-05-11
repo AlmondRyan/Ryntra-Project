@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <cstdint>
 
 namespace Ryntra::Compiler::Semantic {
 
@@ -17,6 +18,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedBlockNode;
     class TypedStringLiteralNode;
     class TypedIntegerLiteralNode;
+    class TypedLongLiteralNode;
     class TypedIdentifierNode;
     class TypedFunctionCallNode;
     class TypedExpressionStatementNode;
@@ -37,6 +39,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
         virtual void visit(TypedIntegerLiteralNode &node) = 0;
+        virtual void visit(TypedLongLiteralNode &node) = 0;
         virtual void visit(TypedIdentifierNode &node) = 0;
         virtual void visit(TypedFunctionCallNode &node) = 0;
         virtual void visit(TypedVariableNode &node) = 0;
@@ -108,6 +111,23 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         int value;
+    };
+
+    class TypedLongLiteralNode : public TypedExpressionNode {
+    public:
+        TypedLongLiteralNode(int64_t value, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), value(value) {}
+
+        int64_t getValue() const { return value; }
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedLongLiteral(" + std::to_string(value) + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        int64_t value;
     };
 
     class TypedIdentifierNode : public TypedExpressionNode {

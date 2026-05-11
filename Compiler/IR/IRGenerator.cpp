@@ -25,6 +25,8 @@ namespace Ryntra::IR {
             const auto &name = static_cast<const Sem::PrimitiveType &>(*semType).getName();
             if (name == "i32" || name == "int")
                 return Type::getInt32Type();
+            if (name == "i64" || name == "long")
+                return Type::getInt64Type();
             if (name == "string" || name == "str")
                 return Type::getStringType();
             return Type::getInt32Type();
@@ -107,6 +109,12 @@ namespace Ryntra::IR {
             std::to_string(node.getValue()));
     }
 
+    void IRGenerator::visit(Sem::TypedLongLiteralNode &node) {
+        lastValue_ = std::make_shared<ImmediateValue>(
+            Type::getInt64Type(),
+            std::to_string(node.getValue()));
+    }
+
     void IRGenerator::visit(Sem::TypedIdentifierNode &node) {
         auto it = functionMap_.find(node.getName());
         if (it != functionMap_.end()) {
@@ -134,6 +142,8 @@ namespace Ryntra::IR {
             auto argType = argValues[0]->getType();
             if (argType->isInt32())
                 suffix = "i32";
+            else if (argType->isInt64())
+                suffix = "i64";
             else if (argType->isString())
                 suffix = "string";
             actualName = calleeName + "_" + suffix;
@@ -219,6 +229,22 @@ namespace Ryntra::IR {
         if (!lhs || !rhs) {
             lastValue_ = nullptr;
             return;
+        }
+
+        // Type promotion: if one operand is i64 and the other is an i32 ImmediateValue,
+        // promote the i32 to i64 so createBinaryOp's type check passes
+        if (!lhs->getType()->isEqual(rhs->getType().get())) {
+            if (lhs->getType()->isInt64() && rhs->getType()->isInt32()) {
+                if (auto rhsImm = std::dynamic_pointer_cast<ImmediateValue>(rhs)) {
+                    rhs = std::make_shared<ImmediateValue>(
+                        Type::getInt64Type(), rhsImm->getLiteralValue());
+                }
+            } else if (lhs->getType()->isInt32() && rhs->getType()->isInt64()) {
+                if (auto lhsImm = std::dynamic_pointer_cast<ImmediateValue>(lhs)) {
+                    lhs = std::make_shared<ImmediateValue>(
+                        Type::getInt64Type(), lhsImm->getLiteralValue());
+                }
+            }
         }
 
         Instruction::Opcode irOp;

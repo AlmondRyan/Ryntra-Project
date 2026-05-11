@@ -32,6 +32,16 @@ namespace Ryntra::Compiler {
         return "(IntegerLiteral " + std::to_string(value) + ")";
     }
 
+    void LongLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<LongLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string LongLiteralNode::toString() const {
+        return "(LongLiteral " + std::to_string(value) + ")";
+    }
+
     void IdentifierNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<IdentifierNode> *>(&visitor)) {
             v->visit(*this);

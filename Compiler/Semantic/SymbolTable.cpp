@@ -13,6 +13,7 @@ namespace Ryntra::Compiler::Semantic {
 
         auto voidType = std::make_shared<STType::VoidType>();
         auto int32Type = std::make_shared<STType::Int32Type>();
+        auto int64Type = std::make_shared<STType::Int64Type>();
         auto stringType = std::make_shared<STType::StringType>();
 
         auto overloadSet = std::make_shared<OverloadSet>("__builtin_print");
@@ -25,6 +26,12 @@ namespace Ryntra::Compiler::Semantic {
         {
             std::vector<TypePtr> params;
             params.push_back(int32Type);
+            overloadSet->addFunction(
+                std::make_shared<FunctionSymbol>("__builtin_print", voidType, std::move(params)));
+        }
+        {
+            std::vector<TypePtr> params;
+            params.push_back(int64Type);
             overloadSet->addFunction(
                 std::make_shared<FunctionSymbol>("__builtin_print", voidType, std::move(params)));
         }
