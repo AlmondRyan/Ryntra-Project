@@ -13,4 +13,5 @@ VariableNode
 VariableDeclarationNode
 BinaryOpNode
 UnaryOpNode
+CastNode
 AssignmentNode

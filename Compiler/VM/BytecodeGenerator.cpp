@@ -133,6 +133,22 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::SExt: {
+            for (const auto& op : operands) {
+                pushOperandValue(op);
+            }
+            currentFunction_->addInstruction(OpCode::SExt);
+            break;
+        }
+
+        case IR::Instruction::Opcode::Trunc: {
+            for (const auto& op : operands) {
+                pushOperandValue(op);
+            }
+            currentFunction_->addInstruction(OpCode::Trunc);
+            break;
+        }
+
         case IR::Instruction::Opcode::BitNot: {
             // Unary: push the single operand
             for (const auto& op : operands) {

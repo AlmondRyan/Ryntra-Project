@@ -27,6 +27,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedVariableDeclarationNode;
     class TypedBinaryOpNode;
     class TypedUnaryOpNode;
+    class TypedCastNode;
     class TypedAssignmentNode;
 
     class ITypedVisitor {
@@ -46,6 +47,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedVariableDeclarationNode &node) = 0;
         virtual void visit(TypedBinaryOpNode &node) = 0;
         virtual void visit(TypedUnaryOpNode &node) = 0;
+        virtual void visit(TypedCastNode &node) = 0;
         virtual void visit(TypedAssignmentNode &node) = 0;
     };
 
@@ -323,6 +325,27 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         UnaryOpType op;
+        std::shared_ptr<TypedExpressionNode> operand;
+    };
+
+    class TypedCastNode : public TypedExpressionNode {
+    public:
+        TypedCastNode(std::shared_ptr<TypedExpressionNode> operand, std::shared_ptr<Type> targetType)
+            : TypedExpressionNode(std::move(targetType)), operand(std::move(operand)) {}
+
+        std::shared_ptr<TypedExpressionNode> getOperand() const { return operand; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedCast: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Operand:" << std::endl;
+            operand->dump(indent + 2);
+        }
+
+    private:
         std::shared_ptr<TypedExpressionNode> operand;
     };
 

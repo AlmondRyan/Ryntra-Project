@@ -193,6 +193,16 @@ namespace Ryntra::Compiler {
         return "(UnaryOp " + opStr + " " + operand->toString() + ")";
     }
 
+    void CastNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<CastNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string CastNode::toString() const {
+        return "(Cast " + targetType->toString() + " " + operand->toString() + ")";
+    }
+
     void AssignmentNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
             v->visit(*this);

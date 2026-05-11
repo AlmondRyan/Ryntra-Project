@@ -1,12 +1,16 @@
+Something will do afterward:
+- Add `--strict` (`-s`) command argument, will make RCW002 (etc.) as an error.
+
 - ✅ V0.0.1 Hello World
 - ✅ V0.0.2.1 `int` Variable Declaration
 - ✅ V0.0.2.2 `int` Variable Arithmetic Operation (w/ Modulation)
 - ✅ V0.0.2.3 `int` Variable Assignment and Compound Assignment
 - ✅ V0.0.2.4 `int` Variable Bitwise Operation (w/ lshift and rshift)
-- ❌ V0.0.3.1 `long` Variable Declaration
-- ❌ V0.0.3.2 `long` Variable Arithmetic Operation
-- ❌ V0.0.3.3 `long` Variable Bitwise Operation and Assignment
-- ❌ V0.0.3.4 Operations and Casting between `int` and `long`.
+- ✅ V0.0.3.1 `long` Variable Declaration
+- ✅ V0.0.3.2 `long` Variable Arithmetic Operation
+- ✅ V0.0.3.3 `long` Variable Bitwise Operation and Assignment
+- ✅ V0.0.3.4 Operations and Casting between `int` and `long`.
+- ❌ V0.0.3.5 `__builtin_scan()` Function
 - ❌ V0.0.4.1 `bool` Variable Declaration and Assignment
 - ❌ V0.0.4.2 Comparison Operators
 - ❌ V0.0.4.3 `if` Blocks

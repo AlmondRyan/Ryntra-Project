@@ -47,8 +47,16 @@ namespace Ryntra::IR {
                                                        int32_t value);
 
         std::shared_ptr<Instruction> createUnaryOp(Instruction::Opcode opcode,
-                                                    const std::string &name,
-                                                    std::shared_ptr<Value> operand);
+                                                     const std::string &name,
+                                                     std::shared_ptr<Value> operand);
+
+        std::shared_ptr<Instruction> createSExt(const std::string &name,
+                                                  std::shared_ptr<Value> operand,
+                                                  std::shared_ptr<Type> targetType);
+
+        std::shared_ptr<Instruction> createTrunc(const std::string &name,
+                                                   std::shared_ptr<Value> operand,
+                                                   std::shared_ptr<Type> targetType);
 
         std::shared_ptr<Instruction> createBinaryOp(Instruction::Opcode opcode,
                                                      const std::string &name,

@@ -233,6 +233,20 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> operand;
     };
 
+    class CastNode : public ExpressionNode {
+    public:
+        CastNode(std::shared_ptr<TypeSpecifierNode> targetType, std::shared_ptr<ExpressionNode> operand)
+            : targetType(std::move(targetType)), operand(std::move(operand)) {}
+        std::shared_ptr<TypeSpecifierNode> getTargetType() const { return targetType; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> targetType;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
     class AssignmentNode : public ExpressionNode {
     public:
         AssignmentNode(std::shared_ptr<IdentifierNode> lhs, std::shared_ptr<ExpressionNode> rhs)

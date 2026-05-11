@@ -185,6 +185,26 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::SExt: {
+                auto a = pop();
+                if (a.isInt32()) {
+                    push(VMValue(static_cast<int64_t>(a.asInt32())));
+                } else {
+                    push(a);
+                }
+                break;
+            }
+
+            case OpCode::Trunc: {
+                auto a = pop();
+                if (a.isInt64()) {
+                    push(VMValue(static_cast<int32_t>(a.asInt64())));
+                } else {
+                    push(a);
+                }
+                break;
+            }
+
             case OpCode::Pop:
                 if (!stack_.empty()) pop();
                 break;

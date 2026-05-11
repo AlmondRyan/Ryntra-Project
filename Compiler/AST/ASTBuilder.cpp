@@ -69,6 +69,9 @@ namespace Ryntra::Compiler {
         if (auto *bitOrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitOrExpressionContext *>(ctx)) {
             return visitBitOrExpression(bitOrCtx);
         }
+        if (auto *castCtx = dynamic_cast<Ryntra::antlr::RyntraParser::CastExpressionContext *>(ctx)) {
+            return visitCastExpression(castCtx);
+        }
         if (auto *unaryCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryExpressionContext *>(ctx)) {
             return visitUnaryExpression(unaryCtx);
         }
@@ -220,6 +223,12 @@ namespace Ryntra::Compiler {
         auto left = visitExpression(ctx->left);
         auto right = visitExpression(ctx->right);
         return createNode<BinaryOpNode>(ctx, std::move(left), BinaryOpType::BitOr, std::move(right));
+    }
+
+    std::shared_ptr<CastNode> ASTBuilder::visitCastExpression(Ryntra::antlr::RyntraParser::CastExpressionContext *ctx) {
+        auto targetType = visitTypeSpecifier(ctx->typeSpecifier());
+        auto operand = visitExpression(ctx->expression());
+        return createNode<CastNode>(ctx, std::move(targetType), std::move(operand));
     }
 
     std::shared_ptr<AssignmentNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {

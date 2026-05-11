@@ -202,6 +202,44 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createSExt(const std::string &name,
+                                                        std::shared_ptr<Value> operand,
+                                                        std::shared_ptr<Type> targetType) {
+        if (!operand || !targetType) return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {operand};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::SExt,
+            targetType,
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createTrunc(const std::string &name,
+                                                         std::shared_ptr<Value> operand,
+                                                         std::shared_ptr<Type> targetType) {
+        if (!operand || !targetType) return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {operand};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Trunc,
+            targetType,
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
     void IRBuilder::setInsertPoint(std::shared_ptr<BasicBlock> block) {
         currentBlock_ = block;
     }

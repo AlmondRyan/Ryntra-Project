@@ -200,6 +200,17 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(ExpressionStatementNode &node) {
         node.getExpression()->accept(*this);
         if (auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode)) {
+            // RCW001: Warn if the result of a non-void expression is discarded (skip assignments)
+            auto exprType = typedExpr->getType();
+            if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
+                auto rawExpr = node.getExpression();
+                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr)) {
+                    ErrorHandler::getInstance().makeWarning(
+                        "[RCW001]: Result will be discarded.",
+                        node.getLocation());
+                }
+            }
+
             auto typedStmt = std::make_shared<TypedExpressionStatementNode>(typedExpr);
             typedStmt->setLocation(node.getLocation());
             lastNode = typedStmt;
@@ -515,6 +526,54 @@ namespace Ryntra::Compiler::Semantic {
         auto typedBinOp = std::make_shared<TypedBinaryOpNode>(typedLeft, node.getOp(), typedRight, resultType);
         typedBinOp->setLocation(node.getLocation());
         lastNode = typedBinOp;
+    }
+
+    void SemanticAnalyzer::visit(CastNode &node) {
+        node.getOperand()->accept(*this);
+        auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedOperand) {
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getTargetType()->accept(*this);
+        auto targetSTType = lastType;
+        if (!targetSTType) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto targetTyped = toTypedType(targetSTType);
+        auto operandType = typedOperand->getType();
+
+        auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
+
+        bool castValid = false;
+        if (operandType->equals(*intType) && targetTyped->equals(*longType))
+            castValid = true;
+        else if (operandType->equals(*longType) && targetTyped->equals(*intType))
+            castValid = true;
+        else if (operandType->equals(*targetTyped))
+            castValid = true;
+
+        if (!castValid && operandType->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE020]: Cannot cast from '" + operandType->toString() +
+                "' to '" + targetTyped->toString() + "'.",
+                node.getLocation());
+        }
+
+        // RCW002: Warn when casting from a larger type to a smaller type (truncation)
+        if (operandType->equals(*longType) && targetTyped->equals(*intType)) {
+            ErrorHandler::getInstance().makeWarning(
+                "[RCW002]: Result of this casting operation will be truncated.",
+                node.getLocation());
+        }
+
+        auto typedCast = std::make_shared<TypedCastNode>(typedOperand, targetTyped);
+        typedCast->setLocation(node.getLocation());
+        lastNode = typedCast;
     }
 
     void SemanticAnalyzer::visit(AssignmentNode &node) {

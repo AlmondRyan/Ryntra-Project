@@ -82,7 +82,8 @@ returnStatement
     ;
 
 expression
-    : LPAREN expression RPAREN                                      # ParenthesizedExpression
+    : LPAREN typeSpecifier RPAREN expression                        # CastExpression
+    | LPAREN expression RPAREN                                      # ParenthesizedExpression
     | BIT_NOT expression                                            # UnaryExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
     | left=expression op=(PLUS|MINUS) right=expression               # PlusMinusExpression

@@ -21,6 +21,8 @@ namespace Ryntra::VM {
         BitXor,         // Bitwise XOR (^)
         Shl,            // Shift left (<<)
         Shr,            // Shift right (>>)
+        SExt,           // Sign extend i32 → i64
+        Trunc,          // Truncate i64 → i32
         Pop,            // Pop value from stack
         Halt            // Stop execution
     };

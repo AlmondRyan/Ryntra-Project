@@ -22,7 +22,9 @@ namespace Ryntra::IR {
             BitOr,      // |
             BitXor,     // ^
             Shl,        // <<
-            Shr         // >>
+            Shr,        // >>
+            SExt,       // sign extend i32 → i64
+            Trunc       // truncate i64 → i32
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -114,6 +116,20 @@ namespace Ryntra::IR {
 
             case Opcode::BitNot: {
                 result += "bitnot ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::SExt: {
+                result += "sext ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Trunc: {
+                result += "trunc ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
                 break;

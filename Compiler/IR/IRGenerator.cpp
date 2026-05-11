@@ -265,6 +265,38 @@ namespace Ryntra::IR {
         lastValue_ = result;
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedCastNode &node) {
+        node.getOperand()->accept(*this);
+        auto operand = lastValue_;
+        if (!operand) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto targetIRType = toIRType(node.getType());
+        auto operandIRType = operand->getType();
+
+        // Materialize ImmediateValue into a Constant instruction first if needed,
+        // so we have a proper SSA value to cast
+        std::shared_ptr<Value> castOperand = operand;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(operand)) {
+            auto constInst = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+            castOperand = constInst;
+        }
+
+        if (operandIRType->isInt32() && targetIRType->isInt64()) {
+            lastValue_ = builder_.createSExt(
+                builder_.generateUniqueName(""), castOperand, targetIRType);
+        } else if (operandIRType->isInt64() && targetIRType->isInt32()) {
+            lastValue_ = builder_.createTrunc(
+                builder_.generateUniqueName(""), castOperand, targetIRType);
+        } else {
+            // Same type — no-op, just forward
+            lastValue_ = castOperand;
+        }
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {
         node.getRHS()->accept(*this);
         if (lastValue_) {
