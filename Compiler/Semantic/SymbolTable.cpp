@@ -59,19 +59,19 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError("[RCE016]: No scope to define symbol", location);
             return;
         }
-        auto& currentScope = scopes.back();
+        auto &currentScope = scopes.back();
         if (currentScope->find(symbol->getName()) != nullptr) {
-             ErrorHandler::getInstance().makeError("[RCE017]: Symbol '" + symbol->getName() + "' is already defined in the current scope.", location);
-             return;
+            ErrorHandler::getInstance().makeError("[RCE017]: Symbol '" + symbol->getName() + "' is already defined in the current scope.", location);
+            return;
         }
         currentScope->symbols[symbol->getName()] = std::move(symbol);
     }
 
-    std::shared_ptr<Symbol> SymbolTable::resolve(const std::string& name) {
+    std::shared_ptr<Symbol> SymbolTable::resolve(const std::string &name) {
         if (scopes.empty()) {
             return nullptr;
         }
         return scopes.back()->find(name);
     }
 
-}
+} // namespace Ryntra::Compiler::Semantic

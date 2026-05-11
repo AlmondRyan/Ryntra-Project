@@ -75,7 +75,8 @@ namespace Ryntra::IR {
                                                            std::shared_ptr<Type> type,
                                                            std::shared_ptr<Value> value) {
         std::vector<std::shared_ptr<Value>> operands;
-        if (value) operands.push_back(value);
+        if (value)
+            operands.push_back(value);
 
         auto instruction = std::make_shared<Instruction>(
             Instruction::Opcode::Constant,
@@ -154,8 +155,8 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createUnaryOp(Instruction::Opcode opcode,
-                                                           const std::string &name,
-                                                           std::shared_ptr<Value> operand) {
+                                                          const std::string &name,
+                                                          std::shared_ptr<Value> operand) {
         if (!operand) {
             return nullptr;
         }
@@ -203,9 +204,10 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createSExt(const std::string &name,
-                                                        std::shared_ptr<Value> operand,
-                                                        std::shared_ptr<Type> targetType) {
-        if (!operand || !targetType) return nullptr;
+                                                       std::shared_ptr<Value> operand,
+                                                       std::shared_ptr<Type> targetType) {
+        if (!operand || !targetType)
+            return nullptr;
 
         std::vector<std::shared_ptr<Value>> operands = {operand};
         auto instruction = std::make_shared<Instruction>(
@@ -222,9 +224,10 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createTrunc(const std::string &name,
-                                                         std::shared_ptr<Value> operand,
-                                                         std::shared_ptr<Type> targetType) {
-        if (!operand || !targetType) return nullptr;
+                                                        std::shared_ptr<Value> operand,
+                                                        std::shared_ptr<Type> targetType) {
+        if (!operand || !targetType)
+            return nullptr;
 
         std::vector<std::shared_ptr<Value>> operands = {operand};
         auto instruction = std::make_shared<Instruction>(

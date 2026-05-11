@@ -117,13 +117,33 @@ namespace Ryntra::Compiler {
         for (size_t i = 0; i < inner.size(); ++i) {
             if (inner[i] == '\\' && i + 1 < inner.size()) {
                 switch (inner[i + 1]) {
-                case 'n':  val += '\n'; ++i; break;
-                case 't':  val += '\t'; ++i; break;
-                case 'r':  val += '\r'; ++i; break;
-                case '0':  val += '\0'; ++i; break;
-                case '\\': val += '\\'; ++i; break;
-                case '"':  val += '"';  ++i; break;
-                default:   val += inner[i]; break;
+                case 'n':
+                    val += '\n';
+                    ++i;
+                    break;
+                case 't':
+                    val += '\t';
+                    ++i;
+                    break;
+                case 'r':
+                    val += '\r';
+                    ++i;
+                    break;
+                case '0':
+                    val += '\0';
+                    ++i;
+                    break;
+                case '\\':
+                    val += '\\';
+                    ++i;
+                    break;
+                case '"':
+                    val += '"';
+                    ++i;
+                    break;
+                default:
+                    val += inner[i];
+                    break;
                 }
             } else {
                 val += inner[i];
@@ -175,10 +195,14 @@ namespace Ryntra::Compiler {
         auto right = visitExpression(ctx->right);
 
         BinaryOpType op;
-        if (ctx->MUL()) op = BinaryOpType::Mul;
-        else if (ctx->DIV()) op = BinaryOpType::Div;
-        else if (ctx->MOD()) op = BinaryOpType::Mod;
-        else op = BinaryOpType::Mul;
+        if (ctx->MUL())
+            op = BinaryOpType::Mul;
+        else if (ctx->DIV())
+            op = BinaryOpType::Div;
+        else if (ctx->MOD())
+            op = BinaryOpType::Mod;
+        else
+            op = BinaryOpType::Mul;
 
         return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
     }
@@ -188,9 +212,12 @@ namespace Ryntra::Compiler {
         auto right = visitExpression(ctx->right);
 
         BinaryOpType op;
-        if (ctx->PLUS()) op = BinaryOpType::Add;
-        else if (ctx->MINUS()) op = BinaryOpType::Sub;
-        else op = BinaryOpType::Add;
+        if (ctx->PLUS())
+            op = BinaryOpType::Add;
+        else if (ctx->MINUS())
+            op = BinaryOpType::Sub;
+        else
+            op = BinaryOpType::Add;
 
         return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
     }
@@ -246,17 +273,28 @@ namespace Ryntra::Compiler {
         }
 
         BinaryOpType binOp;
-        if (ctx->ADD_ASSIGN()) binOp = BinaryOpType::Add;
-        else if (ctx->SUB_ASSIGN()) binOp = BinaryOpType::Sub;
-        else if (ctx->MUL_ASSIGN()) binOp = BinaryOpType::Mul;
-        else if (ctx->DIV_ASSIGN()) binOp = BinaryOpType::Div;
-        else if (ctx->MOD_ASSIGN()) binOp = BinaryOpType::Mod;
-        else if (ctx->AND_ASSIGN()) binOp = BinaryOpType::BitAnd;
-        else if (ctx->OR_ASSIGN()) binOp = BinaryOpType::BitOr;
-        else if (ctx->XOR_ASSIGN()) binOp = BinaryOpType::BitXor;
-        else if (ctx->SHL_ASSIGN()) binOp = BinaryOpType::Shl;
-        else if (ctx->SHR_ASSIGN()) binOp = BinaryOpType::Shr;
-        else return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+        if (ctx->ADD_ASSIGN())
+            binOp = BinaryOpType::Add;
+        else if (ctx->SUB_ASSIGN())
+            binOp = BinaryOpType::Sub;
+        else if (ctx->MUL_ASSIGN())
+            binOp = BinaryOpType::Mul;
+        else if (ctx->DIV_ASSIGN())
+            binOp = BinaryOpType::Div;
+        else if (ctx->MOD_ASSIGN())
+            binOp = BinaryOpType::Mod;
+        else if (ctx->AND_ASSIGN())
+            binOp = BinaryOpType::BitAnd;
+        else if (ctx->OR_ASSIGN())
+            binOp = BinaryOpType::BitOr;
+        else if (ctx->XOR_ASSIGN())
+            binOp = BinaryOpType::BitXor;
+        else if (ctx->SHL_ASSIGN())
+            binOp = BinaryOpType::Shl;
+        else if (ctx->SHR_ASSIGN())
+            binOp = BinaryOpType::Shr;
+        else
+            return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
 
         auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));
         varRef->setLocation(lhsName->getLocation());

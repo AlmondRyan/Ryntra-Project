@@ -1,5 +1,6 @@
 import sys
 
+
 def main():
     if (len(sys.argv) != 2):
         print("Usage: GenAllNodesVisitor.py <outputFile>")
@@ -42,6 +43,7 @@ virtual ~AllNodesVisitor() = default;
 
     with open(outputPath, 'w', encoding='utf-8') as out_file:
         out_file.write(code)
+
 
 if __name__ == '__main__':
     main()

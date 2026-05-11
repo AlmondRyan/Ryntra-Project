@@ -216,7 +216,7 @@ namespace Ryntra::Compiler {
     };
 
     enum class UnaryOpType : uint8_t {
-        BitNot  // ~
+        BitNot // ~
     };
 
     class UnaryOpNode : public ExpressionNode {

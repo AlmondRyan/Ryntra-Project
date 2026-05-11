@@ -2,10 +2,10 @@
 
 #include "Type.h"
 #include "Value.h"
-#include <string>
-#include <memory>
-#include <variant>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <variant>
 
 namespace Ryntra::IR {
     class Constant : public Value {

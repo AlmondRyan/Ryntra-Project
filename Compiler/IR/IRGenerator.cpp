@@ -1,6 +1,6 @@
 #include "IRGenerator.h"
-#include "ImmediateValue.h"
 #include "Compiler/Semantic/TypeSystem.h"
+#include "ImmediateValue.h"
 
 namespace Ryntra::IR {
     namespace Sem = Compiler::Semantic;
@@ -8,14 +8,15 @@ namespace Ryntra::IR {
     IRGenerator::IRGenerator() = default;
 
     std::shared_ptr<Module> IRGenerator::generate(Sem::TypedProgramNode &program,
-                                                   const std::string &moduleName) {
+                                                  const std::string &moduleName) {
         builder_.createModule(moduleName);
         program.accept(*this);
         return builder_.getModule();
     }
 
     std::shared_ptr<Type> IRGenerator::toIRType(const std::shared_ptr<Sem::Type> &semType) {
-        if (!semType) return Type::getVoidType();
+        if (!semType)
+            return Type::getVoidType();
 
         switch (semType->getKind()) {
         case Sem::TypeKind::VOID:
@@ -60,7 +61,8 @@ namespace Ryntra::IR {
 
     void IRGenerator::visit(Sem::TypedFunctionDefinitionNode &node) {
         auto irFunc = functionMap_[node.getName()];
-        if (!irFunc) return;
+        if (!irFunc)
+            return;
 
         auto entry = builder_.createBasicBlock("entry");
         irFunc->addBasicBlock(entry);
@@ -132,7 +134,8 @@ namespace Ryntra::IR {
         std::vector<std::shared_ptr<Value>> argValues;
         for (const auto &arg : node.getArguments()) {
             arg->accept(*this);
-            if (lastValue_) argValues.push_back(lastValue_);
+            if (lastValue_)
+                argValues.push_back(lastValue_);
         }
 
         // Mangle __builtin_ function names based on argument types (or return type for no-arg builtins)
@@ -220,7 +223,9 @@ namespace Ryntra::IR {
 
         Instruction::Opcode irOp;
         switch (node.getOp()) {
-        case Compiler::UnaryOpType::BitNot: irOp = Instruction::Opcode::BitNot; break;
+        case Compiler::UnaryOpType::BitNot:
+            irOp = Instruction::Opcode::BitNot;
+            break;
         default:
             lastValue_ = nullptr;
             return;
@@ -260,16 +265,36 @@ namespace Ryntra::IR {
 
         Instruction::Opcode irOp;
         switch (node.getOp()) {
-        case Compiler::BinaryOpType::Add: irOp = Instruction::Opcode::Add; break;
-        case Compiler::BinaryOpType::Sub: irOp = Instruction::Opcode::Sub; break;
-        case Compiler::BinaryOpType::Mul: irOp = Instruction::Opcode::Mul; break;
-        case Compiler::BinaryOpType::Div: irOp = Instruction::Opcode::Div; break;
-        case Compiler::BinaryOpType::Mod: irOp = Instruction::Opcode::Mod; break;
-        case Compiler::BinaryOpType::BitAnd: irOp = Instruction::Opcode::BitAnd; break;
-        case Compiler::BinaryOpType::BitOr: irOp = Instruction::Opcode::BitOr; break;
-        case Compiler::BinaryOpType::BitXor: irOp = Instruction::Opcode::BitXor; break;
-        case Compiler::BinaryOpType::Shl: irOp = Instruction::Opcode::Shl; break;
-        case Compiler::BinaryOpType::Shr: irOp = Instruction::Opcode::Shr; break;
+        case Compiler::BinaryOpType::Add:
+            irOp = Instruction::Opcode::Add;
+            break;
+        case Compiler::BinaryOpType::Sub:
+            irOp = Instruction::Opcode::Sub;
+            break;
+        case Compiler::BinaryOpType::Mul:
+            irOp = Instruction::Opcode::Mul;
+            break;
+        case Compiler::BinaryOpType::Div:
+            irOp = Instruction::Opcode::Div;
+            break;
+        case Compiler::BinaryOpType::Mod:
+            irOp = Instruction::Opcode::Mod;
+            break;
+        case Compiler::BinaryOpType::BitAnd:
+            irOp = Instruction::Opcode::BitAnd;
+            break;
+        case Compiler::BinaryOpType::BitOr:
+            irOp = Instruction::Opcode::BitOr;
+            break;
+        case Compiler::BinaryOpType::BitXor:
+            irOp = Instruction::Opcode::BitXor;
+            break;
+        case Compiler::BinaryOpType::Shl:
+            irOp = Instruction::Opcode::Shl;
+            break;
+        case Compiler::BinaryOpType::Shr:
+            irOp = Instruction::Opcode::Shr;
+            break;
         }
 
         auto result = builder_.createBinaryOp(irOp, builder_.generateUniqueName(""), lhs, rhs);

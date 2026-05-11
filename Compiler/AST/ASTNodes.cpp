@@ -165,16 +165,36 @@ namespace Ryntra::Compiler {
     std::string BinaryOpNode::toString() const {
         std::string opStr;
         switch (op) {
-        case BinaryOpType::Add: opStr = "+"; break;
-        case BinaryOpType::Sub: opStr = "-"; break;
-        case BinaryOpType::Mul: opStr = "*"; break;
-        case BinaryOpType::Div: opStr = "/"; break;
-        case BinaryOpType::Mod: opStr = "%"; break;
-        case BinaryOpType::BitAnd: opStr = "&"; break;
-        case BinaryOpType::BitOr:  opStr = "|"; break;
-        case BinaryOpType::BitXor: opStr = "^"; break;
-        case BinaryOpType::Shl:    opStr = "<<"; break;
-        case BinaryOpType::Shr:    opStr = ">>"; break;
+        case BinaryOpType::Add:
+            opStr = "+";
+            break;
+        case BinaryOpType::Sub:
+            opStr = "-";
+            break;
+        case BinaryOpType::Mul:
+            opStr = "*";
+            break;
+        case BinaryOpType::Div:
+            opStr = "/";
+            break;
+        case BinaryOpType::Mod:
+            opStr = "%";
+            break;
+        case BinaryOpType::BitAnd:
+            opStr = "&";
+            break;
+        case BinaryOpType::BitOr:
+            opStr = "|";
+            break;
+        case BinaryOpType::BitXor:
+            opStr = "^";
+            break;
+        case BinaryOpType::Shl:
+            opStr = "<<";
+            break;
+        case BinaryOpType::Shr:
+            opStr = ">>";
+            break;
         }
         return "(BinaryOp " + left->toString() + " " + opStr + " " + right->toString() + ")";
     }
@@ -188,7 +208,9 @@ namespace Ryntra::Compiler {
     std::string UnaryOpNode::toString() const {
         std::string opStr;
         switch (op) {
-        case UnaryOpType::BitNot: opStr = "~"; break;
+        case UnaryOpType::BitNot:
+            opStr = "~";
+            break;
         }
         return "(UnaryOp " + opStr + " " + operand->toString() + ")";
     }

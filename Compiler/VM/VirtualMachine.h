@@ -1,28 +1,28 @@
 #pragma once
 
-#include "VMValue.h"
 #include "Bytecode.h"
-#include <vector>
-#include <unordered_map>
-#include <memory>
+#include "VMValue.h"
 #include <functional>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 namespace Ryntra::VM {
-    using NativeFunction = std::function<VMValue(const std::vector<VMValue>&)>;
+    using NativeFunction = std::function<VMValue(const std::vector<VMValue> &)>;
 
     class VirtualMachine {
     public:
         VirtualMachine();
 
-        void load(const std::vector<std::shared_ptr<BytecodeFunction>>& funcs,
-                  const std::vector<VMValue>& constantPool);
+        void load(const std::vector<std::shared_ptr<BytecodeFunction>> &funcs,
+                  const std::vector<VMValue> &constantPool);
 
-        VMValue execute(const std::string& entryPoint = "main");
+        VMValue execute(const std::string &entryPoint = "main");
 
         void disassemble() const;
 
     private:
-        VMValue executeFunction(BytecodeFunction* func, const std::vector<VMValue>& args);
+        VMValue executeFunction(BytecodeFunction *func, const std::vector<VMValue> &args);
 
         std::vector<VMValue> stack_;
         std::vector<VMValue> constantPool_;
@@ -35,7 +35,7 @@ namespace Ryntra::VM {
         std::vector<NativeFunction> builtins_;
         std::vector<int> builtinArgCounts_;
 
-        void push(const VMValue& value);
+        void push(const VMValue &value);
         VMValue pop();
     };
 } // namespace Ryntra::VM

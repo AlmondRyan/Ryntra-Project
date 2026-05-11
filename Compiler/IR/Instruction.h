@@ -17,14 +17,14 @@ namespace Ryntra::IR {
             Mul,
             Div,
             Mod,
-            BitNot,     // ~
-            BitAnd,     // &
-            BitOr,      // |
-            BitXor,     // ^
-            Shl,        // <<
-            Shr,        // >>
-            SExt,       // sign extend i32 → i64
-            Trunc       // truncate i64 → i32
+            BitNot, // ~
+            BitAnd, // &
+            BitOr,  // |
+            BitXor, // ^
+            Shl,    // <<
+            Shr,    // >>
+            SExt,   // sign extend i32 → i64
+            Trunc   // truncate i64 → i32
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -45,9 +45,7 @@ namespace Ryntra::IR {
             std::string result;
 
             // ret never produces a value; call only produces one when non-void
-            bool hasResult = !name_.empty()
-                && opcode_ != Opcode::Return
-                && !(opcode_ == Opcode::Call && type_->isVoid());
+            bool hasResult = !name_.empty() && opcode_ != Opcode::Return && !(opcode_ == Opcode::Call && type_->isVoid());
 
             if (hasResult) {
                 result = "%" + name_ + " = ";
@@ -71,7 +69,8 @@ namespace Ryntra::IR {
                 // operands[0] is the callee (Function), rest are args
                 result += operands_[0]->getReferenceName() + "(";
                 for (size_t i = 1; i < operands_.size(); ++i) {
-                    if (i > 1) result += ", ";
+                    if (i > 1)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 result += ")";
@@ -95,20 +94,42 @@ namespace Ryntra::IR {
             case Opcode::Shl:
             case Opcode::Shr: {
                 switch (opcode_) {
-                case Opcode::Add: result += "add "; break;
-                case Opcode::Sub: result += "sub "; break;
-                case Opcode::Mul: result += "mul "; break;
-                case Opcode::Div: result += "div "; break;
-                case Opcode::Mod: result += "mod "; break;
-                case Opcode::BitAnd: result += "bitand "; break;
-                case Opcode::BitOr:  result += "bitor ";  break;
-                case Opcode::BitXor: result += "bitxor "; break;
-                case Opcode::Shl:    result += "shl ";    break;
-                case Opcode::Shr:    result += "shr ";    break;
-                default: break;
+                case Opcode::Add:
+                    result += "add ";
+                    break;
+                case Opcode::Sub:
+                    result += "sub ";
+                    break;
+                case Opcode::Mul:
+                    result += "mul ";
+                    break;
+                case Opcode::Div:
+                    result += "div ";
+                    break;
+                case Opcode::Mod:
+                    result += "mod ";
+                    break;
+                case Opcode::BitAnd:
+                    result += "bitand ";
+                    break;
+                case Opcode::BitOr:
+                    result += "bitor ";
+                    break;
+                case Opcode::BitXor:
+                    result += "bitxor ";
+                    break;
+                case Opcode::Shl:
+                    result += "shl ";
+                    break;
+                case Opcode::Shr:
+                    result += "shr ";
+                    break;
+                default:
+                    break;
                 }
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "TypeSystem.h"
-#include "SourceLocation/SourceLocation.h"
 #include "../AST/ASTNodes.h"
+#include "SourceLocation/SourceLocation.h"
+#include "TypeSystem.h"
+#include <cstdint>
 #include <iostream>
 #include <memory>
-#include <vector>
 #include <string>
-#include <cstdint>
+#include <vector>
 
 namespace Ryntra::Compiler::Semantic {
 
@@ -57,13 +57,14 @@ namespace Ryntra::Compiler::Semantic {
         virtual void accept(ITypedVisitor &visitor) = 0;
         virtual std::string toString() const = 0;
         virtual void dump(int indent = 0) const = 0;
-        
+
         SourceLocation getLocation() const { return location; }
         void setLocation(SourceLocation loc) { location = loc; }
 
     protected:
         void printIndent(int indent) const {
-            for (int i = 0; i < indent; ++i) std::cout << "  ";
+            for (int i = 0; i < indent; ++i)
+                std::cout << "  ";
         }
 
     private:
@@ -74,7 +75,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         explicit TypedExpressionNode(std::shared_ptr<Type> type) : type(std::move(type)) {}
         std::shared_ptr<Type> getType() const { return type; }
-        
+
     protected:
         std::shared_ptr<Type> type;
     };
@@ -85,7 +86,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         TypedStringLiteralNode(std::string value, std::shared_ptr<Type> type)
             : TypedExpressionNode(std::move(type)), value(std::move(value)) {}
-            
+
         const std::string &getValue() const { return value; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedStringLiteral(" + value + "): " + type->toString(); }
@@ -102,7 +103,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         TypedIntegerLiteralNode(int value, std::shared_ptr<Type> type)
             : TypedExpressionNode(std::move(type)), value(value) {}
-            
+
         int getValue() const { return value; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedIntegerLiteral(" + std::to_string(value) + "): " + type->toString(); }
@@ -136,7 +137,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         TypedIdentifierNode(std::string name, std::shared_ptr<Type> type)
             : TypedExpressionNode(std::move(type)), name(std::move(name)) {}
-            
+
         const std::string &getName() const { return name; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedIdentifier(" + name + "): " + type->toString(); }
@@ -151,14 +152,14 @@ namespace Ryntra::Compiler::Semantic {
 
     class TypedFunctionCallNode : public TypedExpressionNode {
     public:
-        TypedFunctionCallNode(std::shared_ptr<TypedIdentifierNode> funcName, 
+        TypedFunctionCallNode(std::shared_ptr<TypedIdentifierNode> funcName,
                               std::vector<std::shared_ptr<TypedExpressionNode>> args,
                               std::shared_ptr<Type> type)
             : TypedExpressionNode(std::move(type)), functionName(std::move(funcName)), arguments(std::move(args)) {}
 
         std::shared_ptr<TypedIdentifierNode> getFunctionName() const { return functionName; }
         const std::vector<std::shared_ptr<TypedExpressionNode>> &getArguments() const { return arguments; }
-        
+
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedFunctionCall: " + type->toString(); }
         void dump(int indent = 0) const override {
@@ -199,7 +200,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         explicit TypedExpressionStatementNode(std::shared_ptr<TypedExpressionNode> expr)
             : expression(std::move(expr)) {}
-            
+
         std::shared_ptr<TypedExpressionNode> getExpression() const { return expression; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedExpressionStatement"; }
@@ -217,7 +218,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         explicit TypedReturnNode(std::shared_ptr<TypedExpressionNode> value)
             : value(std::move(value)) {}
-            
+
         std::shared_ptr<TypedExpressionNode> getValue() const { return value; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedReturn"; }
@@ -269,16 +270,36 @@ namespace Ryntra::Compiler::Semantic {
         std::string toString() const override {
             std::string opStr;
             switch (op) {
-            case BinaryOpType::Add: opStr = "+"; break;
-            case BinaryOpType::Sub: opStr = "-"; break;
-            case BinaryOpType::Mul: opStr = "*"; break;
-            case BinaryOpType::Div: opStr = "/"; break;
-            case BinaryOpType::Mod: opStr = "%"; break;
-            case BinaryOpType::BitAnd: opStr = "&"; break;
-            case BinaryOpType::BitOr:  opStr = "|"; break;
-            case BinaryOpType::BitXor: opStr = "^"; break;
-            case BinaryOpType::Shl:    opStr = "<<"; break;
-            case BinaryOpType::Shr:    opStr = ">>"; break;
+            case BinaryOpType::Add:
+                opStr = "+";
+                break;
+            case BinaryOpType::Sub:
+                opStr = "-";
+                break;
+            case BinaryOpType::Mul:
+                opStr = "*";
+                break;
+            case BinaryOpType::Div:
+                opStr = "/";
+                break;
+            case BinaryOpType::Mod:
+                opStr = "%";
+                break;
+            case BinaryOpType::BitAnd:
+                opStr = "&";
+                break;
+            case BinaryOpType::BitOr:
+                opStr = "|";
+                break;
+            case BinaryOpType::BitXor:
+                opStr = "^";
+                break;
+            case BinaryOpType::Shl:
+                opStr = "<<";
+                break;
+            case BinaryOpType::Shr:
+                opStr = ">>";
+                break;
             }
             return "TypedBinaryOp(" + opStr + "): " + type->toString();
         }
@@ -311,7 +332,9 @@ namespace Ryntra::Compiler::Semantic {
         std::string toString() const override {
             std::string opStr;
             switch (op) {
-            case UnaryOpType::BitNot: opStr = "~"; break;
+            case UnaryOpType::BitNot:
+                opStr = "~";
+                break;
             }
             return "TypedUnaryOp(" + opStr + "): " + type->toString();
         }
@@ -376,7 +399,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         explicit TypedBlockNode(std::vector<std::shared_ptr<TypedStatementNode>> stmts)
             : statements(std::move(stmts)) {}
-            
+
         const std::vector<std::shared_ptr<TypedStatementNode>> &getStatements() const { return statements; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedBlock"; }
@@ -394,15 +417,15 @@ namespace Ryntra::Compiler::Semantic {
 
     class TypedFunctionDefinitionNode : public ITypedASTNode {
     public:
-        TypedFunctionDefinitionNode(std::string name, 
-                                    std::shared_ptr<Type> returnType, 
+        TypedFunctionDefinitionNode(std::string name,
+                                    std::shared_ptr<Type> returnType,
                                     std::shared_ptr<TypedBlockNode> body)
             : name(std::move(name)), returnType(std::move(returnType)), body(std::move(body)) {}
-            
+
         const std::string &getName() const { return name; }
         std::shared_ptr<Type> getReturnType() const { return returnType; }
         std::shared_ptr<TypedBlockNode> getBody() const { return body; }
-        
+
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedFunctionDefinition(" + name + "): " + returnType->toString(); }
         void dump(int indent = 0) const override {
@@ -421,7 +444,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         explicit TypedProgramNode(std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> funcs)
             : functions(std::move(funcs)) {}
-            
+
         const std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> &getFunctions() const { return functions; }
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedProgram"; }
