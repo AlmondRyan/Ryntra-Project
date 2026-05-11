@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Ryntra::VM {
     class BytecodeGenerator {
@@ -31,5 +32,7 @@ namespace Ryntra::VM {
         std::unordered_map<std::string, int32_t> functionIndices_;
         std::shared_ptr<BytecodeFunction> currentFunction_;
         std::shared_ptr<IR::Module> currentModule_;
+        std::unordered_map<const IR::Value*, int32_t> instructionSlots_;
+        int32_t nextSlot_;
     };
 } // namespace Ryntra::VM

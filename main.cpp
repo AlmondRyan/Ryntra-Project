@@ -81,6 +81,8 @@ int main(int argc, char **argv) {
                 vm.load(bytecode, bcGen.getConstantPool());
                 auto result = vm.execute("main");
 
+                vm.disassemble();
+
                 std::cout << "\nProgram exited with code: ";
                 if (result.isInt32()) {
                     std::cout << result.asInt32() << std::endl;

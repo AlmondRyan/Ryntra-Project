@@ -41,6 +41,7 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<ITypedASTNode> lastNode;
         TypePtr lastType;                  // STType::Type result from TypeSpecifierNode
         TypePtr currentFunctionReturnType; // STType::Type of the current function
+        std::shared_ptr<Type> expectedReturnType; // Expected return type from context (for __builtin_scan)
 
         // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
         static std::shared_ptr<Type> toTypedType(const TypePtr& stType);

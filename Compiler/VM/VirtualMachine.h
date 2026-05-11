@@ -19,6 +19,8 @@ namespace Ryntra::VM {
 
         VMValue execute(const std::string& entryPoint = "main");
 
+        void disassemble() const;
+
     private:
         VMValue executeFunction(BytecodeFunction* func, const std::vector<VMValue>& args);
 
@@ -27,8 +29,11 @@ namespace Ryntra::VM {
         std::vector<std::shared_ptr<BytecodeFunction>> functionList_;
         std::unordered_map<std::string, std::shared_ptr<BytecodeFunction>> functionMap_;
 
+        std::vector<VMValue> locals_;
+
         // Indexed builtin table — index matches BytecodeGenerator::getBuiltinIndex
         std::vector<NativeFunction> builtins_;
+        std::vector<int> builtinArgCounts_;
 
         void push(const VMValue& value);
         VMValue pop();

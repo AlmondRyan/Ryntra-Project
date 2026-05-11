@@ -76,6 +76,27 @@ namespace Ryntra::Compiler::Semantic {
             symbolTable.define(overloadSet, SourceLocation{0, 0});
         }
 
+        // Register __builtin_scan with overloads for int and long
+        if (!symbolTable.resolve("__builtin_scan")) {
+            auto overloadSet = std::make_shared<OverloadSet>("__builtin_scan");
+
+            // Overload 1: __builtin_scan() → int
+            {
+                std::vector<TypePtr> params{};
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_scan",
+                    std::make_shared<STType::Int32Type>(), std::move(params)));
+            }
+
+            // Overload 2: __builtin_scan() → long
+            {
+                std::vector<TypePtr> params{};
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_scan",
+                    std::make_shared<STType::Int64Type>(), std::move(params)));
+            }
+
+            symbolTable.define(overloadSet, SourceLocation{0, 0});
+        }
+
         // Also register plain "print" for backward compatibility
         if (!symbolTable.resolve("print")) {
             auto overloadSet = std::make_shared<OverloadSet>("print");
@@ -300,7 +321,21 @@ namespace Ryntra::Compiler::Semantic {
             stReturnType = makeSTType("unknown");
         } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(sym)) {
             bool found = false;
-            for (const auto& overload : overloadSet->getFunctions()) {
+
+            // For __builtin_scan, use expectedReturnType from context if available
+            if (funcName == "__builtin_scan" && expectedReturnType) {
+                for (const auto& overload : overloadSet->getFunctions()) {
+                    auto overloadRetTyped = toTypedType(overload->getReturnType());
+                    if (overloadRetTyped->equals(*expectedReturnType)) {
+                        stReturnType = overload->getReturnType();
+                        expectedParamTypes = overload->getParamTypes();
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) for (const auto& overload : overloadSet->getFunctions()) {
                 if (overload->getParamTypes().size() != args.size()) continue;
 
                 bool match = true;
@@ -404,7 +439,10 @@ namespace Ryntra::Compiler::Semantic {
 
         std::shared_ptr<TypedExpressionNode> typedInit = nullptr;
         if (node.getInitializer()) {
+            // Set expected return type for context-sensitive functions like __builtin_scan
+            expectedReturnType = toTypedType(varType);
             node.getInitializer()->accept(*this);
+            expectedReturnType = nullptr;
             typedInit = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
 
             if (typedInit) {

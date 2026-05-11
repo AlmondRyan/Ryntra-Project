@@ -23,8 +23,11 @@ namespace Ryntra::VM {
         Shr,            // Shift right (>>)
         SExt,           // Sign extend i32 → i64
         Trunc,          // Truncate i64 → i32
-        Pop,            // Pop value from stack
-        Halt            // Stop execution
+            Dup,            // Duplicate top of stack
+            Pop,            // Pop value from stack
+            StoreLocal,     // Store value from stack into local variable slot
+            LoadLocal,      // Load value from local variable slot onto stack
+            Halt            // Stop execution
     };
 
     struct Instruction {

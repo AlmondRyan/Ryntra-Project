@@ -29,6 +29,8 @@ namespace Ryntra::VM {
         for (size_t i = 0; i < module->getFunctions().size(); ++i) {
             const auto& irFunc = module->getFunctions()[i];
             if (!irFunc->isExternal()) {
+                instructionSlots_.clear();
+                nextSlot_ = 0;
                 currentFunction_ = functions_[i];
                 for (const auto& block : irFunc->getBasicBlocks()) {
                     generateBasicBlock(block);
@@ -68,12 +70,26 @@ namespace Ryntra::VM {
                 if (!argInst->getOperands().empty()) {
                     pushOperandValue(argInst->getOperands()[0]);
                 }
+            } else {
+                auto it = instructionSlots_.find(argInst.get());
+                if (it != instructionSlots_.end()) {
+                    currentFunction_->addInstruction(OpCode::LoadLocal, it->second);
+                }
             }
         }
     }
 
     void BytecodeGenerator::generateInstruction(const std::shared_ptr<IR::Instruction>& inst) {
         const auto& operands = inst->getOperands();
+
+        // Assign a local slot for instructions that produce a runtime value
+        bool needsSlot = inst->getOpcode() != IR::Instruction::Opcode::Constant
+            && !inst->getType()->isVoid();
+        int32_t slot = -1;
+        if (needsSlot) {
+            slot = nextSlot_++;
+            instructionSlots_[inst.get()] = slot;
+        }
 
         switch (inst->getOpcode()) {
         case IR::Instruction::Opcode::LoadConstant: {
@@ -192,6 +208,10 @@ namespace Ryntra::VM {
         default:
             break;
         }
+
+        if (slot >= 0) {
+            currentFunction_->addInstruction(OpCode::StoreLocal, slot);
+        }
     }
 
     int32_t BytecodeGenerator::addConstant(const VMValue& value) {
@@ -212,6 +232,8 @@ namespace Ryntra::VM {
             "__builtin_print",  // 0
             "__builtin_print_i32",  // 1 (int32 print)
             "__builtin_print_i64",  // 2 (int64 print)
+            "__builtin_scan_i32",  // 3 (int32 scan)
+            "__builtin_scan_i64",  // 4 (int64 scan)
         };
         for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
             if (name == builtinTable[i] ||

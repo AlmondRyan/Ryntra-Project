@@ -135,18 +135,29 @@ namespace Ryntra::IR {
             if (lastValue_) argValues.push_back(lastValue_);
         }
 
-        // Mangle __builtin_ function names based on argument types
+        // Mangle __builtin_ function names based on argument types (or return type for no-arg builtins)
         std::string actualName = calleeName;
-        if (calleeName.rfind("__builtin_", 0) == 0 && !argValues.empty()) {
-            std::string suffix;
-            auto argType = argValues[0]->getType();
-            if (argType->isInt32())
-                suffix = "i32";
-            else if (argType->isInt64())
-                suffix = "i64";
-            else if (argType->isString())
-                suffix = "string";
-            actualName = calleeName + "_" + suffix;
+        if (calleeName.rfind("__builtin_", 0) == 0) {
+            if (!argValues.empty()) {
+                std::string suffix;
+                auto argType = argValues[0]->getType();
+                if (argType->isInt32())
+                    suffix = "i32";
+                else if (argType->isInt64())
+                    suffix = "i64";
+                else if (argType->isString())
+                    suffix = "string";
+                actualName = calleeName + "_" + suffix;
+            } else if (calleeName == "__builtin_scan") {
+                // No-arg builtins: mangle based on return type
+                std::string suffix;
+                auto retType = node.getType();
+                if (retType->toString() == "int")
+                    suffix = "i32";
+                else if (retType->toString() == "long")
+                    suffix = "i64";
+                actualName = calleeName + "_" + suffix;
+            }
         }
 
         auto it = functionMap_.find(actualName);

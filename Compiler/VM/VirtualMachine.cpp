@@ -37,7 +37,21 @@ namespace Ryntra::VM {
                 }
                 return VMValue();
             },
+            // 3: __builtin_scan_i32 — reads int32 from stdin
+            [](const std::vector<VMValue>& args) -> VMValue {
+                int32_t val;
+                std::cin >> val;
+                return VMValue(val);
+            },
+            // 4: __builtin_scan_i64 — reads int64 from stdin
+            [](const std::vector<VMValue>& args) -> VMValue {
+                int64_t val;
+                std::cin >> val;
+                return VMValue(val);
+            },
         };
+
+        builtinArgCounts_ = {1, 1, 1, 0, 0};  // arg count per builtin index
     }
 
     void VirtualMachine::load(const std::vector<std::shared_ptr<BytecodeFunction>>& funcs,
@@ -62,6 +76,7 @@ namespace Ryntra::VM {
 
     VMValue VirtualMachine::executeFunction(BytecodeFunction* func, const std::vector<VMValue>& args) {
 
+        locals_.clear();
         size_t ip = 0;
         while (ip < func->instructions.size()) {
             const auto& inst = func->instructions[ip];
@@ -99,8 +114,11 @@ namespace Ryntra::VM {
                 if (inst.operand < 0 || inst.operand >= static_cast<int32_t>(builtins_.size())) {
                     throw std::runtime_error("Invalid builtin index: " + std::to_string(inst.operand));
                 }
-                std::vector<VMValue> callArgs;
-                if (!stack_.empty()) callArgs.push_back(pop());
+                size_t argCount = static_cast<size_t>(builtinArgCounts_[inst.operand]);
+                std::vector<VMValue> callArgs(argCount);
+                for (int i = static_cast<int>(argCount) - 1; i >= 0; --i) {
+                    callArgs[i] = pop();
+                }
                 VMValue result = builtins_[inst.operand](callArgs);
                 if (!result.isVoid()) push(result);
                 break;
@@ -205,9 +223,32 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::Dup: {
+                if (!stack_.empty()) {
+                    push(stack_.back());
+                }
+                break;
+            }
+
             case OpCode::Pop:
                 if (!stack_.empty()) pop();
                 break;
+
+            case OpCode::StoreLocal: {
+                auto val = pop();
+                int32_t idx = inst.operand;
+                if (idx >= static_cast<int32_t>(locals_.size()))
+                    locals_.resize(idx + 1);
+                locals_[idx] = val;
+                break;
+            }
+
+            case OpCode::LoadLocal: {
+                int32_t idx = inst.operand;
+                if (idx >= 0 && idx < static_cast<int32_t>(locals_.size()))
+                    push(locals_[idx]);
+                break;
+            }
 
             case OpCode::Halt:
                 return VMValue();
@@ -220,6 +261,59 @@ namespace Ryntra::VM {
         }
 
         return VMValue();
+    }
+
+    static const char* opcodeNames[] = {
+        "LoadConst",
+        "Call",
+        "BCall",
+        "Return",
+        "Add",
+        "Sub",
+        "Mul",
+        "Div",
+        "Mod",
+        "BitNot",
+        "BitAnd",
+        "BitOr",
+        "BitXor",
+        "Shl",
+        "Shr",
+        "SExt",
+        "Trunc",
+        "Dup",
+        "Pop",
+        "StoreLocal",
+        "LoadLocal",
+        "Halt",
+    };
+
+    void VirtualMachine::disassemble() const {
+        for (const auto& func : functionList_) {
+            std::cout << "function " << func->name
+                      << " (paramCount=" << func->paramCount
+                      << ", external=" << (func->isExternal ? "true" : "false") << "):\n";
+            if (func->instructions.empty()) {
+                std::cout << "  (no instructions)\n";
+            } else {
+                for (size_t i = 0; i < func->instructions.size(); ++i) {
+                    const auto& inst = func->instructions[i];
+                    uint8_t idx = static_cast<uint8_t>(inst.opcode);
+                    const char* name = (idx < sizeof(opcodeNames)/sizeof(opcodeNames[0]))
+                        ? opcodeNames[idx] : "???";
+                    std::cout << "  " << i << ": " << name;
+                    if (inst.opcode == OpCode::LoadConst ||
+                        inst.opcode == OpCode::StoreLocal ||
+                        inst.opcode == OpCode::LoadLocal) {
+                        std::cout << " " << inst.operand;
+                    } else if (inst.opcode == OpCode::Call || inst.opcode == OpCode::BCall) {
+                        std::cout << " " << inst.operand;
+                    }
+                    std::cout << "\n";
+                }
+            }
+            std::cout << "\n";
+        }
     }
 
     void VirtualMachine::push(const VMValue& value) {
