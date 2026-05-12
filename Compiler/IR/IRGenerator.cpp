@@ -247,18 +247,26 @@ namespace Ryntra::IR {
             return;
         }
 
-        // Type promotion: if one operand is i64 and the other is an i32 ImmediateValue,
-        // promote the i32 to i64 so createBinaryOp's type check passes
+        // Type promotion: if one operand is i64 and the other is i32,
+        // promote the i32 to i64 so createBinaryOp's type check passes.
+        // For ImmediateValue (literal) operands, create a new i64 ImmediateValue.
+        // For non-immediate operands (variables), insert a SExt instruction.
         if (!lhs->getType()->isEqual(rhs->getType().get())) {
             if (lhs->getType()->isInt64() && rhs->getType()->isInt32()) {
                 if (auto rhsImm = std::dynamic_pointer_cast<ImmediateValue>(rhs)) {
                     rhs = std::make_shared<ImmediateValue>(
                         Type::getInt64Type(), rhsImm->getLiteralValue());
+                } else {
+                    rhs = builder_.createSExt(
+                        builder_.generateUniqueName(""), rhs, Type::getInt64Type());
                 }
             } else if (lhs->getType()->isInt32() && rhs->getType()->isInt64()) {
                 if (auto lhsImm = std::dynamic_pointer_cast<ImmediateValue>(lhs)) {
                     lhs = std::make_shared<ImmediateValue>(
                         Type::getInt64Type(), lhsImm->getLiteralValue());
+                } else {
+                    lhs = builder_.createSExt(
+                        builder_.generateUniqueName(""), lhs, Type::getInt64Type());
                 }
             }
         }

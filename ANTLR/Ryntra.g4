@@ -45,6 +45,9 @@ SHR_ASSIGN: '>>=';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 INTEGER_LITERAL: [0-9]+ [Ll]?;
+
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 WS: [ \t\r\n]+ -> skip;
 
 // Parser Rules

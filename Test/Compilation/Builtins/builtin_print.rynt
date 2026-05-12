@@ -1,0 +1,8 @@
+public void main() {
+    // 1. Print Normal String
+    __builtin_print("Hello World");
+
+    // 2. Handle Escape Characters
+    __builtin_print("\n");
+    __builtin_print("\t abc \t bcd \t cde");
+}
