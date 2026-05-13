@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ColorTheme>
+    <Name>Catppuccin Macchiato</Name>
+    <Palette>
+        <Color name="Base" hex="#24273a"/>
+        <Color name="Text" hex="#cad3f5"/>
+        <Color name="Mauve" hex="#c6a0f6"/>
+        <Color name="Surface2" hex="#5b6078"/>
+        <Color name="Green" hex="#a6da95"/>
+        <Color name="Peach" hex="#f5a97f"/>
+        <Color name="Blue" hex="#8aadf4"/>
+        <Color name="Red" hex="#ed8796"/>
+        <Color name="Surface1" hex="#494d64"/>
+    </Palette>
+    <Styles>
+        <Style name="Keyword" color="Mauve" bold="true"/>
+        <Style name="Comment" color="Surface2" italic="true"/>
+        <Style name="String" color="Green"/>
+        <Style name="Number" color="Peach"/>
+        <Style name="Background" color="Base"/>
+        <Style name="Foreground" color="Text"/>
+        <Style name="Selection" color="Surface1"/>
+    </Styles>
+</ColorTheme>
