@@ -1,0 +1,112 @@
+/*QTabWidget::pane {*/
+/*    border: 1px solid #333333;*/
+/*    background: #242424;*/
+/*    top: -1px;*/
+/*}*/
+
+/*QTabBar::tab {*/
+/*    background: #2d2d2d;*/
+/*    color: #b0b0b0;*/
+/*    padding: 8px 16px;*/
+/*    margin-right: 2px;*/
+/*    border: 1px solid #333333;*/
+/*    border-bottom: none;*/
+/*    min-width: 80px;*/
+/*}*/
+
+/*QTabBar::tab:hover {*/
+/*    background: #383838;*/
+/*    color: #ffffff;*/
+/*}*/
+
+/*QTabBar::tab:selected {*/
+/*    background: #242424;*/
+/*    color: #ffffff;*/
+/*    border-bottom: 3px solid #a4ccf0;   *//* accent 鑹蹭笅鍒掔嚎 */
+/*    font-weight: bold;*/
+/*}*/
+
+/*QTabBar::tab:selected:hover {*/
+/*    background: #2a2a2a;*/
+/*}*/
+
+/*QMenuBar {*/
+/*    background: #252525;*/
+/*    spacing: 4px;*/
+/*    padding: 2px 4px;*/
+/*    border-bottom: 1px solid #333333;*/
+/*}*/
+
+/*QMenuBar::item {*/
+/*    background: transparent;*/
+/*    padding: 6px 12px;*/
+/*    color: #d0d0d0;*/
+/*}*/
+
+/*QMenuBar::item:selected {*/
+/*    background: #3a3a3a;*/
+/*    color: #ffffff;*/
+/*}*/
+
+/*QMenuBar::item:pressed {*/
+/*    background: #a4ccf0;*/
+/*    color: #0f0f0f;*/
+/*}*/
+
+/*QMenu {*/
+/*    background: #252525;*/
+/*    border: 1px solid #404040;*/
+/*    padding: 4px 0px;*/
+/*    border-radius: 4px;*/
+/*}*/
+
+/*QMenu::item {*/
+/*    padding: 8px 32px 8px 36px;*/
+/*    background: transparent;*/
+/*    color: #e0e0e0;*/
+/*}*/
+
+/*QMenu::item:selected {*/
+/*    background: #a4ccf0;*/
+/*    color: #0f0f0f;*/
+/*    font-weight: 500;*/
+/*}*/
+
+/*QMenu::item:disabled {*/
+/*    color: #606060;*/
+/*}*/
+
+/*QMenu::separator {*/
+/*    height: 1px;*/
+/*    background: #404040;*/
+/*    margin: 4px 8px;*/
+/*}*/
+
+/*QMenu::indicator {*/
+/*    width: 16px;*/
+/*    height: 16px;*/
+/*}*/
+
+/*QToolTip {*/
+/*    background: #2d2d2d;*/
+/*    border: 1px solid #505050;*/
+/*    color: #f0f0f0;*/
+/*    padding: 4px 8px;*/
+/*    border-radius: 3px;*/
+/*}*/
+
+/*QScrollBar:vertical {*/
+/*    background: #1e1e1e;*/
+/*    width: 14px;*/
+/*    margin: 0px;*/
+/*}*/
+
+/*QScrollBar::handle:vertical {*/
+/*    background: #505050;*/
+/*    min-height: 30px;*/
+/*    border-radius: 7px;*/
+/*}*/
+
+/*QScrollBar::handle:vertical:hover {*/
+/*    background: #707070;*/
+/*}*/

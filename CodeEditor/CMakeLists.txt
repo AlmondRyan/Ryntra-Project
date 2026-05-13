@@ -16,6 +16,8 @@ add_executable(Riko main.cpp
         Editor/Editor/CodeEditor.cpp
         Editor/Editor/LineNumberArea.h
         Resources.qrc
+        MainWindow/MainWindow.cpp
+        MainWindow/MainWindow.h
 )
 
 target_link_libraries(Riko

@@ -26,7 +26,7 @@ namespace Ryntra::CodeEditor {
         setPalette(palette);
 
         RikoHighlighter *highlighter = new RikoHighlighter(this->document());
-        highlighter->loadTheme(":/Editor/Resources/ColorPreset/CatppuccinMacchiato.xml");
+        highlighter->loadTheme(":/Editor/Resources/ColorScheme/CatppuccinMacchiato.xml");
         highlighter->loadLanguage(":/Editor/Resources/LanguageDefinition/Ryntra.xml");
     }
 
@@ -69,8 +69,8 @@ namespace Ryntra::CodeEditor {
 
     void CodeEditor::indentSelection() const {
         QTextCursor cursor = this->textCursor();
-        int         start = cursor.selectionStart();
-        int         end = cursor.selectionEnd();
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
 
         cursor.setPosition(start);
         int startBlock = cursor.blockNumber();
@@ -147,7 +147,7 @@ namespace Ryntra::CodeEditor {
             int delta = event->angleDelta().y();
             if (delta != 0) {
                 QFont currentFont = font();
-                int   newSize = currentFont.pointSize() + (delta > 0 ? 1 : -1);
+                int newSize = currentFont.pointSize() + (delta > 0 ? 1 : -1);
                 if (newSize >= 6 && newSize <= 72) {
                     currentFont.setPointSize(newSize);
                     setFont(currentFont);
@@ -163,7 +163,7 @@ namespace Ryntra::CodeEditor {
         QList<QTextEdit::ExtraSelection> extraSelections;
         if (!isReadOnly()) {
             QTextEdit::ExtraSelection selection;
-            QColor                    lineColor = QColor(240, 240, 245, 30);
+            QColor lineColor = QColor(240, 240, 245, 30);
             selection.format.setBackground(lineColor);
             // selection.format.setForeground(Qt::white);
             selection.format.setProperty(QTextFormat::FullWidthSelection, true);
@@ -186,9 +186,9 @@ namespace Ryntra::CodeEditor {
                          rightEdge, event->rect().bottom());
 
         QTextBlock block = firstVisibleBlock();
-        int        blockNumber = block.blockNumber();
-        int        top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
-        int        bottom = top + qRound(blockBoundingRect(block).height());
+        int blockNumber = block.blockNumber();
+        int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
+        int bottom = top + qRound(blockBoundingRect(block).height());
 
         QColor textColor = palette().color(QPalette::Text);
         textColor = textColor.darker(110);
@@ -226,11 +226,11 @@ namespace Ryntra::CodeEditor {
 
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
             QTextCursor cursor = textCursor();
-            QTextBlock  currentBlock = cursor.block();
-            QString     currentText = currentBlock.text();
-            int         positionInBlock = cursor.position() - currentBlock.position();
-            QTextBlock  nextBlock = currentBlock.next();
-            QString     nextText = nextBlock.isValid() ? nextBlock.text().trimmed() : "";
+            QTextBlock currentBlock = cursor.block();
+            QString currentText = currentBlock.text();
+            int positionInBlock = cursor.position() - currentBlock.position();
+            QTextBlock nextBlock = currentBlock.next();
+            QString nextText = nextBlock.isValid() ? nextBlock.text().trimmed() : "";
 
             QString indent;
             for (int i = 0; i < currentText.size(); ++i) {
@@ -268,7 +268,7 @@ namespace Ryntra::CodeEditor {
                 innerCursor.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor, 1);
                 setTextCursor(innerCursor);
             } else {
-                bool    increaseIndent = textBeforeCursor.trimmed().endsWith("{");
+                bool increaseIndent = textBeforeCursor.trimmed().endsWith("{");
                 QString newIndent = indent;
                 if (increaseIndent) {
                     newIndent.append("    ");
@@ -297,7 +297,7 @@ namespace Ryntra::CodeEditor {
             }
 
             QChar closingBracket;
-            bool  isOpeningBracket = false;
+            bool isOpeningBracket = false;
             if (ch == '(') {
                 closingBracket = ')';
                 isOpeningBracket = true;
@@ -331,4 +331,4 @@ namespace Ryntra::CodeEditor {
         QPlainTextEdit::keyPressEvent(event);
     }
 
-} // namespace Riko::Editor
+} // namespace Ryntra::CodeEditor
