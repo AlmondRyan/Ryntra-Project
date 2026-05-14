@@ -10,6 +10,7 @@ namespace Ryntra::IR {
         enum class Kind {
             Void,
             Int32,
+            Int64,
             String,
             Function
         };
@@ -24,11 +25,13 @@ namespace Ryntra::IR {
 
         bool isVoid() const { return kind_ == Kind::Void; }
         bool isInt32() const { return kind_ == Kind::Int32; }
+        bool isInt64() const { return kind_ == Kind::Int64; }
         bool isString() const { return kind_ == Kind::String; }
         bool isFunction() const { return kind_ == Kind::Function; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
+        static std::shared_ptr<Type> getInt64Type();
         static std::shared_ptr<Type> getStringType();
 
     private:
@@ -58,6 +61,19 @@ namespace Ryntra::IR {
 
         bool isEqual(const Type *other) const override {
             return other->isInt32();
+        }
+    };
+
+    class Int64Type : public Type {
+    public:
+        Int64Type() : Type(Kind::Int64) {}
+
+        std::string toString() const override {
+            return "i64";
+        }
+
+        bool isEqual(const Type *other) const override {
+            return other->isInt64();
         }
     };
 
@@ -131,5 +147,10 @@ namespace Ryntra::IR {
     inline std::shared_ptr<Type> Type::getStringType() {
         static std::shared_ptr<Type> stringType = std::make_shared<StringType>();
         return stringType;
+    }
+
+    inline std::shared_ptr<Type> Type::getInt64Type() {
+        static std::shared_ptr<Type> int64Type = std::make_shared<Int64Type>();
+        return int64Type;
     }
 } // namespace Ryntra::IR

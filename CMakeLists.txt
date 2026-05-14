@@ -83,6 +83,8 @@ add_executable(RyntraProject
         ${VM_SOURCE}
 )
 
+add_subdirectory(CodeEditor)
+
 add_dependencies(RyntraProject GenerateAllNodesVisitor)
 
 target_link_libraries(RyntraProject PRIVATE antlr4_shared)

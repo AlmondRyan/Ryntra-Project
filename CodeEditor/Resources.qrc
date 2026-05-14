@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Editor/Resources/LanguageDefinition/Ryntra.xml</file>
+        <file>Editor/Resources/ColorScheme/CatppuccinMacchiato.xml</file>
+        <file>MainWindow/Style.qss</file>
+    </qresource>
+</RCC>

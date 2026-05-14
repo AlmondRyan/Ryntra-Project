@@ -19,8 +19,18 @@ namespace Ryntra::Compiler {
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *ctx);
         std::shared_ptr<StringLiteralNode> visitStringLiteral(antlr::RyntraParser::StringLiteralContext *ctx);
         std::shared_ptr<IntegerLiteralNode> visitIntegerLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
+        std::shared_ptr<LongLiteralNode> visitLongLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitMulDivModExpression(antlr::RyntraParser::MulDivModExpressionContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitPlusMinusExpression(antlr::RyntraParser::PlusMinusExpressionContext *ctx);
+        std::shared_ptr<UnaryOpNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitBitAndExpression(antlr::RyntraParser::BitAndExpressionContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitBitXorExpression(antlr::RyntraParser::BitXorExpressionContext *ctx);
+        std::shared_ptr<BinaryOpNode> visitBitOrExpression(antlr::RyntraParser::BitOrExpressionContext *ctx);
+        std::shared_ptr<CastNode> visitCastExpression(antlr::RyntraParser::CastExpressionContext *ctx);
+        std::shared_ptr<AssignmentNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:

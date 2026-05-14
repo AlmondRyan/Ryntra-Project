@@ -1,14 +1,15 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <unordered_map>
+#include "SourceLocation/SourceLocation.h"
 #include <memory>
 #include <stdexcept>
-#include "SourceLocation/SourceLocation.h"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace Ryntra::Compiler::Semantic {
     namespace STType {
+        // clang-format off
         enum class TypeKind {
             Void,
             Bool,                     // i1
@@ -29,6 +30,7 @@ namespace Ryntra::Compiler::Semantic {
 
             String
         };
+        // clang-format on
 
         class Type {
         public:
@@ -63,13 +65,18 @@ namespace Ryntra::Compiler::Semantic {
             TypeKind getKind() const override { return TypeKind::Int32; }
         };
 
+        class Int64Type : public Type {
+        public:
+            TypeKind getKind() const override { return TypeKind::Int64; }
+        };
+
         class StringType : public Type {
         public:
             TypeKind getKind() const override { return TypeKind::String; }
         };
 
         // TODO: More in the future
-    }
+    } // namespace STType
 
     using TypePtr = std::shared_ptr<STType::Type>;
 
@@ -85,9 +92,10 @@ namespace Ryntra::Compiler::Semantic {
     public:
         virtual ~Symbol() = default;
         explicit Symbol(std::string name) : name(std::move(name)) {}
-        const std::string& getName() const { return name; }
+        const std::string &getName() const { return name; }
 
         virtual SymbolKind getKind() const = 0;
+
     private:
         std::string name;
     };
@@ -96,10 +104,11 @@ namespace Ryntra::Compiler::Semantic {
     public:
         FunctionSymbol(std::string name, TypePtr returnType, std::vector<TypePtr> paramTypes)
             : Symbol(std::move(name)), returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
-        
-        const TypePtr& getReturnType() const { return returnType; }
-        const std::vector<TypePtr>& getParamTypes() const { return paramTypes; }
+
+        const TypePtr &getReturnType() const { return returnType; }
+        const std::vector<TypePtr> &getParamTypes() const { return paramTypes; }
         SymbolKind getKind() const override { return SymbolKind::Function; }
+
     private:
         TypePtr returnType;
         std::vector<TypePtr> paramTypes;
@@ -109,9 +118,10 @@ namespace Ryntra::Compiler::Semantic {
     public:
         VariableSymbol(std::string name, TypePtr type)
             : Symbol(std::move(name)), type(std::move(type)) {}
-        
-        const TypePtr& getType() const { return type; }
+
+        const TypePtr &getType() const { return type; }
         SymbolKind getKind() const override { return SymbolKind::Variable; }
+
     private:
         TypePtr type;
     };
@@ -125,6 +135,7 @@ namespace Ryntra::Compiler::Semantic {
             return functions;
         }
         SymbolKind getKind() const override { return SymbolKind::OverloadSet; }
+
     private:
         std::vector<std::shared_ptr<FunctionSymbol>> functions;
     };
@@ -159,14 +170,14 @@ namespace Ryntra::Compiler::Semantic {
     class SymbolTable {
     public:
         SymbolTable();
-        
+
         void enterScope();
         void exitScope();
-        
+
         void define(std::shared_ptr<Symbol> symbol, SourceLocation location);
-        std::shared_ptr<Symbol> resolve(const std::string& name);
+        std::shared_ptr<Symbol> resolve(const std::string &name);
 
     private:
         std::vector<std::unique_ptr<Scope>> scopes;
     };
-}
+} // namespace Ryntra::Compiler::Semantic

@@ -3,6 +3,7 @@
 #include "ASTVisitor.h"
 #include "SourceLocation/SourceLocation.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -60,6 +61,17 @@ namespace Ryntra::Compiler {
 
     private:
         int value;
+    };
+
+    class LongLiteralNode : public ExpressionNode {
+    public:
+        LongLiteralNode(int64_t value) : value(value) {}
+        int64_t getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        int64_t value;
     };
 
     class IdentifierNode : public ExpressionNode {
@@ -172,5 +184,80 @@ namespace Ryntra::Compiler {
 
     private:
         std::shared_ptr<IdentifierNode> name;
+    };
+
+    enum class BinaryOpType : uint8_t {
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        BitAnd,
+        BitOr,
+        BitXor,
+        Shl,
+        Shr
+    };
+
+    class BinaryOpNode : public ExpressionNode {
+    public:
+        BinaryOpNode(std::shared_ptr<ExpressionNode> left, BinaryOpType op, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), op(op), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        BinaryOpType getOp() const { return op; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        BinaryOpType op;
+        std::shared_ptr<ExpressionNode> right;
+    };
+
+    enum class UnaryOpType : uint8_t {
+        BitNot // ~
+    };
+
+    class UnaryOpNode : public ExpressionNode {
+    public:
+        UnaryOpNode(UnaryOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        UnaryOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        UnaryOpType op;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class CastNode : public ExpressionNode {
+    public:
+        CastNode(std::shared_ptr<TypeSpecifierNode> targetType, std::shared_ptr<ExpressionNode> operand)
+            : targetType(std::move(targetType)), operand(std::move(operand)) {}
+        std::shared_ptr<TypeSpecifierNode> getTargetType() const { return targetType; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> targetType;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class AssignmentNode : public ExpressionNode {
+    public:
+        AssignmentNode(std::shared_ptr<IdentifierNode> lhs, std::shared_ptr<ExpressionNode> rhs)
+            : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+        std::shared_ptr<IdentifierNode> getLHS() const { return lhs; }
+        std::shared_ptr<ExpressionNode> getRHS() const { return rhs; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> lhs;
+        std::shared_ptr<ExpressionNode> rhs;
     };
 } // namespace Ryntra::Compiler

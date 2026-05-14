@@ -8,4 +8,4 @@ namespace Ryntra::Compiler {
         SourceLocation() = default;
         SourceLocation(const int _line, const int _column) : line(_line), column(_column) {}
     };
-}
+} // namespace Ryntra::Compiler

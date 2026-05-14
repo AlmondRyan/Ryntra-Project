@@ -62,10 +62,10 @@ int main(int argc, char **argv) {
         } else {
             std::cout << "Semantic Analysis Passed." << std::endl;
             if (auto typedAST = analyzer.getTypedAST()) {
-                std::cout << "Typed AST:" << std::endl;
-                typedAST->dump();
-                std::cout << std::endl;
-                std::cout << "====================================================" << std::endl;
+                // std::cout << "Typed AST:" << std::endl;
+                // typedAST->dump();
+                // std::cout << std::endl;
+                // std::cout << "====================================================" << std::endl;
 
                 Ryntra::IR::IRGenerator irGen;
                 auto module = irGen.generate(*typedAST, "HelloWorld");
@@ -80,6 +80,8 @@ int main(int argc, char **argv) {
                 Ryntra::VM::VirtualMachine vm;
                 vm.load(bytecode, bcGen.getConstantPool());
                 auto result = vm.execute("main");
+
+                // vm.disassemble();
 
                 std::cout << "\nProgram exited with code: ";
                 if (result.isInt32()) {

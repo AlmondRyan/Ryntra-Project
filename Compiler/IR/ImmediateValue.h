@@ -17,6 +17,8 @@ namespace Ryntra::IR {
             return toString();
         }
 
+        const std::string &getLiteralValue() const { return literalValue_; }
+
     private:
         std::string literalValue_;
     };

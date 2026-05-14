@@ -8,5 +8,10 @@ FunctionDefinitionNode
 ProgramNode
 ReturnNode
 IntegerLiteralNode
+LongLiteralNode
 VariableNode
 VariableDeclarationNode
+BinaryOpNode
+UnaryOpNode
+CastNode
+AssignmentNode

@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Ryntra::VM {
+    // clang-format off
     enum class OpCode : uint8_t {
         LoadConst,      // Load constant onto stack
         Call,           // Call user-defined function by index
@@ -14,13 +15,26 @@ namespace Ryntra::VM {
         Sub,            // Subtract
         Mul,            // Multiply
         Div,            // Divide
-        Pop,            // Pop value from stack
-        Halt            // Stop execution
+        Mod,            // Modulo
+        BitNot,         // Bitwise NOT (~)
+        BitAnd,         // Bitwise AND (&)
+        BitOr,          // Bitwise OR (|)
+        BitXor,         // Bitwise XOR (^)
+        Shl,            // Shift left (<<)
+        Shr,            // Shift right (>>)
+        SExt,           // Sign extend i32 → i64
+        Trunc,          // Truncate i64 → i32
+            Dup,            // Duplicate top of stack
+            Pop,            // Pop value from stack
+            StoreLocal,     // Store value from stack into local variable slot
+            LoadLocal,      // Load value from local variable slot onto stack
+            Halt            // Stop execution
     };
+    // clang-format on
 
     struct Instruction {
         OpCode opcode;
-        int32_t operand;  // Index into constant pool or other data
+        int32_t operand; // Index into constant pool or other data
 
         Instruction(OpCode op, int32_t operand = 0)
             : opcode(op), operand(operand) {}
@@ -31,9 +45,9 @@ namespace Ryntra::VM {
         std::string name;
         std::vector<Instruction> instructions;
         bool isExternal;
-        int32_t paramCount;  // number of parameters this function expects
+        int32_t paramCount; // number of parameters this function expects
 
-        BytecodeFunction(const std::string& name, bool external = false, int32_t paramCount = 0)
+        BytecodeFunction(const std::string &name, bool external = false, int32_t paramCount = 0)
             : name(name), isExternal(external), paramCount(paramCount) {}
 
         void addInstruction(OpCode op, int32_t operand = 0) {

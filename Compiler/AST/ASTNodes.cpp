@@ -32,6 +32,16 @@ namespace Ryntra::Compiler {
         return "(IntegerLiteral " + std::to_string(value) + ")";
     }
 
+    void LongLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<LongLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string LongLiteralNode::toString() const {
+        return "(LongLiteral " + std::to_string(value) + ")";
+    }
+
     void IdentifierNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<IdentifierNode> *>(&visitor)) {
             v->visit(*this);
@@ -144,6 +154,85 @@ namespace Ryntra::Compiler {
 
     std::string VariableNode::toString() const {
         return "(Variable " + name->toString() + ")";
+    }
+
+    void BinaryOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BinaryOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BinaryOpNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case BinaryOpType::Add:
+            opStr = "+";
+            break;
+        case BinaryOpType::Sub:
+            opStr = "-";
+            break;
+        case BinaryOpType::Mul:
+            opStr = "*";
+            break;
+        case BinaryOpType::Div:
+            opStr = "/";
+            break;
+        case BinaryOpType::Mod:
+            opStr = "%";
+            break;
+        case BinaryOpType::BitAnd:
+            opStr = "&";
+            break;
+        case BinaryOpType::BitOr:
+            opStr = "|";
+            break;
+        case BinaryOpType::BitXor:
+            opStr = "^";
+            break;
+        case BinaryOpType::Shl:
+            opStr = "<<";
+            break;
+        case BinaryOpType::Shr:
+            opStr = ">>";
+            break;
+        }
+        return "(BinaryOp " + left->toString() + " " + opStr + " " + right->toString() + ")";
+    }
+
+    void UnaryOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<UnaryOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string UnaryOpNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case UnaryOpType::BitNot:
+            opStr = "~";
+            break;
+        }
+        return "(UnaryOp " + opStr + " " + operand->toString() + ")";
+    }
+
+    void CastNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<CastNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string CastNode::toString() const {
+        return "(Cast " + targetType->toString() + " " + operand->toString() + ")";
+    }
+
+    void AssignmentNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string AssignmentNode::toString() const {
+        return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
     }
 
 } // namespace Ryntra::Compiler
