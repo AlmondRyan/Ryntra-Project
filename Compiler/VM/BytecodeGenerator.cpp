@@ -55,6 +55,12 @@ namespace Ryntra::VM {
                 if (spacePos != std::string::npos) {
                     val = VMValue(std::stoi(repr.substr(spacePos + 1)));
                 }
+            } else if (imm->getType()->isBool()) {
+                std::string repr = imm->toString();
+                auto spacePos = repr.find(' ');
+                if (spacePos != std::string::npos) {
+                    val = VMValue(static_cast<int32_t>(std::stoi(repr.substr(spacePos + 1))));
+                }
             } else if (imm->getType()->isInt64()) {
                 std::string repr = imm->toString();
                 auto spacePos = repr.find(' ');
@@ -99,6 +105,8 @@ namespace Ryntra::VM {
                         val = VMValue(std::get<int32_t>(constant->getValue()));
                     } else if (constant->getType()->isInt64()) {
                         val = VMValue(std::get<int64_t>(constant->getValue()));
+                    } else if (constant->getType()->isBool()) {
+                        val = VMValue(static_cast<int32_t>(std::get<bool>(constant->getValue()) ? 1 : 0));
                     } else if (constant->getType()->isString()) {
                         val = VMValue(std::get<std::string>(constant->getValue()));
                     }
@@ -249,15 +257,17 @@ namespace Ryntra::VM {
 
     int32_t BytecodeGenerator::getBuiltinIndex(const std::string &name) {
         static const std::vector<std::string> builtinTable = {
-            "__builtin_print",     // 0
-            "__builtin_print_i32", // 1 (int32 print)
-            "__builtin_print_i64", // 2 (int64 print)
-            "__builtin_scan_i32",  // 3 (int32 scan)
-            "__builtin_scan_i64",  // 4 (int64 scan)
+            "__builtin_print",          // 0
+            "__builtin_print_i32",      // 1 (int32 print)
+            "__builtin_print_i64",      // 2 (int64 print)
+            "__builtin_print_bool",     // 3 (bool print)
+            "__builtin_print_string",   // 4 (string print)
+            "__builtin_scan_bool",      // 5 (bool scan)
+            "__builtin_scan_i32",       // 6 (int32 scan)
+            "__builtin_scan_i64",       // 7 (int64 scan)
         };
         for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
-            if (name == builtinTable[i] ||
-                (name.rfind(builtinTable[i] + "_", 0) == 0))
+            if (name == builtinTable[i])
                 return i;
         }
         throw std::runtime_error("Unknown builtin: " + name);

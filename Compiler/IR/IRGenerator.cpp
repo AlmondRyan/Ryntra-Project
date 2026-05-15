@@ -30,6 +30,8 @@ namespace Ryntra::IR {
                 return Type::getInt64Type();
             if (name == "string" || name == "str")
                 return Type::getStringType();
+            if (name == "bool")
+                return Type::getBoolType();
             return Type::getInt32Type();
         }
 
@@ -105,6 +107,12 @@ namespace Ryntra::IR {
             builder_.generateUniqueName(""), constant);
     }
 
+    void IRGenerator::visit(Sem::TypedBoolLiteralNode &node) {
+        lastValue_ = std::make_shared<ImmediateValue>(
+            Type::getBoolType(),
+            node.getValue() ? "1" : "0");
+    }
+
     void IRGenerator::visit(Sem::TypedIntegerLiteralNode &node) {
         lastValue_ = std::make_shared<ImmediateValue>(
             Type::getInt32Type(),
@@ -148,6 +156,8 @@ namespace Ryntra::IR {
                     suffix = "i32";
                 else if (argType->isInt64())
                     suffix = "i64";
+                else if (argType->isBool())
+                    suffix = "bool";
                 else if (argType->isString())
                     suffix = "string";
                 actualName = calleeName + "_" + suffix;
@@ -159,6 +169,8 @@ namespace Ryntra::IR {
                     suffix = "i32";
                 else if (retType->toString() == "long")
                     suffix = "i64";
+                else if (retType->toString() == "bool")
+                    suffix = "bool";
                 actualName = calleeName + "_" + suffix;
             }
         }

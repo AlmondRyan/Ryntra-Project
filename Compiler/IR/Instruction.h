@@ -81,6 +81,8 @@ namespace Ryntra::IR {
                 result += "ret ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                else
+                    result += "void";
                 break;
 
             case Opcode::Add:

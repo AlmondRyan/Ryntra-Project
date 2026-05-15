@@ -6,6 +6,9 @@ INT: 'int';
 LONG: 'long';
 VOID: 'void';
 RETURN: 'return';
+BOOL: 'bool';
+TRUE: 'true';
+FALSE: 'false';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -64,6 +67,7 @@ typeSpecifier
     : INT
     | LONG
     | VOID
+    | BOOL
     ;
 
 block
@@ -99,6 +103,8 @@ expression
     | IDENTIFIER                                                    # VariableReference
     | STRING_LITERAL                                                # StringLiteral
     | INTEGER_LITERAL                                               # IntegerLiteral
+    | TRUE                                                          # TrueLiteral
+    | FALSE                                                         # FalseLiteral
     ;
 
 argumentList

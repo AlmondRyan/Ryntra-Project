@@ -1,6 +1,7 @@
 #include "VirtualMachine.h"
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 
 namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
@@ -38,13 +39,50 @@ namespace Ryntra::VM {
                 }
                 return VMValue();
             },
-            // 3: __builtin_scan_i32 — reads int32 from stdin
+            // 3: __builtin_print_bool — prints "true" or "false"
+            [](const std::vector<VMValue> &args) -> VMValue {
+                if (!args.empty() && args[0].isInt32()) {
+                    std::cout << (args[0].asInt32() ? "true" : "false");
+                }
+                return VMValue();
+            },
+            // 4: __builtin_print_string — prints string
+            [](const std::vector<VMValue> &args) -> VMValue {
+                if (!args.empty() && args[0].isString()) {
+                    const std::string &s = args[0].asString();
+                    for (char c : s) {
+                        if (c == '\0')
+                            break;
+                        std::cout << c;
+                    }
+                }
+                return VMValue();
+            },
+            // 5: __builtin_scan_bool — reads bool from stdin
+            [](const std::vector<VMValue> &args) -> VMValue {
+                std::string input;
+                std::cin >> input;
+                std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+                if (input == "true") {
+                    return VMValue(static_cast<int32_t>(1));
+                } else if (input == "false") {
+                    return VMValue(static_cast<int32_t>(0));
+                } else {
+                    try {
+                        int32_t val = std::stoi(input);
+                        return VMValue(val != 0 ? static_cast<int32_t>(1) : static_cast<int32_t>(0));
+                    } catch (...) {
+                        return VMValue(static_cast<int32_t>(0));
+                    }
+                }
+            },
+            // 6: __builtin_scan_i32 — reads int32 from stdin
             [](const std::vector<VMValue> &args) -> VMValue {
                 int32_t val;
                 std::cin >> val;
                 return VMValue(val);
             },
-            // 4: __builtin_scan_i64 — reads int64 from stdin
+            // 7: __builtin_scan_i64 — reads int64 from stdin
             [](const std::vector<VMValue> &args) -> VMValue {
                 int64_t val;
                 std::cin >> val;
@@ -52,7 +90,7 @@ namespace Ryntra::VM {
             },
         };
 
-        builtinArgCounts_ = {1, 1, 1, 0, 0}; // arg count per builtin index
+        builtinArgCounts_ = {1, 1, 1, 1, 1, 0, 0, 0}; // arg count per builtin index
     }
 
     void VirtualMachine::load(const std::vector<std::shared_ptr<BytecodeFunction>> &funcs,

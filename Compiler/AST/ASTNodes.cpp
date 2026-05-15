@@ -12,6 +12,16 @@ namespace Ryntra::Compiler {
         return "(TypeSpecifier " + name + ")";
     }
 
+    void BoolLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BoolLiteralNode::toString() const {
+        return value ? "(BoolLiteral true)" : "(BoolLiteral false)";
+    }
+
     void StringLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<StringLiteralNode> *>(&visitor)) {
             v->visit(*this);

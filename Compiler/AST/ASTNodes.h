@@ -41,6 +41,17 @@ namespace Ryntra::Compiler {
         std::string name;
     };
 
+    class BoolLiteralNode : public ExpressionNode {
+    public:
+        BoolLiteralNode(bool value) : value(value) {}
+        bool getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        bool value;
+    };
+
     class StringLiteralNode : public ExpressionNode {
     public:
         StringLiteralNode(const std::string &value) : value(value) {}

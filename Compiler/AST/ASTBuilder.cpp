@@ -95,6 +95,12 @@ namespace Ryntra::Compiler {
             }
             return visitIntegerLiteral(intCtx);
         }
+        if (auto *trueCtx = dynamic_cast<Ryntra::antlr::RyntraParser::TrueLiteralContext *>(ctx)) {
+            return visitTrueLiteral(trueCtx);
+        }
+        if (auto *falseCtx = dynamic_cast<Ryntra::antlr::RyntraParser::FalseLiteralContext *>(ctx)) {
+            return visitFalseLiteral(falseCtx);
+        }
         return nullptr; // Should not happen if grammar is covered
     }
 
@@ -165,6 +171,14 @@ namespace Ryntra::Compiler {
         }
         int64_t val = std::stoll(text);
         return createNode<LongLiteralNode>(ctx, val);
+    }
+
+    std::shared_ptr<BoolLiteralNode> ASTBuilder::visitTrueLiteral(Ryntra::antlr::RyntraParser::TrueLiteralContext *ctx) {
+        return createNode<BoolLiteralNode>(ctx, true);
+    }
+
+    std::shared_ptr<BoolLiteralNode> ASTBuilder::visitFalseLiteral(Ryntra::antlr::RyntraParser::FalseLiteralContext *ctx) {
+        return createNode<BoolLiteralNode>(ctx, false);
     }
 
     std::vector<std::shared_ptr<ExpressionNode>> ASTBuilder::visitArgumentList(Ryntra::antlr::RyntraParser::ArgumentListContext *ctx) {

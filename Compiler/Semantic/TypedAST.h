@@ -17,6 +17,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedFunctionDefinitionNode;
     class TypedBlockNode;
     class TypedStringLiteralNode;
+    class TypedBoolLiteralNode;
     class TypedIntegerLiteralNode;
     class TypedLongLiteralNode;
     class TypedIdentifierNode;
@@ -39,6 +40,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedExpressionStatementNode &node) = 0;
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
+        virtual void visit(TypedBoolLiteralNode &node) = 0;
         virtual void visit(TypedIntegerLiteralNode &node) = 0;
         virtual void visit(TypedLongLiteralNode &node) = 0;
         virtual void visit(TypedIdentifierNode &node) = 0;
@@ -97,6 +99,23 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::string value;
+    };
+
+    class TypedBoolLiteralNode : public TypedExpressionNode {
+    public:
+        TypedBoolLiteralNode(bool value, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), value(value) {}
+
+        bool getValue() const { return value; }
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedBoolLiteral(" + std::string(value ? "true" : "false") + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        bool value;
     };
 
     class TypedIntegerLiteralNode : public TypedExpressionNode {

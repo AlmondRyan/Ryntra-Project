@@ -1,4 +1,5 @@
 TypeSpecifierNode
+BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode

@@ -21,6 +21,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(BlockNode &node) override;
         void visit(ExpressionStatementNode &node) override;
         void visit(StringLiteralNode &node) override;
+        void visit(BoolLiteralNode &node) override;
         void visit(IntegerLiteralNode &node) override;
         void visit(LongLiteralNode &node) override;
         void visit(IdentifierNode &node) override;

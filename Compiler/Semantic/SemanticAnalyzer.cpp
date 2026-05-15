@@ -12,6 +12,8 @@ namespace Ryntra::Compiler::Semantic {
             return std::make_shared<STType::StringType>();
         if (name == "long")
             return std::make_shared<STType::Int64Type>();
+        if (name == "bool")
+            return std::make_shared<STType::BoolType>();
         // int / int32 both map to Int32
         return std::make_shared<STType::Int32Type>();
     }
@@ -28,6 +30,8 @@ namespace Ryntra::Compiler::Semantic {
             return TypeFactory::getPrimitive("int");
         case STType::TypeKind::Int64:
             return TypeFactory::getPrimitive("long");
+        case STType::TypeKind::Bool:
+            return TypeFactory::getPrimitive("bool");
         default:
             return TypeFactory::getPrimitive("unknown");
         }
@@ -83,6 +87,13 @@ namespace Ryntra::Compiler::Semantic {
                                                                           std::make_shared<STType::VoidType>(), std::move(params)));
             }
 
+            // Overload 4: __builtin_print(bool)
+            {
+                std::vector<TypePtr> params{std::make_shared<STType::BoolType>()};
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_print",
+                                                                          std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
             symbolTable.define(overloadSet, SourceLocation{0, 0});
         }
 
@@ -102,6 +113,13 @@ namespace Ryntra::Compiler::Semantic {
                 std::vector<TypePtr> params{};
                 overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_scan",
                                                                           std::make_shared<STType::Int64Type>(), std::move(params)));
+            }
+
+            // Overload 3: __builtin_scan() → bool
+            {
+                std::vector<TypePtr> params{};
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("__builtin_scan",
+                                                                          std::make_shared<STType::BoolType>(), std::move(params)));
             }
 
             symbolTable.define(overloadSet, SourceLocation{0, 0});
@@ -128,6 +146,13 @@ namespace Ryntra::Compiler::Semantic {
             // Overload 3: print(long)
             {
                 std::vector<TypePtr> params{std::make_shared<STType::Int64Type>()};
+                overloadSet->addFunction(std::make_shared<FunctionSymbol>("print",
+                                                                          std::make_shared<STType::VoidType>(), std::move(params)));
+            }
+
+            // Overload 4: print(bool)
+            {
+                std::vector<TypePtr> params{std::make_shared<STType::BoolType>()};
                 overloadSet->addFunction(std::make_shared<FunctionSymbol>("print",
                                                                           std::make_shared<STType::VoidType>(), std::move(params)));
             }
@@ -253,6 +278,14 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(StringLiteralNode &node) {
         auto stType = std::make_shared<STType::StringType>();
         auto typedNode = std::make_shared<TypedStringLiteralNode>(
+            node.getValue(), toTypedType(stType));
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(BoolLiteralNode &node) {
+        auto stType = std::make_shared<STType::BoolType>();
+        auto typedNode = std::make_shared<TypedBoolLiteralNode>(
             node.getValue(), toTypedType(stType));
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
