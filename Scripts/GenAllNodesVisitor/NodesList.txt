@@ -17,3 +17,4 @@ UnaryOpNode
 CastNode
 ComparisonNode
 AssignmentNode
+IfNode

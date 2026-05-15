@@ -34,6 +34,8 @@ namespace Ryntra::VM {
             Pop,            // Pop value from stack
             StoreLocal,     // Store value from stack into local variable slot
             LoadLocal,      // Load value from local variable slot onto stack
+            Jmp,            // Unconditional jump to instruction offset
+            Jz,             // Pop value, jump if zero to instruction offset
             Halt            // Stop execution
     };
     // clang-format on

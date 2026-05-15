@@ -35,6 +35,9 @@ namespace Ryntra::Compiler {
         if (ctx->returnStatement()) {
             return visitReturnStatement(ctx->returnStatement());
         }
+        if (ctx->ifStatement()) {
+            return visitIfStatement(ctx->ifStatement());
+        }
         if (ctx->expression()) {
             auto expr = visitExpression(ctx->expression());
             return createNode<ExpressionStatementNode>(ctx, std::move(expr));
@@ -45,6 +48,23 @@ namespace Ryntra::Compiler {
     std::shared_ptr<ReturnNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx) {
         auto expr = visitExpression(ctx->expression());
         return createNode<ReturnNode>(ctx, std::move(expr));
+    }
+
+    std::shared_ptr<IfNode> ASTBuilder::visitIfStatement(antlr::RyntraParser::IfStatementContext *ctx) {
+        auto cond = visitExpression(ctx->expression());
+        auto thenBlk = visitBlock(ctx->block());
+        std::shared_ptr<StatementNode> elseBr = nullptr;
+        if (ctx->elseBranch()) {
+            elseBr = visitElseBranch(ctx->elseBranch());
+        }
+        return createNode<IfNode>(ctx, std::move(cond), std::move(thenBlk), std::move(elseBr));
+    }
+
+    std::shared_ptr<StatementNode> ASTBuilder::visitElseBranch(antlr::RyntraParser::ElseBranchContext *ctx) {
+        if (ctx->ifStatement()) {
+            return visitIfStatement(ctx->ifStatement());
+        }
+        return visitBlock(ctx->block());
     }
 
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {

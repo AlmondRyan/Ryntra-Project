@@ -98,6 +98,22 @@ namespace Ryntra::Compiler {
         return "(Return " + value->toString() + ")";
     }
 
+    void IfNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<IfNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string IfNode::toString() const {
+        std::stringstream ss;
+        ss << "(If " << condition->toString() << " " << thenBlock->toString();
+        if (elseBranch) {
+            ss << " " << elseBranch->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     void BlockNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BlockNode> *>(&visitor)) {
             v->visit(*this);

@@ -68,6 +68,12 @@ namespace Ryntra::IR {
                                                     std::shared_ptr<Value> lhs,
                                                     std::shared_ptr<Value> rhs);
 
+        std::shared_ptr<Instruction> createBr(const std::string &targetBlockName);
+
+        std::shared_ptr<Instruction> createCondBr(std::shared_ptr<Value> condition,
+                                                   const std::string &trueBlockName,
+                                                   const std::string &falseBlockName);
+
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;
 

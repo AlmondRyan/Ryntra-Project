@@ -253,6 +253,34 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedBlock;
     }
 
+    void SemanticAnalyzer::visit(IfNode &node) {
+        node.getCondition()->accept(*this);
+        auto typedCond = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (typedCond) {
+            auto boolType = TypeFactory::getPrimitive("bool");
+            if (!typedCond->getType()->equals(*boolType) && typedCond->getType()->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE023]: If condition must be 'bool', but got '" +
+                        typedCond->getType()->toString() + "'.",
+                    node.getCondition()->getLocation());
+            }
+        }
+
+        node.getThenBlock()->accept(*this);
+        auto typedThen = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
+
+        std::shared_ptr<TypedStatementNode> typedElse = nullptr;
+        if (node.getElseBranch()) {
+            node.getElseBranch()->accept(*this);
+            typedElse = std::dynamic_pointer_cast<TypedStatementNode>(lastNode);
+        }
+
+        auto typedIf = std::make_shared<TypedIfNode>(typedCond, typedThen, typedElse);
+        typedIf->setLocation(node.getLocation());
+        lastNode = typedIf;
+    }
+
     void SemanticAnalyzer::visit(ExpressionStatementNode &node) {
         node.getExpression()->accept(*this);
         if (auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode)) {

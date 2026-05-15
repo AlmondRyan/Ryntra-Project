@@ -17,6 +17,7 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedProgramNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionDefinitionNode &node) override;
         void visit(Compiler::Semantic::TypedBlockNode &node) override;
+        void visit(Compiler::Semantic::TypedIfNode &node) override;
         void visit(Compiler::Semantic::TypedExpressionStatementNode &node) override;
         void visit(Compiler::Semantic::TypedReturnNode &node) override;
         void visit(Compiler::Semantic::TypedStringLiteralNode &node) override;
@@ -41,6 +42,19 @@ namespace Ryntra::IR {
 
         // Map from function name -> IR Function (for call resolution)
         std::unordered_map<std::string, std::shared_ptr<Function>> functionMap_;
+
+        // Current function name being generated (for adding basic blocks)
+        std::string currentFunctionName_;
+
+        // Counter for unique if-block names
+        int ifCounter_ = 0;
+
+        // Check if an opcode is a terminator (ends a basic block)
+        bool isTerminator(Instruction::Opcode opcode) const {
+            return opcode == Instruction::Opcode::Return ||
+                   opcode == Instruction::Opcode::Br ||
+                   opcode == Instruction::Opcode::CondBr;
+        }
 
         // Map from variable name -> IR Value (for variable references)
         std::unordered_map<std::string, std::shared_ptr<Value>> variableMap_;

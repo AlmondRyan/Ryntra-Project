@@ -19,6 +19,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(FunctionDefinitionNode &node) override;
         void visit(FunctionCallNode &node) override;
         void visit(BlockNode &node) override;
+        void visit(IfNode &node) override;
         void visit(ExpressionStatementNode &node) override;
         void visit(StringLiteralNode &node) override;
         void visit(BoolLiteralNode &node) override;

@@ -6,6 +6,8 @@ INT: 'int';
 LONG: 'long';
 VOID: 'void';
 RETURN: 'return';
+IF: 'if';
+ELSE: 'else';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
@@ -86,6 +88,16 @@ statement
     : variableDeclaration SEMICOLON
     | expression SEMICOLON
     | returnStatement
+    | ifStatement
+    ;
+
+ifStatement
+    : IF LPAREN expression RPAREN block elseBranch?
+    ;
+
+elseBranch
+    : ELSE block
+    | ELSE ifStatement
     ;
 
 variableDeclaration

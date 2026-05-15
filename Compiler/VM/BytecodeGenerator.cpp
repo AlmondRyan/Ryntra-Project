@@ -28,16 +28,36 @@ namespace Ryntra::VM {
         for (size_t i = 0; i < module->getFunctions().size(); ++i) {
             const auto &irFunc = module->getFunctions()[i];
             if (!irFunc->isExternal()) {
-                instructionSlots_.clear();
-                nextSlot_ = 0;
-                currentFunction_ = functions_[i];
-                for (const auto &block : irFunc->getBasicBlocks()) {
-                    generateBasicBlock(block);
-                }
+                generateFunction(irFunc);
             }
         }
 
         return functions_;
+    }
+
+    void BytecodeGenerator::generateFunction(const std::shared_ptr<IR::Function> &func) {
+        instructionSlots_.clear();
+        nextSlot_ = 0;
+
+        // Find the matching BytecodeFunction index
+        int32_t idx = getFunctionIndex(func->getName());
+        currentFunction_ = functions_[idx];
+
+        blockOffsets_.clear();
+        fixups_.clear();
+
+        for (const auto &block : func->getBasicBlocks()) {
+            blockOffsets_[block->getName()] = static_cast<int32_t>(currentFunction_->instructions.size());
+            generateBasicBlock(block);
+        }
+
+        // Resolve fixups: patch branch target offsets
+        for (const auto &fixup : fixups_) {
+            auto it = blockOffsets_.find(fixup.targetBlockName);
+            if (it != blockOffsets_.end()) {
+                currentFunction_->instructions[fixup.instructionIndex].operand = it->second;
+            }
+        }
     }
 
     void BytecodeGenerator::generateBasicBlock(const std::shared_ptr<IR::BasicBlock> &block) {
@@ -253,6 +273,27 @@ namespace Ryntra::VM {
                 break;
             }
             currentFunction_->addInstruction(bcOp);
+            break;
+        }
+
+        case IR::Instruction::Opcode::Br: {
+            auto targetName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[0])->getLiteralValue();
+            size_t instIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jmp, 0);
+            fixups_.push_back({instIdx, targetName});
+            break;
+        }
+
+        case IR::Instruction::Opcode::CondBr: {
+            pushOperandValue(operands[0]);
+            auto falseName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[2])->getLiteralValue();
+            size_t jzIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jz, 0);
+            fixups_.push_back({jzIdx, falseName});
+            auto trueName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[1])->getLiteralValue();
+            size_t jmpIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jmp, 0);
+            fixups_.push_back({jmpIdx, trueName});
             break;
         }
 

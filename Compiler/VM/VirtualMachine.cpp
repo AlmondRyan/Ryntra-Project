@@ -371,6 +371,23 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::Jmp:
+                ip = static_cast<size_t>(inst.operand);
+                continue;
+
+            case OpCode::Jz: {
+                auto val = pop();
+                if (val.isInt32() && val.asInt32() == 0) {
+                    ip = static_cast<size_t>(inst.operand);
+                    continue;
+                }
+                if (val.isInt64() && val.asInt64() == 0) {
+                    ip = static_cast<size_t>(inst.operand);
+                    continue;
+                }
+                break;
+            }
+
             case OpCode::Halt:
                 return VMValue();
 
@@ -412,6 +429,8 @@ namespace Ryntra::VM {
         "Pop",
         "StoreLocal",
         "LoadLocal",
+        "Jmp",
+        "Jz",
         "Halt",
     };
 
@@ -432,7 +451,9 @@ namespace Ryntra::VM {
                     std::cout << "  " << i << ": " << name;
                     if (inst.opcode == OpCode::LoadConst ||
                         inst.opcode == OpCode::StoreLocal ||
-                        inst.opcode == OpCode::LoadLocal) {
+                        inst.opcode == OpCode::LoadLocal ||
+                        inst.opcode == OpCode::Jmp ||
+                        inst.opcode == OpCode::Jz) {
                         std::cout << " " << inst.operand;
                     } else if (inst.opcode == OpCode::Call || inst.opcode == OpCode::BCall) {
                         std::cout << " " << inst.operand;

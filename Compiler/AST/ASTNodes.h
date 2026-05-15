@@ -132,7 +132,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> value;
     };
 
-    class BlockNode : public IASTNode {
+    class BlockNode : public StatementNode {
     public:
         BlockNode(std::vector<std::shared_ptr<StatementNode>> stmts) : statements(std::move(stmts)) {}
         const std::vector<std::shared_ptr<StatementNode>> &getStatements() const { return statements; }
@@ -141,6 +141,24 @@ namespace Ryntra::Compiler {
 
     private:
         std::vector<std::shared_ptr<StatementNode>> statements;
+    };
+
+    class IfNode : public StatementNode {
+    public:
+        IfNode(std::shared_ptr<ExpressionNode> condition,
+               std::shared_ptr<BlockNode> thenBlock,
+               std::shared_ptr<StatementNode> elseBranch)
+            : condition(std::move(condition)), thenBlock(std::move(thenBlock)), elseBranch(std::move(elseBranch)) {}
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getThenBlock() const { return thenBlock; }
+        std::shared_ptr<StatementNode> getElseBranch() const { return elseBranch; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<BlockNode> thenBlock;
+        std::shared_ptr<StatementNode> elseBranch; // IfNode, BlockNode, or nullptr
     };
 
     class FunctionDefinitionNode : public IASTNode {

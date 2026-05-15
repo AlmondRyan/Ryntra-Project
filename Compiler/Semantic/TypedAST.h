@@ -16,6 +16,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedProgramNode;
     class TypedFunctionDefinitionNode;
     class TypedBlockNode;
+    class TypedIfNode;
     class TypedStringLiteralNode;
     class TypedBoolLiteralNode;
     class TypedIntegerLiteralNode;
@@ -38,6 +39,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedProgramNode &node) = 0;
         virtual void visit(TypedFunctionDefinitionNode &node) = 0;
         virtual void visit(TypedBlockNode &node) = 0;
+        virtual void visit(TypedIfNode &node) = 0;
         virtual void visit(TypedExpressionStatementNode &node) = 0;
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
@@ -473,6 +475,41 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::vector<std::shared_ptr<TypedStatementNode>> statements;
+    };
+
+    class TypedIfNode : public TypedStatementNode {
+    public:
+        TypedIfNode(std::shared_ptr<TypedExpressionNode> condition,
+                    std::shared_ptr<TypedBlockNode> thenBlock,
+                    std::shared_ptr<TypedStatementNode> elseBranch)
+            : condition(std::move(condition)), thenBlock(std::move(thenBlock)), elseBranch(std::move(elseBranch)) {}
+
+        std::shared_ptr<TypedExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<TypedBlockNode> getThenBlock() const { return thenBlock; }
+        std::shared_ptr<TypedStatementNode> getElseBranch() const { return elseBranch; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedIf"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Condition:" << std::endl;
+            condition->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Then:" << std::endl;
+            thenBlock->dump(indent + 2);
+            if (elseBranch) {
+                printIndent(indent + 1);
+                std::cout << "Else:" << std::endl;
+                elseBranch->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> condition;
+        std::shared_ptr<TypedBlockNode> thenBlock;
+        std::shared_ptr<TypedStatementNode> elseBranch;
     };
 
     class TypedFunctionDefinitionNode : public ITypedASTNode {

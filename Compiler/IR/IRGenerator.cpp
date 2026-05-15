@@ -66,6 +66,9 @@ namespace Ryntra::IR {
         if (!irFunc)
             return;
 
+        currentFunctionName_ = node.getName();
+        ifCounter_ = 0;
+
         auto entry = builder_.createBasicBlock("entry");
         irFunc->addBasicBlock(entry);
         builder_.setInsertPoint(entry);
@@ -79,6 +82,73 @@ namespace Ryntra::IR {
                 builder_.createReturn("");
             }
         }
+    }
+
+    void IRGenerator::visit(Sem::TypedIfNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        node.getCondition()->accept(*this);
+        auto condVal = lastValue_;
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto thenBlock = builder_.createBasicBlock("if.then." + suffix);
+        auto elseBlock = builder_.createBasicBlock("if.else." + suffix);
+        auto endBlock = builder_.createBasicBlock("if.end." + suffix);
+
+        std::string trueTarget = thenBlock->getName();
+        std::string falseTarget;
+
+        if (node.getElseBranch()) {
+            falseTarget = elseBlock->getName();
+        } else {
+            falseTarget = endBlock->getName();
+        }
+
+        builder_.createCondBr(condVal, trueTarget, falseTarget);
+        currentFunc->addBasicBlock(thenBlock);
+        builder_.setInsertPoint(thenBlock);
+
+        node.getThenBlock()->accept(*this);
+
+        // After visiting child statements, the current block may have changed
+        // (e.g., inner ifs create new blocks). Use the actual current block.
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(endBlock->getName());
+            }
+        }
+
+        if (node.getElseBranch()) {
+            currentFunc->addBasicBlock(elseBlock);
+            builder_.setInsertPoint(elseBlock);
+
+            if (auto typedElseBlock = std::dynamic_pointer_cast<Sem::TypedBlockNode>(node.getElseBranch())) {
+                typedElseBlock->accept(*this);
+            } else if (auto typedElseIf = std::dynamic_pointer_cast<Sem::TypedIfNode>(node.getElseBranch())) {
+                typedElseIf->accept(*this);
+            }
+
+            curBlock = builder_.getInsertPoint();
+            if (curBlock) {
+                auto &insts = curBlock->getInstructions();
+                if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                    builder_.createBr(endBlock->getName());
+                }
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
     }
 
     void IRGenerator::visit(Sem::TypedBlockNode &node) {

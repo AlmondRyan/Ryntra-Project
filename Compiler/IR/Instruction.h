@@ -30,7 +30,9 @@ namespace Ryntra::IR {
             Lt,     // <
             Gt,     // >
             Le,     // <=
-            Ge      // >=
+            Ge,     // >=
+            Br,     // unconditional branch to basic block
+            CondBr  // conditional branch to basic block
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -183,6 +185,24 @@ namespace Ryntra::IR {
                 result += "trunc ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Br: {
+                result += "br ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::CondBr: {
+                result += "condbr ";
+                if (operands_.size() >= 1)
+                    result += operands_[0]->getReferenceName() + " ";
+                if (operands_.size() >= 2)
+                    result += operands_[1]->getReferenceName() + " ";
+                if (operands_.size() >= 3)
+                    result += operands_[2]->getReferenceName();
                 break;
             }
 

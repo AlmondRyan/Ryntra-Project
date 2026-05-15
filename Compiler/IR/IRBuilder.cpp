@@ -264,6 +264,35 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createBr(const std::string &targetBlockName) {
+        auto label = std::make_shared<ImmediateValue>(Type::getVoidType(), targetBlockName);
+        std::vector<std::shared_ptr<Value>> operands = {label};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Br,
+            Type::getVoidType(),
+            operands,
+            "");
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createCondBr(std::shared_ptr<Value> condition,
+                                                          const std::string &trueBlockName,
+                                                          const std::string &falseBlockName) {
+        auto trueLabel = std::make_shared<ImmediateValue>(Type::getVoidType(), trueBlockName);
+        auto falseLabel = std::make_shared<ImmediateValue>(Type::getVoidType(), falseBlockName);
+        std::vector<std::shared_ptr<Value>> operands = {condition, trueLabel, falseLabel};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::CondBr,
+            Type::getVoidType(),
+            operands,
+            "");
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
     void IRBuilder::setInsertPoint(std::shared_ptr<BasicBlock> block) {
         currentBlock_ = block;
     }
