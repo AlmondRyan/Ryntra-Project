@@ -15,4 +15,5 @@ VariableDeclarationNode
 BinaryOpNode
 UnaryOpNode
 CastNode
+ComparisonNode
 AssignmentNode

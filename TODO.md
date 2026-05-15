@@ -11,8 +11,8 @@ Something will do afterward:
 - ✅ V0.0.3.3 `long` Variable Bitwise Operation and Assignment
 - ✅ V0.0.3.4 Operations and Casting between `int` and `long`.
 - ✅ V0.0.3.5 `__builtin_scan()` Function
-- ❌ V0.0.4.1 `bool` Variable Declaration and Assignment
-- ❌ V0.0.4.2 Comparison Operators
+- ✅ V0.0.4.1 `bool` Variable Declaration and Assignment
+- ✅ V0.0.4.2 Comparison Operators
 - ❌ V0.0.4.3 `if` Blocks
 - ❌ V0.0.4.4 `else` And `else if` Blocks
 - ❌ V0.0.5.1 `while` Blocks

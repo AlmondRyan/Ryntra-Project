@@ -235,6 +235,25 @@ namespace Ryntra::Compiler {
         return "(Cast " + targetType->toString() + " " + operand->toString() + ")";
     }
 
+    void ComparisonNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ComparisonNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ComparisonNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case ComparisonOpType::Eq: opStr = "=="; break;
+        case ComparisonOpType::Ne: opStr = "!="; break;
+        case ComparisonOpType::Lt: opStr = "<"; break;
+        case ComparisonOpType::Gt: opStr = ">"; break;
+        case ComparisonOpType::Le: opStr = "<="; break;
+        case ComparisonOpType::Ge: opStr = ">="; break;
+        }
+        return "(Comparison " + left->toString() + " " + opStr + " " + right->toString() + ")";
+    }
+
     void AssignmentNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
             v->visit(*this);

@@ -243,6 +243,27 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createCompare(Instruction::Opcode opcode,
+                                                           const std::string &name,
+                                                           std::shared_ptr<Value> lhs,
+                                                           std::shared_ptr<Value> rhs) {
+        if (!lhs || !rhs)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {lhs, rhs};
+
+        auto instruction = std::make_shared<Instruction>(
+            opcode,
+            Type::getBoolType(),
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
     void IRBuilder::setInsertPoint(std::shared_ptr<BasicBlock> block) {
         currentBlock_ = block;
     }

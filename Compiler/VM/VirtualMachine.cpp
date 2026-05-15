@@ -289,6 +289,60 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::Eq: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() == b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() == b.asInt32())));
+                break;
+            }
+            case OpCode::Ne: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() != b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() != b.asInt32())));
+                break;
+            }
+            case OpCode::Lt: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() < b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() < b.asInt32())));
+                break;
+            }
+            case OpCode::Gt: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() > b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() > b.asInt32())));
+                break;
+            }
+            case OpCode::Le: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() <= b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() <= b.asInt32())));
+                break;
+            }
+            case OpCode::Ge: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() >= b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() >= b.asInt32())));
+                break;
+            }
             case OpCode::Dup: {
                 if (!stack_.empty()) {
                     push(stack_.back());
@@ -348,6 +402,12 @@ namespace Ryntra::VM {
         "Shr",
         "SExt",
         "Trunc",
+        "Eq",
+        "Ne",
+        "Lt",
+        "Gt",
+        "Le",
+        "Ge",
         "Dup",
         "Pop",
         "StoreLocal",

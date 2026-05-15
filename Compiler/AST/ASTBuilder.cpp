@@ -72,6 +72,9 @@ namespace Ryntra::Compiler {
         if (auto *castCtx = dynamic_cast<Ryntra::antlr::RyntraParser::CastExpressionContext *>(ctx)) {
             return visitCastExpression(castCtx);
         }
+        if (auto *cmpCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ComparisonExpressionContext *>(ctx)) {
+            return visitComparisonExpression(cmpCtx);
+        }
         if (auto *unaryCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryExpressionContext *>(ctx)) {
             return visitUnaryExpression(unaryCtx);
         }
@@ -270,6 +273,22 @@ namespace Ryntra::Compiler {
         auto targetType = visitTypeSpecifier(ctx->typeSpecifier());
         auto operand = visitExpression(ctx->expression());
         return createNode<CastNode>(ctx, std::move(targetType), std::move(operand));
+    }
+
+    std::shared_ptr<ComparisonNode> ASTBuilder::visitComparisonExpression(Ryntra::antlr::RyntraParser::ComparisonExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+
+        ComparisonOpType op;
+        if (ctx->EQ()) op = ComparisonOpType::Eq;
+        else if (ctx->NE()) op = ComparisonOpType::Ne;
+        else if (ctx->LT()) op = ComparisonOpType::Lt;
+        else if (ctx->GT()) op = ComparisonOpType::Gt;
+        else if (ctx->LE()) op = ComparisonOpType::Le;
+        else if (ctx->GE()) op = ComparisonOpType::Ge;
+        else op = ComparisonOpType::Eq;
+
+        return createNode<ComparisonNode>(ctx, std::move(left), op, std::move(right));
     }
 
     std::shared_ptr<AssignmentNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {

@@ -32,6 +32,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(BinaryOpNode &node) override;
         void visit(UnaryOpNode &node) override;
         void visit(CastNode &node) override;
+        void visit(ComparisonNode &node) override;
         void visit(AssignmentNode &node) override;
 
     private:

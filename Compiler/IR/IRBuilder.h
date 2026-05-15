@@ -63,6 +63,11 @@ namespace Ryntra::IR {
                                                     std::shared_ptr<Value> lhs,
                                                     std::shared_ptr<Value> rhs);
 
+        std::shared_ptr<Instruction> createCompare(Instruction::Opcode opcode,
+                                                    const std::string &name,
+                                                    std::shared_ptr<Value> lhs,
+                                                    std::shared_ptr<Value> rhs);
+
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;
 

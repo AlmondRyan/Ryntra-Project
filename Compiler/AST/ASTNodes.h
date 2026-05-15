@@ -258,6 +258,31 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> operand;
     };
 
+    enum class ComparisonOpType : uint8_t {
+        Eq,  // ==
+        Ne,  // !=
+        Lt,  // <
+        Gt,  // >
+        Le,  // <=
+        Ge   // >=
+    };
+
+    class ComparisonNode : public ExpressionNode {
+    public:
+        ComparisonNode(std::shared_ptr<ExpressionNode> left, ComparisonOpType op, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), op(op), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        ComparisonOpType getOp() const { return op; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        ComparisonOpType op;
+        std::shared_ptr<ExpressionNode> right;
+    };
+
     class AssignmentNode : public ExpressionNode {
     public:
         AssignmentNode(std::shared_ptr<IdentifierNode> lhs, std::shared_ptr<ExpressionNode> rhs)

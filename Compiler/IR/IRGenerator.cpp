@@ -353,6 +353,45 @@ namespace Ryntra::IR {
         }
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedComparisonNode &node) {
+        node.getLeft()->accept(*this);
+        auto lhs = lastValue_;
+
+        node.getRight()->accept(*this);
+        auto rhs = lastValue_;
+
+        if (!lhs || !rhs) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        if (!lhs->getType()->isEqual(rhs->getType().get())) {
+            if (lhs->getType()->isInt64() && rhs->getType()->isInt32()) {
+                if (auto rhsImm = std::dynamic_pointer_cast<ImmediateValue>(rhs))
+                    rhs = std::make_shared<ImmediateValue>(Type::getInt64Type(), rhsImm->getLiteralValue());
+                else
+                    rhs = builder_.createSExt(builder_.generateUniqueName(""), rhs, Type::getInt64Type());
+            } else if (lhs->getType()->isInt32() && rhs->getType()->isInt64()) {
+                if (auto lhsImm = std::dynamic_pointer_cast<ImmediateValue>(lhs))
+                    lhs = std::make_shared<ImmediateValue>(Type::getInt64Type(), lhsImm->getLiteralValue());
+                else
+                    lhs = builder_.createSExt(builder_.generateUniqueName(""), lhs, Type::getInt64Type());
+            }
+        }
+
+        Instruction::Opcode irOp;
+        switch (node.getOp()) {
+        case Compiler::ComparisonOpType::Eq: irOp = Instruction::Opcode::Eq; break;
+        case Compiler::ComparisonOpType::Ne: irOp = Instruction::Opcode::Ne; break;
+        case Compiler::ComparisonOpType::Lt: irOp = Instruction::Opcode::Lt; break;
+        case Compiler::ComparisonOpType::Gt: irOp = Instruction::Opcode::Gt; break;
+        case Compiler::ComparisonOpType::Le: irOp = Instruction::Opcode::Le; break;
+        case Compiler::ComparisonOpType::Ge: irOp = Instruction::Opcode::Ge; break;
+        }
+
+        lastValue_ = builder_.createCompare(irOp, builder_.generateUniqueName(""), lhs, rhs);
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {
         node.getRHS()->accept(*this);
         if (lastValue_) {

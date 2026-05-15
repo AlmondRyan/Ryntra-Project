@@ -29,6 +29,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedBinaryOpNode;
     class TypedUnaryOpNode;
     class TypedCastNode;
+    class TypedComparisonNode;
     class TypedAssignmentNode;
 
     class ITypedVisitor {
@@ -50,6 +51,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedBinaryOpNode &node) = 0;
         virtual void visit(TypedUnaryOpNode &node) = 0;
         virtual void visit(TypedCastNode &node) = 0;
+        virtual void visit(TypedComparisonNode &node) = 0;
         virtual void visit(TypedAssignmentNode &node) = 0;
     };
 
@@ -389,6 +391,45 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::shared_ptr<TypedExpressionNode> operand;
+    };
+
+    class TypedComparisonNode : public TypedExpressionNode {
+    public:
+        TypedComparisonNode(std::shared_ptr<TypedExpressionNode> left, ComparisonOpType op, std::shared_ptr<TypedExpressionNode> right, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), left(std::move(left)), op(op), right(std::move(right)) {}
+
+        std::shared_ptr<TypedExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<TypedExpressionNode> getRight() const { return right; }
+        ComparisonOpType getOp() const { return op; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override {
+            std::string opStr;
+            switch (op) {
+            case ComparisonOpType::Eq: opStr = "=="; break;
+            case ComparisonOpType::Ne: opStr = "!="; break;
+            case ComparisonOpType::Lt: opStr = "<"; break;
+            case ComparisonOpType::Gt: opStr = ">"; break;
+            case ComparisonOpType::Le: opStr = "<="; break;
+            case ComparisonOpType::Ge: opStr = ">="; break;
+            }
+            return "TypedComparison(" + opStr + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Left:" << std::endl;
+            left->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Right:" << std::endl;
+            right->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> left;
+        ComparisonOpType op;
+        std::shared_ptr<TypedExpressionNode> right;
     };
 
     class TypedAssignmentNode : public TypedExpressionNode {

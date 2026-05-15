@@ -171,6 +171,29 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::Eq:
+        case IR::Instruction::Opcode::Ne:
+        case IR::Instruction::Opcode::Lt:
+        case IR::Instruction::Opcode::Gt:
+        case IR::Instruction::Opcode::Le:
+        case IR::Instruction::Opcode::Ge: {
+            for (const auto &op : operands) {
+                pushOperandValue(op);
+            }
+            OpCode bcOp;
+            switch (inst->getOpcode()) {
+            case IR::Instruction::Opcode::Eq: bcOp = OpCode::Eq; break;
+            case IR::Instruction::Opcode::Ne: bcOp = OpCode::Ne; break;
+            case IR::Instruction::Opcode::Lt: bcOp = OpCode::Lt; break;
+            case IR::Instruction::Opcode::Gt: bcOp = OpCode::Gt; break;
+            case IR::Instruction::Opcode::Le: bcOp = OpCode::Le; break;
+            case IR::Instruction::Opcode::Ge: bcOp = OpCode::Ge; break;
+            default: bcOp = OpCode::Eq; break;
+            }
+            currentFunction_->addInstruction(bcOp);
+            break;
+        }
+
         case IR::Instruction::Opcode::BitNot: {
             // Unary: push the single operand
             for (const auto &op : operands) {

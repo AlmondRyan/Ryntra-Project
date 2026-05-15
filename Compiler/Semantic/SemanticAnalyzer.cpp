@@ -664,6 +664,44 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedCast;
     }
 
+    void SemanticAnalyzer::visit(ComparisonNode &node) {
+        node.getLeft()->accept(*this);
+        auto typedLeft = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        node.getRight()->accept(*this);
+        auto typedRight = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (!typedLeft || !typedRight) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
+        bool leftIsInt = typedLeft->getType()->equals(*intType);
+        bool rightIsInt = typedRight->getType()->equals(*intType);
+        bool leftIsLong = typedLeft->getType()->equals(*longType);
+        bool rightIsLong = typedRight->getType()->equals(*longType);
+
+        if (!leftIsInt && !leftIsLong) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE021]: Left operand of comparison must be 'int' or 'long', but got '" +
+                    typedLeft->getType()->toString() + "'.",
+                node.getLeft()->getLocation());
+        }
+        if (!rightIsInt && !rightIsLong) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE022]: Right operand of comparison must be 'int' or 'long', but got '" +
+                    typedRight->getType()->toString() + "'.",
+                node.getRight()->getLocation());
+        }
+
+        auto boolType = TypeFactory::getPrimitive("bool");
+        auto typedCmp = std::make_shared<TypedComparisonNode>(typedLeft, node.getOp(), typedRight, boolType);
+        typedCmp->setLocation(node.getLocation());
+        lastNode = typedCmp;
+    }
+
     void SemanticAnalyzer::visit(AssignmentNode &node) {
         auto varName = node.getLHS()->getName();
         auto sym = symbolTable.resolve(varName);

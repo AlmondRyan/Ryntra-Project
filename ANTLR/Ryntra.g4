@@ -37,6 +37,14 @@ BIT_NOT: '~';
 SHL: '<<';
 SHR: '>>';
 
+// Comparison Operators
+EQ: '==';
+NE: '!=';
+GE: '>=';
+LE: '<=';
+GT: '>';
+LT: '<';
+
 // Bitwise Compound Assignment
 AND_ASSIGN: '&=';
 OR_ASSIGN: '|=';
@@ -98,6 +106,7 @@ expression
     | left=expression op=BIT_AND right=expression                    # BitAndExpression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression
+    | left=expression op=(EQ|NE|GE|LE|GT|LT) right=expression         # ComparisonExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
     | IDENTIFIER                                                    # VariableReference

@@ -24,7 +24,13 @@ namespace Ryntra::IR {
             Shl,    // <<
             Shr,    // >>
             SExt,   // sign extend i32 → i64
-            Trunc   // truncate i64 → i32
+            Trunc,  // truncate i64 → i32
+            Eq,     // ==
+            Ne,     // !=
+            Lt,     // <
+            Gt,     // >
+            Le,     // <=
+            Ge      // >=
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -141,6 +147,28 @@ namespace Ryntra::IR {
                 result += "bitnot ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Eq:
+            case Opcode::Ne:
+            case Opcode::Lt:
+            case Opcode::Gt:
+            case Opcode::Le:
+            case Opcode::Ge: {
+                switch (opcode_) {
+                case Opcode::Eq: result += "eq "; break;
+                case Opcode::Ne: result += "ne "; break;
+                case Opcode::Lt: result += "lt "; break;
+                case Opcode::Gt: result += "gt "; break;
+                case Opcode::Le: result += "le "; break;
+                case Opcode::Ge: result += "ge "; break;
+                default: break;
+                }
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
                 break;
             }
 
