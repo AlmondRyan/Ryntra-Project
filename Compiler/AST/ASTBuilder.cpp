@@ -98,6 +98,9 @@ namespace Ryntra::Compiler {
         if (auto *unaryCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryExpressionContext *>(ctx)) {
             return visitUnaryExpression(unaryCtx);
         }
+        if (auto *notCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NotExpressionContext *>(ctx)) {
+            return visitNotExpression(notCtx);
+        }
         if (auto *parenCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ParenthesizedExpressionContext *>(ctx)) {
             return visitExpression(parenCtx->expression());
         }
@@ -262,6 +265,11 @@ namespace Ryntra::Compiler {
     std::shared_ptr<UnaryOpNode> ASTBuilder::visitUnaryExpression(Ryntra::antlr::RyntraParser::UnaryExpressionContext *ctx) {
         auto operand = visitExpression(ctx->expression());
         return createNode<UnaryOpNode>(ctx, UnaryOpType::BitNot, std::move(operand));
+    }
+
+    std::shared_ptr<UnaryOpNode> ASTBuilder::visitNotExpression(Ryntra::antlr::RyntraParser::NotExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<UnaryOpNode>(ctx, UnaryOpType::LogicalNot, std::move(operand));
     }
 
     std::shared_ptr<BinaryOpNode> ASTBuilder::visitShiftExpression(Ryntra::antlr::RyntraParser::ShiftExpressionContext *ctx) {

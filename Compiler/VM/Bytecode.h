@@ -17,6 +17,7 @@ namespace Ryntra::VM {
         Div,            // Divide
         Mod,            // Modulo
         BitNot,         // Bitwise NOT (~)
+        LogicalNot,     // Logical NOT (!)
         BitAnd,         // Bitwise AND (&)
         BitOr,          // Bitwise OR (|)
         BitXor,         // Bitwise XOR (^)

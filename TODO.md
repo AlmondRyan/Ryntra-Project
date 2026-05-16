@@ -13,8 +13,9 @@ Something will do afterward:
 - ✅ V0.0.3.5 `__builtin_scan()` Function
 - ✅ V0.0.4.1 `bool` Variable Declaration and Assignment
 - ✅ V0.0.4.2 Comparison Operators
-- ❌ V0.0.4.3 `if` Blocks
-- ❌ V0.0.4.4 `else` And `else if` Blocks
+- ✅ V0.0.4.3 `if` Blocks
+- ✅ V0.0.4.4 `else` And `else if` Blocks
+- ✅ V0.0.4.5 Condition NOT operator
 - ❌ V0.0.5.1 `while` Blocks
 - ❌ V0.0.5.2 `break` Blocks
 - ❌ V0.0.5.3 `continue` Blocks

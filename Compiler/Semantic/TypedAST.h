@@ -358,6 +358,9 @@ namespace Ryntra::Compiler::Semantic {
             case UnaryOpType::BitNot:
                 opStr = "~";
                 break;
+            case UnaryOpType::LogicalNot:
+                opStr = "!";
+                break;
             }
             return "TypedUnaryOp(" + opStr + "): " + type->toString();
         }

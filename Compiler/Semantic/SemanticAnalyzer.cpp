@@ -581,6 +581,22 @@ namespace Ryntra::Compiler::Semantic {
 
         auto intType = TypeFactory::getPrimitive("int");
         auto longType = TypeFactory::getPrimitive("long");
+        auto boolType = TypeFactory::getPrimitive("bool");
+
+        if (node.getOp() == UnaryOpType::LogicalNot) {
+            if (!typedOperand->getType()->equals(*boolType)) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE020]: Unary operator '!' requires 'bool' operand, but got '" +
+                        typedOperand->getType()->toString() + "'.",
+                    node.getOperand()->getLocation());
+            }
+            auto typedUnary = std::make_shared<TypedUnaryOpNode>(
+                node.getOp(), typedOperand, boolType);
+            typedUnary->setLocation(node.getLocation());
+            lastNode = typedUnary;
+            return;
+        }
+
         bool isInt = typedOperand->getType()->equals(*intType);
         bool isLong = typedOperand->getType()->equals(*longType);
         if (!isInt && !isLong) {

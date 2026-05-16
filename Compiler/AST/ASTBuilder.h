@@ -29,6 +29,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BinaryOpNode> visitMulDivModExpression(antlr::RyntraParser::MulDivModExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitPlusMinusExpression(antlr::RyntraParser::PlusMinusExpressionContext *ctx);
         std::shared_ptr<UnaryOpNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *ctx);
+        std::shared_ptr<UnaryOpNode> visitNotExpression(antlr::RyntraParser::NotExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitBitAndExpression(antlr::RyntraParser::BitAndExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitBitXorExpression(antlr::RyntraParser::BitXorExpressionContext *ctx);

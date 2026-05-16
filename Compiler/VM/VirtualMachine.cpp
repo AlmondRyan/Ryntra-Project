@@ -223,6 +223,14 @@ namespace Ryntra::VM {
                     push(VMValue(~a.asInt32()));
                 break;
             }
+            case OpCode::LogicalNot: {
+                auto a = pop();
+                if (a.isInt32())
+                    push(VMValue(a.asInt32() == 0 ? 1 : 0));
+                else if (a.isInt64())
+                    push(VMValue(a.asInt64() == 0 ? 1 : 0));
+                break;
+            }
             case OpCode::BitAnd: {
                 auto b = pop();
                 auto a = pop();
@@ -412,6 +420,7 @@ namespace Ryntra::VM {
         "Div",
         "Mod",
         "BitNot",
+        "LogicalNot",
         "BitAnd",
         "BitOr",
         "BitXor",

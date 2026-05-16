@@ -17,8 +17,9 @@ namespace Ryntra::IR {
             Mul,
             Div,
             Mod,
-            BitNot, // ~
-            BitAnd, // &
+            BitNot,     // ~
+            LogicalNot, // !
+            BitAnd,     // &
             BitOr,  // |
             BitXor, // ^
             Shl,    // <<
@@ -152,6 +153,13 @@ namespace Ryntra::IR {
                 break;
             }
 
+            case Opcode::LogicalNot: {
+                result += "logicalnot ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
             case Opcode::Eq:
             case Opcode::Ne:
             case Opcode::Lt:
@@ -189,7 +197,7 @@ namespace Ryntra::IR {
             }
 
             case Opcode::Br: {
-                result += "br ";
+                result += "br label ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
                 break;
@@ -198,11 +206,11 @@ namespace Ryntra::IR {
             case Opcode::CondBr: {
                 result += "condbr ";
                 if (operands_.size() >= 1)
-                    result += operands_[0]->getReferenceName() + " ";
+                    result += operands_[0]->getReferenceName();
                 if (operands_.size() >= 2)
-                    result += operands_[1]->getReferenceName() + " ";
+                    result += ", label " + operands_[1]->getReferenceName();
                 if (operands_.size() >= 3)
-                    result += operands_[2]->getReferenceName();
+                    result += ", label " + operands_[2]->getReferenceName();
                 break;
             }
 

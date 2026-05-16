@@ -71,7 +71,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override;
 
     private:
-        int value;
+        int value; // I think programmers should explicitly mark `L/l` suffix to make the
+                   // literal as long literal.
     };
 
     class LongLiteralNode : public ExpressionNode {
@@ -245,7 +246,8 @@ namespace Ryntra::Compiler {
     };
 
     enum class UnaryOpType : uint8_t {
-        BitNot // ~
+        BitNot, // ~
+        LogicalNot // !
     };
 
     class UnaryOpNode : public ExpressionNode {

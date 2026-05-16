@@ -214,12 +214,14 @@ namespace Ryntra::VM {
             break;
         }
 
-        case IR::Instruction::Opcode::BitNot: {
+        case IR::Instruction::Opcode::BitNot:
+        case IR::Instruction::Opcode::LogicalNot: {
             // Unary: push the single operand
             for (const auto &op : operands) {
                 pushOperandValue(op);
             }
-            currentFunction_->addInstruction(OpCode::BitNot);
+            OpCode bcOp = (inst->getOpcode() == IR::Instruction::Opcode::LogicalNot) ? OpCode::LogicalNot : OpCode::BitNot;
+            currentFunction_->addInstruction(bcOp);
             break;
         }
 

@@ -36,6 +36,7 @@ BIT_AND: '&';
 BIT_OR: '|';
 BIT_XOR: '^';
 BIT_NOT: '~';
+NOT: '!';
 SHL: '<<';
 SHR: '>>';
 
@@ -112,6 +113,7 @@ expression
     : LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
     | BIT_NOT expression                                            # UnaryExpression
+    | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
     | left=expression op=(PLUS|MINUS) right=expression               # PlusMinusExpression
     | left=expression op=(SHL|SHR) right=expression                  # ShiftExpression

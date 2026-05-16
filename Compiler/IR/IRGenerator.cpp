@@ -308,6 +308,9 @@ namespace Ryntra::IR {
         case Compiler::UnaryOpType::BitNot:
             irOp = Instruction::Opcode::BitNot;
             break;
+        case Compiler::UnaryOpType::LogicalNot:
+            irOp = Instruction::Opcode::LogicalNot;
+            break;
         default:
             lastValue_ = nullptr;
             return;
