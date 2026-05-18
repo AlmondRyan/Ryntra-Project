@@ -21,6 +21,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(BlockNode &node) override;
         void visit(IfNode &node) override;
         void visit(WhileNode &node) override;
+        void visit(ForNode &node) override;
         void visit(BreakNode &node) override;
         void visit(ContinueNode &node) override;
         void visit(ExpressionStatementNode &node) override;
@@ -38,6 +39,8 @@ namespace Ryntra::Compiler::Semantic {
         void visit(CastNode &node) override;
         void visit(ComparisonNode &node) override;
         void visit(AssignmentNode &node) override;
+        void visit(PrefixOpNode &node) override;
+        void visit(PostfixOpNode &node) override;
 
     private:
         SymbolTable symbolTable;

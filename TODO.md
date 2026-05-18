@@ -1,5 +1,6 @@
 Something will do afterward:
 - Add `--strict` (`-s`) command argument, will treat RCW002 (etc.) as an error.
+- Add `do...while()` block
 
 - ✅ V0.0.1 Hello World
 - ✅ V0.0.2.1 `int` Variable Declaration
@@ -17,8 +18,16 @@ Something will do afterward:
 - ✅ V0.0.4.4 `else` And `else if` Blocks
 - ✅ V0.0.4.5 Condition NOT operator
 - ✅ V0.0.5.1 `while` Blocks
-- ❌ V0.0.5.2 `break` Blocks
-- ❌ V0.0.5.3 `continue` Blocks
-- ❌ V0.0.5.4 Self Increase/Decrease Operator
-- ❌ V0.0.5.5 `for` Blocks
-- ❌ V0.0.5.6 `do...while` Blocks
+- ✅ V0.0.5.2 `break` Blocks
+- ✅ V0.0.5.3 `continue` Blocks
+- ✅ V0.0.5.4 Self Increase/Decrease Operator
+- ✅ V0.0.5.5 `for` Blocks
+- ❌ V0.0.6.1 Array Declaration
+- ❌ V0.0.6.2 Array Index Access
+- ❌ V0.0.6.3 Array Index Assignment
+- ❌ V0.0.7.1 Generic Operator `<>`
+- ❌ V0.0.7.2 Reference `ref<T>` (automatically dereference)
+- ❌ V0.0.7.3 Unsafe Block `unsafe`
+- ❌ V0.0.7.4 Unsafe Pointer `ptr<T>`
+- ❌ V0.0.7.5 Pointer dereference `ptr<T>.load()` (manually dereference, lowering to `ptrload` instruction)
+- ❌ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)

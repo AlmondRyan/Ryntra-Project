@@ -194,6 +194,76 @@ namespace Ryntra::IR {
         lastValue_ = nullptr;
     }
 
+    void IRGenerator::visit(Sem::TypedForNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        if (node.getInit()) {
+            node.getInit()->accept(*this);
+        }
+
+        auto condBlock = builder_.createBasicBlock("for.cond." + suffix);
+        auto bodyBlock = builder_.createBasicBlock("for.body." + suffix);
+        auto iterBlock = builder_.createBasicBlock("for.iter." + suffix);
+        auto endBlock = builder_.createBasicBlock("for.end." + suffix);
+
+        builder_.createBr(condBlock->getName());
+        currentFunc->addBasicBlock(condBlock);
+        builder_.setInsertPoint(condBlock);
+
+        std::shared_ptr<Value> condVal;
+        if (node.getCondition()) {
+            node.getCondition()->accept(*this);
+            condVal = lastValue_;
+        } else {
+            condVal = std::make_shared<ImmediateValue>(Type::getBoolType(), "1");
+        }
+
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        builder_.createCondBr(condVal, bodyBlock->getName(), endBlock->getName());
+        currentFunc->addBasicBlock(bodyBlock);
+        builder_.setInsertPoint(bodyBlock);
+
+        // Continue jumps to the iteration (operation) block
+        loopStack_.push_back({iterBlock->getName(), endBlock->getName()});
+        node.getBody()->accept(*this);
+        loopStack_.pop_back();
+
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(iterBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(iterBlock);
+        builder_.setInsertPoint(iterBlock);
+
+        if (node.getOperation()) {
+            node.getOperation()->accept(*this);
+        }
+
+        curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(condBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
     void IRGenerator::visit(Sem::TypedBreakNode &node) {
         if (loopStack_.empty())
             return;
@@ -543,6 +613,72 @@ namespace Ryntra::IR {
         }
 
         lastValue_ = builder_.createCompare(irOp, builder_.generateUniqueName(""), lhs, rhs);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPrefixOpNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto varIRType = toIRType(node.getType());
+
+        // Load current value
+        auto loadInst = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, varIRType);
+
+        // Create immediate 1 of the appropriate type
+        auto oneImm = std::make_shared<ImmediateValue>(varIRType, "1");
+        auto oneConst = builder_.createConstant(
+            builder_.generateUniqueName(""), varIRType, oneImm);
+
+        // Add or subtract 1
+        Instruction::Opcode arithOp = (node.getOp() == Compiler::IncDecOpType::Increment)
+                                          ? Instruction::Opcode::Add
+                                          : Instruction::Opcode::Sub;
+        auto result = builder_.createBinaryOp(
+            arithOp, builder_.generateUniqueName(""), loadInst, oneConst);
+
+        // Store result back
+        builder_.createStore(result, it->second);
+
+        // Prefix expression yields the new value
+        lastValue_ = result;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPostfixOpNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto varIRType = toIRType(node.getType());
+
+        // Load current value (this is the old value, which is the result)
+        auto loadInst = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, varIRType);
+
+        // Create immediate 1 of the appropriate type
+        auto oneImm = std::make_shared<ImmediateValue>(varIRType, "1");
+        auto oneConst = builder_.createConstant(
+            builder_.generateUniqueName(""), varIRType, oneImm);
+
+        // Add or subtract 1
+        Instruction::Opcode arithOp = (node.getOp() == Compiler::IncDecOpType::Increment)
+                                          ? Instruction::Opcode::Add
+                                          : Instruction::Opcode::Sub;
+        auto newVal = builder_.createBinaryOp(
+            arithOp, builder_.generateUniqueName(""), loadInst, oneConst);
+
+        // Store new value back
+        builder_.createStore(newVal, it->second);
+
+        // Postfix expression yields the OLD value
+        lastValue_ = loadInst;
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {

@@ -17,6 +17,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ReturnNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx);
         std::shared_ptr<IfNode> visitIfStatement(antlr::RyntraParser::IfStatementContext *ctx);
         std::shared_ptr<WhileNode> visitWhileStatement(antlr::RyntraParser::WhileStatementContext *ctx);
+        std::shared_ptr<ForNode> visitForStatement(antlr::RyntraParser::ForStatementContext *ctx);
         std::shared_ptr<BreakNode> visitBreakStatement(antlr::RyntraParser::BreakStatementContext *ctx);
         std::shared_ptr<ContinueNode> visitContinueStatement(antlr::RyntraParser::ContinueStatementContext *ctx);
         std::shared_ptr<StatementNode> visitElseBranch(antlr::RyntraParser::ElseBranchContext *ctx);
@@ -31,6 +32,10 @@ namespace Ryntra::Compiler {
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
         std::shared_ptr<BinaryOpNode> visitMulDivModExpression(antlr::RyntraParser::MulDivModExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitPlusMinusExpression(antlr::RyntraParser::PlusMinusExpressionContext *ctx);
+        std::shared_ptr<PrefixOpNode> visitPrefixIncExpression(antlr::RyntraParser::PrefixIncExpressionContext *ctx);
+        std::shared_ptr<PrefixOpNode> visitPrefixDecExpression(antlr::RyntraParser::PrefixDecExpressionContext *ctx);
+        std::shared_ptr<PostfixOpNode> visitPostfixIncExpression(antlr::RyntraParser::PostfixIncExpressionContext *ctx);
+        std::shared_ptr<PostfixOpNode> visitPostfixDecExpression(antlr::RyntraParser::PostfixDecExpressionContext *ctx);
         std::shared_ptr<UnaryOpNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *ctx);
         std::shared_ptr<UnaryOpNode> visitNotExpression(antlr::RyntraParser::NotExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *ctx);

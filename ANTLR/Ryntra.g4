@@ -9,6 +9,7 @@ RETURN: 'return';
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
+FOR: 'for';
 BREAK: 'break';
 CONTINUE: 'continue';
 BOOL: 'bool';
@@ -22,6 +23,8 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
+INC: '++';
+DEC: '--';
 ASSIGN: '=';
 ADD_ASSIGN: '+=';
 SUB_ASSIGN: '-=';
@@ -94,12 +97,17 @@ statement
     | returnStatement
     | ifStatement
     | whileStatement
+    | forStatement
     | breakStatement
     | continueStatement
     ;
 
 whileStatement
     : WHILE LPAREN expression RPAREN block
+    ;
+
+forStatement
+    : FOR LPAREN (variableDeclaration | expression)? SEMICOLON expression? SEMICOLON expression? RPAREN block
     ;
 
 breakStatement
@@ -130,6 +138,11 @@ returnStatement
 expression
     : LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
+    | expression INC                                                # PostfixIncExpression
+    | expression DEC                                                # PostfixDecExpression
+    | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
+    | INC expression                                                # PrefixIncExpression
+    | DEC expression                                                # PrefixDecExpression
     | BIT_NOT expression                                            # UnaryExpression
     | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
@@ -140,7 +153,6 @@ expression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression
     | left=expression op=(EQ|NE|GE|LE|GT|LT) right=expression         # ComparisonExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
-    | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
     | IDENTIFIER                                                    # VariableReference
     | STRING_LITERAL                                                # StringLiteral
     | INTEGER_LITERAL                                               # IntegerLiteral

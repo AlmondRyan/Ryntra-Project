@@ -18,8 +18,11 @@ namespace Ryntra::Compiler::Semantic {
     class TypedBlockNode;
     class TypedIfNode;
     class TypedWhileNode;
+    class TypedForNode;
     class TypedBreakNode;
     class TypedContinueNode;
+    class TypedPrefixOpNode;
+    class TypedPostfixOpNode;
     class TypedStringLiteralNode;
     class TypedBoolLiteralNode;
     class TypedIntegerLiteralNode;
@@ -44,8 +47,11 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedBlockNode &node) = 0;
         virtual void visit(TypedIfNode &node) = 0;
         virtual void visit(TypedWhileNode &node) = 0;
+        virtual void visit(TypedForNode &node) = 0;
         virtual void visit(TypedBreakNode &node) = 0;
         virtual void visit(TypedContinueNode &node) = 0;
+        virtual void visit(TypedPrefixOpNode &node) = 0;
+        virtual void visit(TypedPostfixOpNode &node) = 0;
         virtual void visit(TypedExpressionStatementNode &node) = 0;
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
@@ -383,6 +389,52 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> operand;
     };
 
+    class TypedPrefixOpNode : public TypedExpressionNode {
+    public:
+        TypedPrefixOpNode(std::string variableName, IncDecOpType op, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)), op(op) {}
+
+        const std::string &getVariableName() const { return variableName; }
+        IncDecOpType getOp() const { return op; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override {
+            std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+            return "TypedPrefixOp(" + opStr + " " + variableName + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string variableName;
+        IncDecOpType op;
+    };
+
+    class TypedPostfixOpNode : public TypedExpressionNode {
+    public:
+        TypedPostfixOpNode(std::string variableName, IncDecOpType op, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)), op(op) {}
+
+        const std::string &getVariableName() const { return variableName; }
+        IncDecOpType getOp() const { return op; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override {
+            std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+            return "TypedPostfixOp(" + variableName + " " + opStr + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string variableName;
+        IncDecOpType op;
+    };
+
     class TypedCastNode : public TypedExpressionNode {
     public:
         TypedCastNode(std::shared_ptr<TypedExpressionNode> operand, std::shared_ptr<Type> targetType)
@@ -545,6 +597,51 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::shared_ptr<TypedExpressionNode> condition;
+        std::shared_ptr<TypedBlockNode> body;
+    };
+
+    class TypedForNode : public TypedStatementNode {
+    public:
+        TypedForNode(std::shared_ptr<TypedStatementNode> init,
+                     std::shared_ptr<TypedExpressionNode> condition,
+                     std::shared_ptr<TypedExpressionNode> operation,
+                     std::shared_ptr<TypedBlockNode> body)
+            : init(std::move(init)), condition(std::move(condition)), operation(std::move(operation)), body(std::move(body)) {}
+
+        std::shared_ptr<TypedStatementNode> getInit() const { return init; }
+        std::shared_ptr<TypedExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<TypedExpressionNode> getOperation() const { return operation; }
+        std::shared_ptr<TypedBlockNode> getBody() const { return body; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFor"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            if (init) {
+                printIndent(indent + 1);
+                std::cout << "Init:" << std::endl;
+                init->dump(indent + 2);
+            }
+            if (condition) {
+                printIndent(indent + 1);
+                std::cout << "Condition:" << std::endl;
+                condition->dump(indent + 2);
+            }
+            if (operation) {
+                printIndent(indent + 1);
+                std::cout << "Operation:" << std::endl;
+                operation->dump(indent + 2);
+            }
+            printIndent(indent + 1);
+            std::cout << "Body:" << std::endl;
+            body->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedStatementNode> init;
+        std::shared_ptr<TypedExpressionNode> condition;
+        std::shared_ptr<TypedExpressionNode> operation;
         std::shared_ptr<TypedBlockNode> body;
     };
 

@@ -19,5 +19,8 @@ ComparisonNode
 AssignmentNode
 IfNode
 WhileNode
+ForNode
 BreakNode
 ContinueNode
+PrefixOpNode
+PostfixOpNode

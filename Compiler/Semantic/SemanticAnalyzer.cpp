@@ -305,6 +305,49 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedWhile;
     }
 
+    void SemanticAnalyzer::visit(ForNode &node) {
+        symbolTable.enterScope();
+
+        std::shared_ptr<TypedStatementNode> typedInit = nullptr;
+        if (node.getInit()) {
+            node.getInit()->accept(*this);
+            typedInit = std::dynamic_pointer_cast<TypedStatementNode>(lastNode);
+        }
+
+        std::shared_ptr<TypedExpressionNode> typedCond = nullptr;
+        if (node.getCondition()) {
+            node.getCondition()->accept(*this);
+            typedCond = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+            if (typedCond) {
+                auto boolType = TypeFactory::getPrimitive("bool");
+                if (!typedCond->getType()->equals(*boolType) && typedCond->getType()->toString() != "unknown") {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE031]: For-loop condition must be 'bool', but got '" +
+                            typedCond->getType()->toString() + "'.",
+                        node.getCondition()->getLocation());
+                }
+            }
+        }
+
+        std::shared_ptr<TypedExpressionNode> typedOp = nullptr;
+        if (node.getOperation()) {
+            node.getOperation()->accept(*this);
+            typedOp = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        }
+
+        ++loopDepth_;
+        node.getBody()->accept(*this);
+        --loopDepth_;
+        auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
+
+        symbolTable.exitScope();
+
+        auto typedFor = std::make_shared<TypedForNode>(typedInit, typedCond, typedOp, typedBody);
+        typedFor->setLocation(node.getLocation());
+        lastNode = typedFor;
+    }
+
     void SemanticAnalyzer::visit(BreakNode &node) {
         if (loopDepth_ == 0) {
             ErrorHandler::getInstance().makeError(
@@ -336,7 +379,9 @@ namespace Ryntra::Compiler::Semantic {
             auto exprType = typedExpr->getType();
             if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
                 auto rawExpr = node.getExpression();
-                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr)) {
+                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());
@@ -792,6 +837,104 @@ namespace Ryntra::Compiler::Semantic {
         auto typedCmp = std::make_shared<TypedComparisonNode>(typedLeft, node.getOp(), typedRight, boolType);
         typedCmp->setLocation(node.getLocation());
         lastNode = typedCmp;
+    }
+
+    void SemanticAnalyzer::visit(PrefixOpNode &node) {
+        auto operand = node.getOperand();
+        auto varNode = std::dynamic_pointer_cast<VariableNode>(operand);
+        if (!varNode) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE027]: Prefix '++'/'--' requires a variable operand.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varName = varNode->getName()->getName();
+        auto sym = symbolTable.resolve(varName);
+
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE014]: Variable '" + varName + "' is not defined.",
+                varNode->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
+        if (!varSym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE015]: '" + varName + "' is not a variable.",
+                varNode->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varType = toTypedType(varSym->getType());
+        auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
+
+        if (!varType->equals(*intType) && !varType->equals(*longType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE028]: Prefix '++'/'--' requires 'int' or 'long' variable, but got '" +
+                    varType->toString() + "'.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedPrefix = std::make_shared<TypedPrefixOpNode>(varName, node.getOp(), varType);
+        typedPrefix->setLocation(node.getLocation());
+        lastNode = typedPrefix;
+    }
+
+    void SemanticAnalyzer::visit(PostfixOpNode &node) {
+        auto operand = node.getOperand();
+        auto varNode = std::dynamic_pointer_cast<VariableNode>(operand);
+        if (!varNode) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE029]: Postfix '++'/'--' requires a variable operand.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varName = varNode->getName()->getName();
+        auto sym = symbolTable.resolve(varName);
+
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE014]: Variable '" + varName + "' is not defined.",
+                varNode->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
+        if (!varSym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE015]: '" + varName + "' is not a variable.",
+                varNode->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varType = toTypedType(varSym->getType());
+        auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
+
+        if (!varType->equals(*intType) && !varType->equals(*longType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE030]: Postfix '++'/'--' requires 'int' or 'long' variable, but got '" +
+                    varType->toString() + "'.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedPostfix = std::make_shared<TypedPostfixOpNode>(varName, node.getOp(), varType);
+        typedPostfix->setLocation(node.getLocation());
+        lastNode = typedPostfix;
     }
 
     void SemanticAnalyzer::visit(AssignmentNode &node) {

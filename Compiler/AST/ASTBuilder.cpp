@@ -41,6 +41,9 @@ namespace Ryntra::Compiler {
         if (ctx->whileStatement()) {
             return visitWhileStatement(ctx->whileStatement());
         }
+        if (ctx->forStatement()) {
+            return visitForStatement(ctx->forStatement());
+        }
         if (ctx->breakStatement()) {
             return visitBreakStatement(ctx->breakStatement());
         }
@@ -73,6 +76,34 @@ namespace Ryntra::Compiler {
         auto cond = visitExpression(ctx->expression());
         auto body = visitBlock(ctx->block());
         return createNode<WhileNode>(ctx, std::move(cond), std::move(body));
+    }
+
+    std::shared_ptr<ForNode> ASTBuilder::visitForStatement(antlr::RyntraParser::ForStatementContext *ctx) {
+        std::shared_ptr<StatementNode> init = nullptr;
+        std::shared_ptr<ExpressionNode> condition = nullptr;
+        std::shared_ptr<ExpressionNode> operation = nullptr;
+
+        auto exprs = ctx->expression();
+        size_t exprIdx = 0;
+
+        if (ctx->variableDeclaration()) {
+            init = visitVariableDeclaration(ctx->variableDeclaration());
+        } else {
+            if (exprIdx < exprs.size()) {
+                init = createNode<ExpressionStatementNode>(ctx, visitExpression(exprs[exprIdx++]));
+            }
+        }
+
+        if (exprIdx < exprs.size()) {
+            condition = visitExpression(exprs[exprIdx++]);
+        }
+
+        if (exprIdx < exprs.size()) {
+            operation = visitExpression(exprs[exprIdx++]);
+        }
+
+        auto body = visitBlock(ctx->block());
+        return createNode<ForNode>(ctx, std::move(init), std::move(condition), std::move(operation), std::move(body));
     }
 
     std::shared_ptr<BreakNode> ASTBuilder::visitBreakStatement(antlr::RyntraParser::BreakStatementContext *ctx) {
@@ -112,17 +143,29 @@ namespace Ryntra::Compiler {
         if (auto *bitOrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitOrExpressionContext *>(ctx)) {
             return visitBitOrExpression(bitOrCtx);
         }
-        if (auto *castCtx = dynamic_cast<Ryntra::antlr::RyntraParser::CastExpressionContext *>(ctx)) {
-            return visitCastExpression(castCtx);
-        }
         if (auto *cmpCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ComparisonExpressionContext *>(ctx)) {
             return visitComparisonExpression(cmpCtx);
+        }
+        if (auto *castCtx = dynamic_cast<Ryntra::antlr::RyntraParser::CastExpressionContext *>(ctx)) {
+            return visitCastExpression(castCtx);
         }
         if (auto *unaryCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryExpressionContext *>(ctx)) {
             return visitUnaryExpression(unaryCtx);
         }
         if (auto *notCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NotExpressionContext *>(ctx)) {
             return visitNotExpression(notCtx);
+        }
+        if (auto *prefixIncCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PrefixIncExpressionContext *>(ctx)) {
+            return visitPrefixIncExpression(prefixIncCtx);
+        }
+        if (auto *prefixDecCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PrefixDecExpressionContext *>(ctx)) {
+            return visitPrefixDecExpression(prefixDecCtx);
+        }
+        if (auto *postfixIncCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PostfixIncExpressionContext *>(ctx)) {
+            return visitPostfixIncExpression(postfixIncCtx);
+        }
+        if (auto *postfixDecCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PostfixDecExpressionContext *>(ctx)) {
+            return visitPostfixDecExpression(postfixDecCtx);
         }
         if (auto *parenCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ParenthesizedExpressionContext *>(ctx)) {
             return visitExpression(parenCtx->expression());
@@ -138,7 +181,6 @@ namespace Ryntra::Compiler {
         }
         if (auto *intCtx = dynamic_cast<Ryntra::antlr::RyntraParser::IntegerLiteralContext *>(ctx)) {
             std::string text = intCtx->INTEGER_LITERAL()->getText();
-            // Check for 'L' or 'l' suffix → long literal
             if (!text.empty() && (text.back() == 'L' || text.back() == 'l')) {
                 return visitLongLiteral(intCtx);
             }
@@ -150,7 +192,7 @@ namespace Ryntra::Compiler {
         if (auto *falseCtx = dynamic_cast<Ryntra::antlr::RyntraParser::FalseLiteralContext *>(ctx)) {
             return visitFalseLiteral(falseCtx);
         }
-        return nullptr; // Should not happen if grammar is covered
+        return nullptr;
     }
 
     std::shared_ptr<FunctionCallNode> ASTBuilder::visitFunctionCall(Ryntra::antlr::RyntraParser::FunctionCallContext *ctx) {
@@ -385,6 +427,26 @@ namespace Ryntra::Compiler {
         auto binExpr = std::make_shared<BinaryOpNode>(std::move(varRef), binOp, std::move(rhs));
         binExpr->setLocation(lhsName->getLocation());
         return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(binExpr));
+    }
+
+    std::shared_ptr<PrefixOpNode> ASTBuilder::visitPrefixIncExpression(antlr::RyntraParser::PrefixIncExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<PrefixOpNode>(ctx, IncDecOpType::Increment, std::move(operand));
+    }
+
+    std::shared_ptr<PrefixOpNode> ASTBuilder::visitPrefixDecExpression(antlr::RyntraParser::PrefixDecExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<PrefixOpNode>(ctx, IncDecOpType::Decrement, std::move(operand));
+    }
+
+    std::shared_ptr<PostfixOpNode> ASTBuilder::visitPostfixIncExpression(antlr::RyntraParser::PostfixIncExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<PostfixOpNode>(ctx, IncDecOpType::Increment, std::move(operand));
+    }
+
+    std::shared_ptr<PostfixOpNode> ASTBuilder::visitPostfixDecExpression(antlr::RyntraParser::PostfixDecExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<PostfixOpNode>(ctx, IncDecOpType::Decrement, std::move(operand));
     }
 
 } // namespace Ryntra::Compiler

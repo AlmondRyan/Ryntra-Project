@@ -310,4 +310,43 @@ namespace Ryntra::Compiler {
         return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
     }
 
+    void PrefixOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PrefixOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PrefixOpNode::toString() const {
+        std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+        return "(PrefixOp " + opStr + " " + operand->toString() + ")";
+    }
+
+    void PostfixOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PostfixOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PostfixOpNode::toString() const {
+        std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+        return "(PostfixOp " + operand->toString() + " " + opStr + ")";
+    }
+
+    void ForNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ForNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ForNode::toString() const {
+        std::stringstream ss;
+        ss << "(For";
+        if (init) ss << " " << init->toString();
+        if (condition) ss << " " << condition->toString();
+        if (operation) ss << " " << operation->toString();
+        ss << " " << body->toString();
+        ss << ")";
+        return ss.str();
+    }
+
 } // namespace Ryntra::Compiler

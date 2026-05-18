@@ -189,6 +189,60 @@ namespace Ryntra::Compiler {
         std::string toString() const override;
     };
 
+    enum class IncDecOpType : uint8_t {
+        Increment, // ++
+        Decrement  // --
+    };
+
+    class PrefixOpNode : public ExpressionNode {
+    public:
+        PrefixOpNode(IncDecOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        IncDecOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        IncDecOpType op;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class PostfixOpNode : public ExpressionNode {
+    public:
+        PostfixOpNode(IncDecOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        IncDecOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        IncDecOpType op;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class ForNode : public StatementNode {
+    public:
+        ForNode(std::shared_ptr<StatementNode> init,
+                std::shared_ptr<ExpressionNode> condition,
+                std::shared_ptr<ExpressionNode> operation,
+                std::shared_ptr<BlockNode> body)
+            : init(std::move(init)), condition(std::move(condition)), operation(std::move(operation)), body(std::move(body)) {}
+        std::shared_ptr<StatementNode> getInit() const { return init; }
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<ExpressionNode> getOperation() const { return operation; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<StatementNode> init;
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<ExpressionNode> operation;
+        std::shared_ptr<BlockNode> body;
+    };
+
     class FunctionDefinitionNode : public IASTNode {
     public:
         FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name, std::shared_ptr<BlockNode> body)

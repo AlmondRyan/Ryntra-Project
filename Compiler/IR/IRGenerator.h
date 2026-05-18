@@ -19,6 +19,7 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedBlockNode &node) override;
         void visit(Compiler::Semantic::TypedIfNode &node) override;
         void visit(Compiler::Semantic::TypedWhileNode &node) override;
+        void visit(Compiler::Semantic::TypedForNode &node) override;
         void visit(Compiler::Semantic::TypedBreakNode &node) override;
         void visit(Compiler::Semantic::TypedContinueNode &node) override;
         void visit(Compiler::Semantic::TypedExpressionStatementNode &node) override;
@@ -36,6 +37,8 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedCastNode &node) override;
         void visit(Compiler::Semantic::TypedComparisonNode &node) override;
         void visit(Compiler::Semantic::TypedAssignmentNode &node) override;
+        void visit(Compiler::Semantic::TypedPrefixOpNode &node) override;
+        void visit(Compiler::Semantic::TypedPostfixOpNode &node) override;
 
     private:
         IRBuilder builder_;
