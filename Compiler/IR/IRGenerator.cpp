@@ -151,6 +151,47 @@ namespace Ryntra::IR {
         lastValue_ = nullptr;
     }
 
+    void IRGenerator::visit(Sem::TypedWhileNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        auto condBlock = builder_.createBasicBlock("while.cond." + suffix);
+        auto bodyBlock = builder_.createBasicBlock("while.body." + suffix);
+        auto endBlock = builder_.createBasicBlock("while.end." + suffix);
+
+        builder_.createBr(condBlock->getName());
+        currentFunc->addBasicBlock(condBlock);
+        builder_.setInsertPoint(condBlock);
+
+        node.getCondition()->accept(*this);
+        auto condVal = lastValue_;
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        builder_.createCondBr(condVal, bodyBlock->getName(), endBlock->getName());
+        currentFunc->addBasicBlock(bodyBlock);
+        builder_.setInsertPoint(bodyBlock);
+
+        node.getBody()->accept(*this);
+
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(condBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
     void IRGenerator::visit(Sem::TypedBlockNode &node) {
         for (const auto &stmt : node.getStatements()) {
             stmt->accept(*this);
@@ -268,29 +309,40 @@ namespace Ryntra::IR {
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedVariableDeclarationNode &node) {
+        auto varName = node.getName();
+        auto varIRType = toIRType(node.getType());
+
+        // Allocate a local slot for the variable
+        auto allocaInst = builder_.createAlloca(
+            builder_.generateUniqueName(varName + "."), varIRType);
+        allocaMap_[varName] = allocaInst;
+
         if (node.getInitializer()) {
             node.getInitializer()->accept(*this);
             if (lastValue_) {
-                auto varName = node.getName();
-                if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
-                    auto constInst = builder_.createConstant(
+                // Materialize ImmediateValue into a Constant instruction if needed
+                std::shared_ptr<Value> storeVal = lastValue_;
+                if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                    storeVal = builder_.createConstant(
                         builder_.generateUniqueName(""),
-                        lastValue_->getType(),
-                        lastValue_);
-                    variableMap_[varName] = constInst;
-                } else {
-                    variableMap_[varName] = lastValue_;
+                        imm->getType(), imm);
                 }
+                builder_.createStore(storeVal, allocaInst);
                 lastValue_ = nullptr;
             }
         }
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedVariableNode &node) {
-        auto it = variableMap_.find(node.getName());
-        if (it != variableMap_.end()) {
-            lastValue_ = it->second;
+        auto it = allocaMap_.find(node.getName());
+        if (it != allocaMap_.end()) {
+            auto loadType = toIRType(node.getType());
+            lastValue_ = builder_.createLoad(
+                builder_.generateUniqueName(""),
+                it->second,
+                loadType);
         } else {
+            // Variable not found in alloca map; fallback (shouldn't happen after semantic analysis)
             lastValue_ = nullptr;
         }
     }
@@ -466,18 +518,25 @@ namespace Ryntra::IR {
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
         node.getRHS()->accept(*this);
         if (lastValue_) {
-            auto varName = node.getVariableName();
-            if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
-                auto constInst = builder_.createConstant(
+            // Materialize ImmediateValue if needed
+            std::shared_ptr<Value> storeVal = lastValue_;
+            if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                storeVal = builder_.createConstant(
                     builder_.generateUniqueName(""),
-                    lastValue_->getType(),
-                    lastValue_);
-                variableMap_[varName] = constInst;
-            } else {
-                variableMap_[varName] = lastValue_;
+                    imm->getType(), imm);
             }
+            builder_.createStore(storeVal, it->second);
+            // Assignment expression yields the stored value (for potential chaining)
+            lastValue_ = storeVal;
         }
     }
 } // namespace Ryntra::IR

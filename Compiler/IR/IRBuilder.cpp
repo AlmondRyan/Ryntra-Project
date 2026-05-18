@@ -91,6 +91,59 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createAlloca(const std::string &name,
+                                                          std::shared_ptr<Type> elementType) {
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Alloca,
+            Type::getVoidType(),
+            std::vector<std::shared_ptr<Value>>{},
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createLoad(const std::string &name,
+                                                        std::shared_ptr<Instruction> allocaInst,
+                                                        std::shared_ptr<Type> loadType) {
+        if (!allocaInst)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {allocaInst};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Load,
+            loadType ? loadType : Type::getVoidType(),
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createStore(std::shared_ptr<Value> value,
+                                                         std::shared_ptr<Instruction> allocaInst) {
+        if (!value || !allocaInst)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {value, allocaInst};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::Store,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
     std::shared_ptr<Instruction> IRBuilder::createCall(const std::string &name,
                                                        std::shared_ptr<Function> function,
                                                        const std::vector<std::shared_ptr<Value>> &args) {

@@ -8,6 +8,7 @@ VOID: 'void';
 RETURN: 'return';
 IF: 'if';
 ELSE: 'else';
+WHILE: 'while';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
@@ -90,6 +91,11 @@ statement
     | expression SEMICOLON
     | returnStatement
     | ifStatement
+    | whileStatement
+    ;
+
+whileStatement
+    : WHILE LPAREN expression RPAREN block
     ;
 
 ifStatement

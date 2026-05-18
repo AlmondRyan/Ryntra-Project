@@ -16,6 +16,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<StatementNode> visitStatement(antlr::RyntraParser::StatementContext *ctx);
         std::shared_ptr<ReturnNode> visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx);
         std::shared_ptr<IfNode> visitIfStatement(antlr::RyntraParser::IfStatementContext *ctx);
+        std::shared_ptr<WhileNode> visitWhileStatement(antlr::RyntraParser::WhileStatementContext *ctx);
         std::shared_ptr<StatementNode> visitElseBranch(antlr::RyntraParser::ElseBranchContext *ctx);
         std::shared_ptr<ExpressionNode> visitExpression(antlr::RyntraParser::ExpressionContext *ctx);
         std::shared_ptr<FunctionCallNode> visitFunctionCall(antlr::RyntraParser::FunctionCallContext *ctx);

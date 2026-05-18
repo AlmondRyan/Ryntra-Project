@@ -37,6 +37,7 @@ namespace Ryntra::VM {
 
     void BytecodeGenerator::generateFunction(const std::shared_ptr<IR::Function> &func) {
         instructionSlots_.clear();
+        allocaSlotMap_.clear();
         nextSlot_ = 0;
 
         // Find the matching BytecodeFunction index
@@ -275,6 +276,34 @@ namespace Ryntra::VM {
                 break;
             }
             currentFunction_->addInstruction(bcOp);
+            break;
+        }
+
+        case IR::Instruction::Opcode::Alloca: {
+            int32_t slotNum = nextSlot_++;
+            allocaSlotMap_[inst.get()] = slotNum;
+            break;
+        }
+
+        case IR::Instruction::Opcode::Load: {
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                currentFunction_->addInstruction(OpCode::LoadLocal, slotNum);
+            }
+            // Don't push operands — LoadLocal pushes the value directly
+            // The result will be stored in the assigned slot below (needsSlot=true)
+            break;
+        }
+
+        case IR::Instruction::Opcode::Store: {
+            // operands[0] = value to store, operands[1] = alloca instruction
+            pushOperandValue(operands[0]);
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[1]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                currentFunction_->addInstruction(OpCode::StoreLocal, slotNum);
+            }
             break;
         }
 

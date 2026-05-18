@@ -36,9 +36,19 @@ namespace Ryntra::IR {
                                                     std::shared_ptr<Type> type,
                                                     std::shared_ptr<Value> value);
 
+        std::shared_ptr<Instruction> createAlloca(const std::string &name,
+                                                   std::shared_ptr<Type> elementType);
+
+        std::shared_ptr<Instruction> createLoad(const std::string &name,
+                                                 std::shared_ptr<Instruction> allocaInst,
+                                                 std::shared_ptr<Type> loadType);
+
+        std::shared_ptr<Instruction> createStore(std::shared_ptr<Value> value,
+                                                  std::shared_ptr<Instruction> allocaInst);
+
         std::shared_ptr<Instruction> createCall(const std::string &name,
-                                                std::shared_ptr<Function> function,
-                                                const std::vector<std::shared_ptr<Value>> &args);
+                                                 std::shared_ptr<Function> function,
+                                                 const std::vector<std::shared_ptr<Value>> &args);
 
         std::shared_ptr<Instruction> createReturn(const std::string &name,
                                                   std::shared_ptr<Value> value = nullptr);

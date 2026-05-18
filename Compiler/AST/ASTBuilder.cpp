@@ -38,6 +38,9 @@ namespace Ryntra::Compiler {
         if (ctx->ifStatement()) {
             return visitIfStatement(ctx->ifStatement());
         }
+        if (ctx->whileStatement()) {
+            return visitWhileStatement(ctx->whileStatement());
+        }
         if (ctx->expression()) {
             auto expr = visitExpression(ctx->expression());
             return createNode<ExpressionStatementNode>(ctx, std::move(expr));
@@ -58,6 +61,12 @@ namespace Ryntra::Compiler {
             elseBr = visitElseBranch(ctx->elseBranch());
         }
         return createNode<IfNode>(ctx, std::move(cond), std::move(thenBlk), std::move(elseBr));
+    }
+
+    std::shared_ptr<WhileNode> ASTBuilder::visitWhileStatement(antlr::RyntraParser::WhileStatementContext *ctx) {
+        auto cond = visitExpression(ctx->expression());
+        auto body = visitBlock(ctx->block());
+        return createNode<WhileNode>(ctx, std::move(cond), std::move(body));
     }
 
     std::shared_ptr<StatementNode> ASTBuilder::visitElseBranch(antlr::RyntraParser::ElseBranchContext *ctx) {

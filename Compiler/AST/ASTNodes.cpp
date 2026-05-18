@@ -130,6 +130,16 @@ namespace Ryntra::Compiler {
         return ss.str();
     }
 
+    void WhileNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<WhileNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string WhileNode::toString() const {
+        return "(While " + condition->toString() + " " + body->toString() + ")";
+    }
+
     void FunctionDefinitionNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<FunctionDefinitionNode> *>(&visitor)) {
             v->visit(*this);

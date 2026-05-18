@@ -38,6 +38,7 @@ namespace Ryntra::VM {
         std::shared_ptr<BytecodeFunction> currentFunction_;
         std::shared_ptr<IR::Module> currentModule_;
         std::unordered_map<const IR::Value *, int32_t> instructionSlots_;
+        std::unordered_map<const IR::Value *, int32_t> allocaSlotMap_;
         int32_t nextSlot_;
         std::unordered_map<std::string, int32_t> blockOffsets_;
         std::vector<Fixup> fixups_;

@@ -32,6 +32,9 @@ namespace Ryntra::IR {
             Gt,     // >
             Le,     // <=
             Ge,     // >=
+            Alloca, // allocate a local variable slot
+            Load,   // load value from alloca slot
+            Store,  // store value to alloca slot
             Br,     // unconditional branch to basic block
             CondBr  // conditional branch to basic block
         };
@@ -193,6 +196,29 @@ namespace Ryntra::IR {
                 result += "trunc ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Alloca: {
+                result += "alloca ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Load: {
+                result += "load ";
+                if (operands_.size() >= 1)
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Store: {
+                result += "store ";
+                if (operands_.size() >= 1)
+                    result += operands_[0]->getReferenceName();
+                if (operands_.size() >= 2)
+                    result += ", " + operands_[1]->getReferenceName();
                 break;
             }
 

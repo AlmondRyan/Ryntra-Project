@@ -18,6 +18,7 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedFunctionDefinitionNode &node) override;
         void visit(Compiler::Semantic::TypedBlockNode &node) override;
         void visit(Compiler::Semantic::TypedIfNode &node) override;
+        void visit(Compiler::Semantic::TypedWhileNode &node) override;
         void visit(Compiler::Semantic::TypedExpressionStatementNode &node) override;
         void visit(Compiler::Semantic::TypedReturnNode &node) override;
         void visit(Compiler::Semantic::TypedStringLiteralNode &node) override;
@@ -56,8 +57,8 @@ namespace Ryntra::IR {
                    opcode == Instruction::Opcode::CondBr;
         }
 
-        // Map from variable name -> IR Value (for variable references)
-        std::unordered_map<std::string, std::shared_ptr<Value>> variableMap_;
+        // Map from variable name -> Alloca instruction (for load/store)
+        std::unordered_map<std::string, std::shared_ptr<Instruction>> allocaMap_;
 
         // Convert a Semantic::Type to an IR::Type
         static std::shared_ptr<Type> toIRType(const std::shared_ptr<Compiler::Semantic::Type> &semType);

@@ -281,6 +281,28 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedIf;
     }
 
+    void SemanticAnalyzer::visit(WhileNode &node) {
+        node.getCondition()->accept(*this);
+        auto typedCond = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (typedCond) {
+            auto boolType = TypeFactory::getPrimitive("bool");
+            if (!typedCond->getType()->equals(*boolType) && typedCond->getType()->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE024]: While condition must be 'bool', but got '" +
+                        typedCond->getType()->toString() + "'.",
+                    node.getCondition()->getLocation());
+            }
+        }
+
+        node.getBody()->accept(*this);
+        auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
+
+        auto typedWhile = std::make_shared<TypedWhileNode>(typedCond, typedBody);
+        typedWhile->setLocation(node.getLocation());
+        lastNode = typedWhile;
+    }
+
     void SemanticAnalyzer::visit(ExpressionStatementNode &node) {
         node.getExpression()->accept(*this);
         if (auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode)) {

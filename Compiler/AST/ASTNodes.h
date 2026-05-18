@@ -162,6 +162,21 @@ namespace Ryntra::Compiler {
         std::shared_ptr<StatementNode> elseBranch; // IfNode, BlockNode, or nullptr
     };
 
+    class WhileNode : public StatementNode {
+    public:
+        WhileNode(std::shared_ptr<ExpressionNode> condition,
+                  std::shared_ptr<BlockNode> body)
+            : condition(std::move(condition)), body(std::move(body)) {}
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<BlockNode> body;
+    };
+
     class FunctionDefinitionNode : public IASTNode {
     public:
         FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name, std::shared_ptr<BlockNode> body)

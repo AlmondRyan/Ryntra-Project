@@ -19,5 +19,6 @@ Something will do afterward:
 - ❌ V0.0.5.1 `while` Blocks
 - ❌ V0.0.5.2 `break` Blocks
 - ❌ V0.0.5.3 `continue` Blocks
-- ❌ V0.0.5.4 `for` Blocks
-- ❌ V0.0.5.5 `do...while` Blocks
+- ❌ V0.0.5.4 Self Increase/Decrease Operator
+- ❌ V0.0.5.5 `for` Blocks
+- ❌ V0.0.5.6 `do...while` Blocks

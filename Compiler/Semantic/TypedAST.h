@@ -17,6 +17,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedFunctionDefinitionNode;
     class TypedBlockNode;
     class TypedIfNode;
+    class TypedWhileNode;
     class TypedStringLiteralNode;
     class TypedBoolLiteralNode;
     class TypedIntegerLiteralNode;
@@ -40,6 +41,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedFunctionDefinitionNode &node) = 0;
         virtual void visit(TypedBlockNode &node) = 0;
         virtual void visit(TypedIfNode &node) = 0;
+        virtual void visit(TypedWhileNode &node) = 0;
         virtual void visit(TypedExpressionStatementNode &node) = 0;
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
@@ -513,6 +515,33 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> condition;
         std::shared_ptr<TypedBlockNode> thenBlock;
         std::shared_ptr<TypedStatementNode> elseBranch;
+    };
+
+    class TypedWhileNode : public TypedStatementNode {
+    public:
+        TypedWhileNode(std::shared_ptr<TypedExpressionNode> condition,
+                       std::shared_ptr<TypedBlockNode> body)
+            : condition(std::move(condition)), body(std::move(body)) {}
+
+        std::shared_ptr<TypedExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<TypedBlockNode> getBody() const { return body; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedWhile"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Condition:" << std::endl;
+            condition->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Body:" << std::endl;
+            body->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> condition;
+        std::shared_ptr<TypedBlockNode> body;
     };
 
     class TypedFunctionDefinitionNode : public ITypedASTNode {
