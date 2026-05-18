@@ -177,6 +177,18 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode> body;
     };
 
+    class BreakNode : public StatementNode {
+    public:
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
+    class ContinueNode : public StatementNode {
+    public:
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
     class FunctionDefinitionNode : public IASTNode {
     public:
         FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name, std::shared_ptr<BlockNode> body)

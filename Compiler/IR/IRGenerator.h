@@ -19,6 +19,8 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedBlockNode &node) override;
         void visit(Compiler::Semantic::TypedIfNode &node) override;
         void visit(Compiler::Semantic::TypedWhileNode &node) override;
+        void visit(Compiler::Semantic::TypedBreakNode &node) override;
+        void visit(Compiler::Semantic::TypedContinueNode &node) override;
         void visit(Compiler::Semantic::TypedExpressionStatementNode &node) override;
         void visit(Compiler::Semantic::TypedReturnNode &node) override;
         void visit(Compiler::Semantic::TypedStringLiteralNode &node) override;
@@ -56,6 +58,12 @@ namespace Ryntra::IR {
                    opcode == Instruction::Opcode::Br ||
                    opcode == Instruction::Opcode::CondBr;
         }
+
+        struct LoopInfo {
+            std::string condBlockName;
+            std::string endBlockName;
+        };
+        std::vector<LoopInfo> loopStack_;
 
         // Map from variable name -> Alloca instruction (for load/store)
         std::unordered_map<std::string, std::shared_ptr<Instruction>> allocaMap_;

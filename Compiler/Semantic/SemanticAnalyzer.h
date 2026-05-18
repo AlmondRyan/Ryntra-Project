@@ -21,6 +21,8 @@ namespace Ryntra::Compiler::Semantic {
         void visit(BlockNode &node) override;
         void visit(IfNode &node) override;
         void visit(WhileNode &node) override;
+        void visit(BreakNode &node) override;
+        void visit(ContinueNode &node) override;
         void visit(ExpressionStatementNode &node) override;
         void visit(StringLiteralNode &node) override;
         void visit(BoolLiteralNode &node) override;
@@ -46,6 +48,7 @@ namespace Ryntra::Compiler::Semantic {
         TypePtr lastType;                         // STType::Type result from TypeSpecifierNode
         TypePtr currentFunctionReturnType;        // STType::Type of the current function
         std::shared_ptr<Type> expectedReturnType; // Expected return type from context (for __builtin_scan)
+        int loopDepth_ = 0;                       // Current loop nesting depth
 
         // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
         static std::shared_ptr<Type> toTypedType(const TypePtr &stType);

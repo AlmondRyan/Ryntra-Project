@@ -295,12 +295,38 @@ namespace Ryntra::Compiler::Semantic {
             }
         }
 
+        ++loopDepth_;
         node.getBody()->accept(*this);
+        --loopDepth_;
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
 
         auto typedWhile = std::make_shared<TypedWhileNode>(typedCond, typedBody);
         typedWhile->setLocation(node.getLocation());
         lastNode = typedWhile;
+    }
+
+    void SemanticAnalyzer::visit(BreakNode &node) {
+        if (loopDepth_ == 0) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE025]: 'break' outside of loop.", node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+        auto typedBreak = std::make_shared<TypedBreakNode>();
+        typedBreak->setLocation(node.getLocation());
+        lastNode = typedBreak;
+    }
+
+    void SemanticAnalyzer::visit(ContinueNode &node) {
+        if (loopDepth_ == 0) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE026]: 'continue' outside of loop.", node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+        auto typedContinue = std::make_shared<TypedContinueNode>();
+        typedContinue->setLocation(node.getLocation());
+        lastNode = typedContinue;
     }
 
     void SemanticAnalyzer::visit(ExpressionStatementNode &node) {

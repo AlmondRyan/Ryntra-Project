@@ -18,6 +18,8 @@ namespace Ryntra::Compiler::Semantic {
     class TypedBlockNode;
     class TypedIfNode;
     class TypedWhileNode;
+    class TypedBreakNode;
+    class TypedContinueNode;
     class TypedStringLiteralNode;
     class TypedBoolLiteralNode;
     class TypedIntegerLiteralNode;
@@ -42,6 +44,8 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedBlockNode &node) = 0;
         virtual void visit(TypedIfNode &node) = 0;
         virtual void visit(TypedWhileNode &node) = 0;
+        virtual void visit(TypedBreakNode &node) = 0;
+        virtual void visit(TypedContinueNode &node) = 0;
         virtual void visit(TypedExpressionStatementNode &node) = 0;
         virtual void visit(TypedReturnNode &node) = 0;
         virtual void visit(TypedStringLiteralNode &node) = 0;
@@ -542,6 +546,26 @@ namespace Ryntra::Compiler::Semantic {
     private:
         std::shared_ptr<TypedExpressionNode> condition;
         std::shared_ptr<TypedBlockNode> body;
+    };
+
+    class TypedBreakNode : public TypedStatementNode {
+    public:
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedBreak"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+    };
+
+    class TypedContinueNode : public TypedStatementNode {
+    public:
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedContinue"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
     };
 
     class TypedFunctionDefinitionNode : public ITypedASTNode {

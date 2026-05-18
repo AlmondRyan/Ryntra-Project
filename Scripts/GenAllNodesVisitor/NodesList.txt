@@ -19,3 +19,5 @@ ComparisonNode
 AssignmentNode
 IfNode
 WhileNode
+BreakNode
+ContinueNode

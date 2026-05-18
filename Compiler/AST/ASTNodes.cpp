@@ -140,6 +140,26 @@ namespace Ryntra::Compiler {
         return "(While " + condition->toString() + " " + body->toString() + ")";
     }
 
+    void BreakNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BreakNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BreakNode::toString() const {
+        return "(Break)";
+    }
+
+    void ContinueNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ContinueNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ContinueNode::toString() const {
+        return "(Continue)";
+    }
+
     void FunctionDefinitionNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<FunctionDefinitionNode> *>(&visitor)) {
             v->visit(*this);

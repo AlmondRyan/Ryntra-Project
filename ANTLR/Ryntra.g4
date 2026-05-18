@@ -9,6 +9,8 @@ RETURN: 'return';
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
+BREAK: 'break';
+CONTINUE: 'continue';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
@@ -92,10 +94,20 @@ statement
     | returnStatement
     | ifStatement
     | whileStatement
+    | breakStatement
+    | continueStatement
     ;
 
 whileStatement
     : WHILE LPAREN expression RPAREN block
+    ;
+
+breakStatement
+    : BREAK SEMICOLON
+    ;
+
+continueStatement
+    : CONTINUE SEMICOLON
     ;
 
 ifStatement

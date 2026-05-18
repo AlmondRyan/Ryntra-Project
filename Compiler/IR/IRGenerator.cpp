@@ -177,7 +177,9 @@ namespace Ryntra::IR {
         currentFunc->addBasicBlock(bodyBlock);
         builder_.setInsertPoint(bodyBlock);
 
+        loopStack_.push_back({condBlock->getName(), endBlock->getName()});
         node.getBody()->accept(*this);
+        loopStack_.pop_back();
 
         auto curBlock = builder_.getInsertPoint();
         if (curBlock) {
@@ -189,6 +191,32 @@ namespace Ryntra::IR {
 
         currentFunc->addBasicBlock(endBlock);
         builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedBreakNode &node) {
+        if (loopStack_.empty())
+            return;
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(loopStack_.back().endBlockName);
+            }
+        }
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedContinueNode &node) {
+        if (loopStack_.empty())
+            return;
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(loopStack_.back().condBlockName);
+            }
+        }
         lastValue_ = nullptr;
     }
 
