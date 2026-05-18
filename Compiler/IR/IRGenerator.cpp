@@ -461,6 +461,15 @@ namespace Ryntra::IR {
         case Compiler::UnaryOpType::LogicalNot:
             irOp = Instruction::Opcode::LogicalNot;
             break;
+        case Compiler::UnaryOpType::Negate: {
+            auto zeroImm = std::make_shared<ImmediateValue>(operand->getType(), "0");
+            auto zeroConst = builder_.createConstant(
+                builder_.generateUniqueName(""), operand->getType(), zeroImm);
+            auto result = builder_.createBinaryOp(
+                Instruction::Opcode::Sub, builder_.generateUniqueName(""), zeroConst, operand);
+            lastValue_ = result;
+            return;
+        }
         default:
             lastValue_ = nullptr;
             return;

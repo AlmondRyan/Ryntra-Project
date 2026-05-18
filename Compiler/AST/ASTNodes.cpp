@@ -267,6 +267,12 @@ namespace Ryntra::Compiler {
         case UnaryOpType::BitNot:
             opStr = "~";
             break;
+        case UnaryOpType::LogicalNot:
+            opStr = "!";
+            break;
+        case UnaryOpType::Negate:
+            opStr = "-";
+            break;
         }
         return "(UnaryOp " + opStr + " " + operand->toString() + ")";
     }

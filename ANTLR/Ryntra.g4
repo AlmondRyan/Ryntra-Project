@@ -107,7 +107,20 @@ whileStatement
     ;
 
 forStatement
-    : FOR LPAREN (variableDeclaration | expression)? SEMICOLON expression? SEMICOLON expression? RPAREN block
+    : FOR LPAREN forInitClause? SEMICOLON forCondClause? SEMICOLON forOperClause? RPAREN block
+    ;
+
+forInitClause
+    : variableDeclaration
+    | expression
+    ;
+
+forCondClause
+    : expression
+    ;
+
+forOperClause
+    : expression
     ;
 
 breakStatement
@@ -143,6 +156,7 @@ expression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
+    | MINUS expression                                              # UnaryMinusExpression
     | BIT_NOT expression                                            # UnaryExpression
     | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression

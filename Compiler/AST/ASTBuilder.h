@@ -36,6 +36,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<PrefixOpNode> visitPrefixDecExpression(antlr::RyntraParser::PrefixDecExpressionContext *ctx);
         std::shared_ptr<PostfixOpNode> visitPostfixIncExpression(antlr::RyntraParser::PostfixIncExpressionContext *ctx);
         std::shared_ptr<PostfixOpNode> visitPostfixDecExpression(antlr::RyntraParser::PostfixDecExpressionContext *ctx);
+        std::shared_ptr<UnaryOpNode> visitUnaryMinusExpression(antlr::RyntraParser::UnaryMinusExpressionContext *ctx);
         std::shared_ptr<UnaryOpNode> visitUnaryExpression(antlr::RyntraParser::UnaryExpressionContext *ctx);
         std::shared_ptr<UnaryOpNode> visitNotExpression(antlr::RyntraParser::NotExpressionContext *ctx);
         std::shared_ptr<BinaryOpNode> visitShiftExpression(antlr::RyntraParser::ShiftExpressionContext *ctx);

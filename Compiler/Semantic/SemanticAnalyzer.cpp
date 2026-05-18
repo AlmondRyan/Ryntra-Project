@@ -692,6 +692,22 @@ namespace Ryntra::Compiler::Semantic {
 
         bool isInt = typedOperand->getType()->equals(*intType);
         bool isLong = typedOperand->getType()->equals(*longType);
+
+        if (node.getOp() == UnaryOpType::Negate) {
+            if (!isInt && !isLong) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE032]: Unary operator '-' requires 'int' or 'long' operand, but got '" +
+                        typedOperand->getType()->toString() + "'.",
+                    node.getOperand()->getLocation());
+            }
+            auto resultType = isLong ? longType : intType;
+            auto typedUnary = std::make_shared<TypedUnaryOpNode>(
+                node.getOp(), typedOperand, resultType);
+            typedUnary->setLocation(node.getLocation());
+            lastNode = typedUnary;
+            return;
+        }
+
         if (!isInt && !isLong) {
             ErrorHandler::getInstance().makeError(
                 "[RCE019]: Unary operator '~' requires 'int' or 'long' operand, but got '" +

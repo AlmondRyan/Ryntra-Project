@@ -83,23 +83,20 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> condition = nullptr;
         std::shared_ptr<ExpressionNode> operation = nullptr;
 
-        auto exprs = ctx->expression();
-        size_t exprIdx = 0;
-
-        if (ctx->variableDeclaration()) {
-            init = visitVariableDeclaration(ctx->variableDeclaration());
-        } else {
-            if (exprIdx < exprs.size()) {
-                init = createNode<ExpressionStatementNode>(ctx, visitExpression(exprs[exprIdx++]));
+        if (ctx->forInitClause()) {
+            if (ctx->forInitClause()->variableDeclaration()) {
+                init = visitVariableDeclaration(ctx->forInitClause()->variableDeclaration());
+            } else if (ctx->forInitClause()->expression()) {
+                init = createNode<ExpressionStatementNode>(ctx, visitExpression(ctx->forInitClause()->expression()));
             }
         }
 
-        if (exprIdx < exprs.size()) {
-            condition = visitExpression(exprs[exprIdx++]);
+        if (ctx->forCondClause()) {
+            condition = visitExpression(ctx->forCondClause()->expression());
         }
 
-        if (exprIdx < exprs.size()) {
-            operation = visitExpression(exprs[exprIdx++]);
+        if (ctx->forOperClause()) {
+            operation = visitExpression(ctx->forOperClause()->expression());
         }
 
         auto body = visitBlock(ctx->block());
@@ -154,6 +151,9 @@ namespace Ryntra::Compiler {
         }
         if (auto *notCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NotExpressionContext *>(ctx)) {
             return visitNotExpression(notCtx);
+        }
+        if (auto *unaryMinusCtx = dynamic_cast<Ryntra::antlr::RyntraParser::UnaryMinusExpressionContext *>(ctx)) {
+            return visitUnaryMinusExpression(unaryMinusCtx);
         }
         if (auto *prefixIncCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PrefixIncExpressionContext *>(ctx)) {
             return visitPrefixIncExpression(prefixIncCtx);
@@ -325,6 +325,11 @@ namespace Ryntra::Compiler {
             op = BinaryOpType::Add;
 
         return createNode<BinaryOpNode>(ctx, std::move(left), op, std::move(right));
+    }
+
+    std::shared_ptr<UnaryOpNode> ASTBuilder::visitUnaryMinusExpression(Ryntra::antlr::RyntraParser::UnaryMinusExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<UnaryOpNode>(ctx, UnaryOpType::Negate, std::move(operand));
     }
 
     std::shared_ptr<UnaryOpNode> ASTBuilder::visitUnaryExpression(Ryntra::antlr::RyntraParser::UnaryExpressionContext *ctx) {
