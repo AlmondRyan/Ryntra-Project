@@ -2,6 +2,8 @@ Something will do afterward:
 - Add `--strict` (`-s`) command argument, will treat RCW002 (etc.) as an error.
 - Add `do...while()` block
 
+****
+
 - ✅ V0.0.1 Hello World
 - ✅ V0.0.2.1 `int` Variable Declaration
 - ✅ V0.0.2.2 `int` Variable Arithmetic Operation (w/ Modulation)
@@ -25,6 +27,7 @@ Something will do afterward:
 - ✅ V0.0.6.1 Array Declaration
 - ❌ V0.0.6.2 Array Index Access
 - ❌ V0.0.6.3 Array Index Assignment
+- ❌ V0.0.6.4 Collector Initializer `{element}`
 - ❌ V0.0.7.1 Generic Operator `<>`
 - ❌ V0.0.7.2 Reference `ref<T>` (automatically dereference)
 - ❌ V0.0.7.3 Unsafe Block `unsafe`

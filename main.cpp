@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
 
         std::cout << "Source: ";
         std::cout << Source << std::endl;
+
         std::cout << "====================================================" << std::endl;
 
         antlr4::ANTLRInputStream input(Source);
@@ -95,7 +96,8 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
         return 0;
     } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        // std::cerr << "Error: " << e.what() << std::endl;
+        std::print(std::cerr, "Error: {}\n", e.what());
         return 1;
     }
 }

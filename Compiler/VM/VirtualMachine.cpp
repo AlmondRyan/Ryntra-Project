@@ -404,7 +404,7 @@ namespace Ryntra::VM {
                 else if (sizeVal.isInt64())
                     size = static_cast<int32_t>(sizeVal.asInt64());
                 auto arrData = std::make_shared<ArrayData>();
-                arrData->elements.resize(size);
+                arrData->elements.resize(size, VMValue(static_cast<int32_t>(0)));
                 push(VMValue(arrData));
                 break;
             }

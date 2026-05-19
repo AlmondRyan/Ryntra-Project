@@ -340,13 +340,23 @@ namespace Ryntra::IR {
     }
 
     void IRGenerator::visit(Sem::TypedIdentifierNode &node) {
-        auto it = functionMap_.find(node.getName());
-        if (it != functionMap_.end()) {
-            lastValue_ = it->second;
-        } else {
-            lastValue_ = std::make_shared<ImmediateValue>(
-                toIRType(node.getType()), node.getName());
+        auto funcIt = functionMap_.find(node.getName());
+        if (funcIt != functionMap_.end()) {
+            lastValue_ = funcIt->second;
+            return;
         }
+
+        auto varIt = allocaMap_.find(node.getName());
+        if (varIt != allocaMap_.end()) {
+            auto loadType = toIRType(node.getType());
+            lastValue_ = builder_.createLoad(
+                builder_.generateUniqueName(""),
+                varIt->second,
+                loadType);
+            return;
+        }
+
+        lastValue_ = nullptr;
     }
 
     void IRGenerator::visit(Sem::TypedFunctionCallNode &node) {
