@@ -27,12 +27,20 @@ namespace Ryntra::VM {
         int32_t getFunctionIndex(const std::string &name);
         int32_t getBuiltinIndex(const std::string &name);
 
+        struct Fixup {
+            size_t instructionIndex;
+            std::string targetBlockName;
+        };
+
         std::vector<VMValue> constantPool_;
         std::vector<std::shared_ptr<BytecodeFunction>> functions_;
         std::unordered_map<std::string, int32_t> functionIndices_;
         std::shared_ptr<BytecodeFunction> currentFunction_;
         std::shared_ptr<IR::Module> currentModule_;
         std::unordered_map<const IR::Value *, int32_t> instructionSlots_;
+        std::unordered_map<const IR::Value *, int32_t> allocaSlotMap_;
         int32_t nextSlot_;
+        std::unordered_map<std::string, int32_t> blockOffsets_;
+        std::vector<Fixup> fixups_;
     };
 } // namespace Ryntra::VM

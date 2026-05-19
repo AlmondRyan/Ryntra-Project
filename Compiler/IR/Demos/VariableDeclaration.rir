@@ -1,10 +1,10 @@
 module VariableDecl {
     external func @__builtin_print_i32(i32) -> void
 
-    func @main() -> i32 {
+    func @main() -> void {
     entry:
         %0 = constant i32 10
-        call @__builtin_print_i32(%0);
-        ret i32 0
+        call @__builtin_print_i32(%0)
+        ret void
     }
 }

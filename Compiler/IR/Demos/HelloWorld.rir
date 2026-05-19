@@ -2,10 +2,10 @@ module HelloWorld {
     external func @__builtin_print_string(string) -> void
     @unnamed0 = global constant string "Hello World\0"
 
-    func @main() -> i32 {
+    func @main() -> void {
     entry:
         %0 = loadc @unnamed0
         call @__builtin_print_string(%0)
-        ret i32 0
+        ret void
     }
 }

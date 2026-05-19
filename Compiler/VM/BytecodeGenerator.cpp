@@ -28,16 +28,37 @@ namespace Ryntra::VM {
         for (size_t i = 0; i < module->getFunctions().size(); ++i) {
             const auto &irFunc = module->getFunctions()[i];
             if (!irFunc->isExternal()) {
-                instructionSlots_.clear();
-                nextSlot_ = 0;
-                currentFunction_ = functions_[i];
-                for (const auto &block : irFunc->getBasicBlocks()) {
-                    generateBasicBlock(block);
-                }
+                generateFunction(irFunc);
             }
         }
 
         return functions_;
+    }
+
+    void BytecodeGenerator::generateFunction(const std::shared_ptr<IR::Function> &func) {
+        instructionSlots_.clear();
+        allocaSlotMap_.clear();
+        nextSlot_ = 0;
+
+        // Find the matching BytecodeFunction index
+        int32_t idx = getFunctionIndex(func->getName());
+        currentFunction_ = functions_[idx];
+
+        blockOffsets_.clear();
+        fixups_.clear();
+
+        for (const auto &block : func->getBasicBlocks()) {
+            blockOffsets_[block->getName()] = static_cast<int32_t>(currentFunction_->instructions.size());
+            generateBasicBlock(block);
+        }
+
+        // Resolve fixups: patch branch target offsets
+        for (const auto &fixup : fixups_) {
+            auto it = blockOffsets_.find(fixup.targetBlockName);
+            if (it != blockOffsets_.end()) {
+                currentFunction_->instructions[fixup.instructionIndex].operand = it->second;
+            }
+        }
     }
 
     void BytecodeGenerator::generateBasicBlock(const std::shared_ptr<IR::BasicBlock> &block) {
@@ -54,6 +75,12 @@ namespace Ryntra::VM {
                 auto spacePos = repr.find(' ');
                 if (spacePos != std::string::npos) {
                     val = VMValue(std::stoi(repr.substr(spacePos + 1)));
+                }
+            } else if (imm->getType()->isBool()) {
+                std::string repr = imm->toString();
+                auto spacePos = repr.find(' ');
+                if (spacePos != std::string::npos) {
+                    val = VMValue(static_cast<int32_t>(std::stoi(repr.substr(spacePos + 1))));
                 }
             } else if (imm->getType()->isInt64()) {
                 std::string repr = imm->toString();
@@ -99,6 +126,8 @@ namespace Ryntra::VM {
                         val = VMValue(std::get<int32_t>(constant->getValue()));
                     } else if (constant->getType()->isInt64()) {
                         val = VMValue(std::get<int64_t>(constant->getValue()));
+                    } else if (constant->getType()->isBool()) {
+                        val = VMValue(static_cast<int32_t>(std::get<bool>(constant->getValue()) ? 1 : 0));
                     } else if (constant->getType()->isString()) {
                         val = VMValue(std::get<std::string>(constant->getValue()));
                     }
@@ -163,12 +192,37 @@ namespace Ryntra::VM {
             break;
         }
 
-        case IR::Instruction::Opcode::BitNot: {
+        case IR::Instruction::Opcode::Eq:
+        case IR::Instruction::Opcode::Ne:
+        case IR::Instruction::Opcode::Lt:
+        case IR::Instruction::Opcode::Gt:
+        case IR::Instruction::Opcode::Le:
+        case IR::Instruction::Opcode::Ge: {
+            for (const auto &op : operands) {
+                pushOperandValue(op);
+            }
+            OpCode bcOp;
+            switch (inst->getOpcode()) {
+            case IR::Instruction::Opcode::Eq: bcOp = OpCode::Eq; break;
+            case IR::Instruction::Opcode::Ne: bcOp = OpCode::Ne; break;
+            case IR::Instruction::Opcode::Lt: bcOp = OpCode::Lt; break;
+            case IR::Instruction::Opcode::Gt: bcOp = OpCode::Gt; break;
+            case IR::Instruction::Opcode::Le: bcOp = OpCode::Le; break;
+            case IR::Instruction::Opcode::Ge: bcOp = OpCode::Ge; break;
+            default: bcOp = OpCode::Eq; break;
+            }
+            currentFunction_->addInstruction(bcOp);
+            break;
+        }
+
+        case IR::Instruction::Opcode::BitNot:
+        case IR::Instruction::Opcode::LogicalNot: {
             // Unary: push the single operand
             for (const auto &op : operands) {
                 pushOperandValue(op);
             }
-            currentFunction_->addInstruction(OpCode::BitNot);
+            OpCode bcOp = (inst->getOpcode() == IR::Instruction::Opcode::LogicalNot) ? OpCode::LogicalNot : OpCode::BitNot;
+            currentFunction_->addInstruction(bcOp);
             break;
         }
 
@@ -225,6 +279,55 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::Alloca: {
+            int32_t slotNum = nextSlot_++;
+            allocaSlotMap_[inst.get()] = slotNum;
+            break;
+        }
+
+        case IR::Instruction::Opcode::Load: {
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                currentFunction_->addInstruction(OpCode::LoadLocal, slotNum);
+            }
+            // Don't push operands — LoadLocal pushes the value directly
+            // The result will be stored in the assigned slot below (needsSlot=true)
+            break;
+        }
+
+        case IR::Instruction::Opcode::Store: {
+            // operands[0] = value to store, operands[1] = alloca instruction
+            pushOperandValue(operands[0]);
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[1]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                currentFunction_->addInstruction(OpCode::StoreLocal, slotNum);
+            }
+            break;
+        }
+
+        case IR::Instruction::Opcode::Br: {
+            auto targetName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[0])->getLiteralValue();
+            size_t instIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jmp, 0);
+            fixups_.push_back({instIdx, targetName});
+            break;
+        }
+
+        case IR::Instruction::Opcode::CondBr: {
+            pushOperandValue(operands[0]);
+            auto falseName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[2])->getLiteralValue();
+            size_t jzIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jz, 0);
+            fixups_.push_back({jzIdx, falseName});
+            auto trueName = std::dynamic_pointer_cast<IR::ImmediateValue>(operands[1])->getLiteralValue();
+            size_t jmpIdx = currentFunction_->instructions.size();
+            currentFunction_->addInstruction(OpCode::Jmp, 0);
+            fixups_.push_back({jmpIdx, trueName});
+            break;
+        }
+
         default:
             break;
         }
@@ -249,15 +352,17 @@ namespace Ryntra::VM {
 
     int32_t BytecodeGenerator::getBuiltinIndex(const std::string &name) {
         static const std::vector<std::string> builtinTable = {
-            "__builtin_print",     // 0
-            "__builtin_print_i32", // 1 (int32 print)
-            "__builtin_print_i64", // 2 (int64 print)
-            "__builtin_scan_i32",  // 3 (int32 scan)
-            "__builtin_scan_i64",  // 4 (int64 scan)
+            "__builtin_print",          // 0
+            "__builtin_print_i32",      // 1 (int32 print)
+            "__builtin_print_i64",      // 2 (int64 print)
+            "__builtin_print_bool",     // 3 (bool print)
+            "__builtin_print_string",   // 4 (string print)
+            "__builtin_scan_bool",      // 5 (bool scan)
+            "__builtin_scan_i32",       // 6 (int32 scan)
+            "__builtin_scan_i64",       // 7 (int64 scan)
         };
         for (int32_t i = 0; i < static_cast<int32_t>(builtinTable.size()); ++i) {
-            if (name == builtinTable[i] ||
-                (name.rfind(builtinTable[i] + "_", 0) == 0))
+            if (name == builtinTable[i])
                 return i;
         }
         throw std::runtime_error("Unknown builtin: " + name);

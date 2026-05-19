@@ -1,4 +1,5 @@
 TypeSpecifierNode
+BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode
@@ -14,4 +15,12 @@ VariableDeclarationNode
 BinaryOpNode
 UnaryOpNode
 CastNode
+ComparisonNode
 AssignmentNode
+IfNode
+WhileNode
+ForNode
+BreakNode
+ContinueNode
+PrefixOpNode
+PostfixOpNode

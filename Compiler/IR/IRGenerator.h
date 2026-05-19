@@ -17,9 +17,15 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedProgramNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionDefinitionNode &node) override;
         void visit(Compiler::Semantic::TypedBlockNode &node) override;
+        void visit(Compiler::Semantic::TypedIfNode &node) override;
+        void visit(Compiler::Semantic::TypedWhileNode &node) override;
+        void visit(Compiler::Semantic::TypedForNode &node) override;
+        void visit(Compiler::Semantic::TypedBreakNode &node) override;
+        void visit(Compiler::Semantic::TypedContinueNode &node) override;
         void visit(Compiler::Semantic::TypedExpressionStatementNode &node) override;
         void visit(Compiler::Semantic::TypedReturnNode &node) override;
         void visit(Compiler::Semantic::TypedStringLiteralNode &node) override;
+        void visit(Compiler::Semantic::TypedBoolLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedIntegerLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedLongLiteralNode &node) override;
         void visit(Compiler::Semantic::TypedIdentifierNode &node) override;
@@ -29,7 +35,10 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedUnaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedBinaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedCastNode &node) override;
+        void visit(Compiler::Semantic::TypedComparisonNode &node) override;
         void visit(Compiler::Semantic::TypedAssignmentNode &node) override;
+        void visit(Compiler::Semantic::TypedPrefixOpNode &node) override;
+        void visit(Compiler::Semantic::TypedPostfixOpNode &node) override;
 
     private:
         IRBuilder builder_;
@@ -40,8 +49,27 @@ namespace Ryntra::IR {
         // Map from function name -> IR Function (for call resolution)
         std::unordered_map<std::string, std::shared_ptr<Function>> functionMap_;
 
-        // Map from variable name -> IR Value (for variable references)
-        std::unordered_map<std::string, std::shared_ptr<Value>> variableMap_;
+        // Current function name being generated (for adding basic blocks)
+        std::string currentFunctionName_;
+
+        // Counter for unique if-block names
+        int ifCounter_ = 0;
+
+        // Check if an opcode is a terminator (ends a basic block)
+        bool isTerminator(Instruction::Opcode opcode) const {
+            return opcode == Instruction::Opcode::Return ||
+                   opcode == Instruction::Opcode::Br ||
+                   opcode == Instruction::Opcode::CondBr;
+        }
+
+        struct LoopInfo {
+            std::string condBlockName;
+            std::string endBlockName;
+        };
+        std::vector<LoopInfo> loopStack_;
+
+        // Map from variable name -> Alloca instruction (for load/store)
+        std::unordered_map<std::string, std::shared_ptr<Instruction>> allocaMap_;
 
         // Convert a Semantic::Type to an IR::Type
         static std::shared_ptr<Type> toIRType(const std::shared_ptr<Compiler::Semantic::Type> &semType);

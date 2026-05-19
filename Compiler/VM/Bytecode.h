@@ -17,6 +17,7 @@ namespace Ryntra::VM {
         Div,            // Divide
         Mod,            // Modulo
         BitNot,         // Bitwise NOT (~)
+        LogicalNot,     // Logical NOT (!)
         BitAnd,         // Bitwise AND (&)
         BitOr,          // Bitwise OR (|)
         BitXor,         // Bitwise XOR (^)
@@ -24,10 +25,18 @@ namespace Ryntra::VM {
         Shr,            // Shift right (>>)
         SExt,           // Sign extend i32 → i64
         Trunc,          // Truncate i64 → i32
+        Eq,             // == (push i32 0/1)
+        Ne,             // !=
+        Lt,             // <
+        Gt,             // >
+        Le,             // <=
+        Ge,             // >=
             Dup,            // Duplicate top of stack
             Pop,            // Pop value from stack
             StoreLocal,     // Store value from stack into local variable slot
             LoadLocal,      // Load value from local variable slot onto stack
+            Jmp,            // Unconditional jump to instruction offset
+            Jz,             // Pop value, jump if zero to instruction offset
             Halt            // Stop execution
     };
     // clang-format on

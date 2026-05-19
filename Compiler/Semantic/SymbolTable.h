@@ -75,6 +75,11 @@ namespace Ryntra::Compiler::Semantic {
             TypeKind getKind() const override { return TypeKind::String; }
         };
 
+        class BoolType : public Type {
+        public:
+            TypeKind getKind() const override { return TypeKind::Bool; }
+        };
+
         // TODO: More in the future
     } // namespace STType
 

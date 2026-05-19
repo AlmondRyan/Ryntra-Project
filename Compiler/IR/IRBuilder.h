@@ -36,9 +36,19 @@ namespace Ryntra::IR {
                                                     std::shared_ptr<Type> type,
                                                     std::shared_ptr<Value> value);
 
+        std::shared_ptr<Instruction> createAlloca(const std::string &name,
+                                                   std::shared_ptr<Type> elementType);
+
+        std::shared_ptr<Instruction> createLoad(const std::string &name,
+                                                 std::shared_ptr<Instruction> allocaInst,
+                                                 std::shared_ptr<Type> loadType);
+
+        std::shared_ptr<Instruction> createStore(std::shared_ptr<Value> value,
+                                                  std::shared_ptr<Instruction> allocaInst);
+
         std::shared_ptr<Instruction> createCall(const std::string &name,
-                                                std::shared_ptr<Function> function,
-                                                const std::vector<std::shared_ptr<Value>> &args);
+                                                 std::shared_ptr<Function> function,
+                                                 const std::vector<std::shared_ptr<Value>> &args);
 
         std::shared_ptr<Instruction> createReturn(const std::string &name,
                                                   std::shared_ptr<Value> value = nullptr);
@@ -62,6 +72,17 @@ namespace Ryntra::IR {
                                                     const std::string &name,
                                                     std::shared_ptr<Value> lhs,
                                                     std::shared_ptr<Value> rhs);
+
+        std::shared_ptr<Instruction> createCompare(Instruction::Opcode opcode,
+                                                    const std::string &name,
+                                                    std::shared_ptr<Value> lhs,
+                                                    std::shared_ptr<Value> rhs);
+
+        std::shared_ptr<Instruction> createBr(const std::string &targetBlockName);
+
+        std::shared_ptr<Instruction> createCondBr(std::shared_ptr<Value> condition,
+                                                   const std::string &trueBlockName,
+                                                   const std::string &falseBlockName);
 
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;

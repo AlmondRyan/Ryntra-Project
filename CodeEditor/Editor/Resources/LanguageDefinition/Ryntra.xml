@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<LanguageDefinition>
+<LanguageDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:noNamespaceSchemaLocation="LanguageDef.xsd">
     <Properties>
         <Name>Ryntra</Name>
         <Version>1.0.0</Version>
@@ -11,6 +12,15 @@
             <Keyword>long</Keyword>
             <Keyword>void</Keyword>
             <Keyword>return</Keyword>
+            <Keyword>if</Keyword>
+            <Keyword>else</Keyword>
+            <Keyword>while</Keyword>
+            <Keyword>for</Keyword>
+            <Keyword>break</Keyword>
+            <Keyword>continue</Keyword>
+            <Keyword>bool</Keyword>
+            <Keyword>true</Keyword>
+            <Keyword>false</Keyword>
         </Keywords>
         <Match>
             <Number>\d+(?:\.\d+)?[a-zA-Z]*</Number>

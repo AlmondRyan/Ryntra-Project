@@ -30,6 +30,8 @@ namespace Ryntra::IR {
                 return Type::getInt64Type();
             if (name == "string" || name == "str")
                 return Type::getStringType();
+            if (name == "bool")
+                return Type::getBoolType();
             return Type::getInt32Type();
         }
 
@@ -64,6 +66,9 @@ namespace Ryntra::IR {
         if (!irFunc)
             return;
 
+        currentFunctionName_ = node.getName();
+        ifCounter_ = 0;
+
         auto entry = builder_.createBasicBlock("entry");
         irFunc->addBasicBlock(entry);
         builder_.setInsertPoint(entry);
@@ -77,6 +82,212 @@ namespace Ryntra::IR {
                 builder_.createReturn("");
             }
         }
+    }
+
+    void IRGenerator::visit(Sem::TypedIfNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        node.getCondition()->accept(*this);
+        auto condVal = lastValue_;
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto thenBlock = builder_.createBasicBlock("if.then." + suffix);
+        auto elseBlock = builder_.createBasicBlock("if.else." + suffix);
+        auto endBlock = builder_.createBasicBlock("if.end." + suffix);
+
+        std::string trueTarget = thenBlock->getName();
+        std::string falseTarget;
+
+        if (node.getElseBranch()) {
+            falseTarget = elseBlock->getName();
+        } else {
+            falseTarget = endBlock->getName();
+        }
+
+        builder_.createCondBr(condVal, trueTarget, falseTarget);
+        currentFunc->addBasicBlock(thenBlock);
+        builder_.setInsertPoint(thenBlock);
+
+        node.getThenBlock()->accept(*this);
+
+        // After visiting child statements, the current block may have changed
+        // (e.g., inner ifs create new blocks). Use the actual current block.
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(endBlock->getName());
+            }
+        }
+
+        if (node.getElseBranch()) {
+            currentFunc->addBasicBlock(elseBlock);
+            builder_.setInsertPoint(elseBlock);
+
+            if (auto typedElseBlock = std::dynamic_pointer_cast<Sem::TypedBlockNode>(node.getElseBranch())) {
+                typedElseBlock->accept(*this);
+            } else if (auto typedElseIf = std::dynamic_pointer_cast<Sem::TypedIfNode>(node.getElseBranch())) {
+                typedElseIf->accept(*this);
+            }
+
+            curBlock = builder_.getInsertPoint();
+            if (curBlock) {
+                auto &insts = curBlock->getInstructions();
+                if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                    builder_.createBr(endBlock->getName());
+                }
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedWhileNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        auto condBlock = builder_.createBasicBlock("while.cond." + suffix);
+        auto bodyBlock = builder_.createBasicBlock("while.body." + suffix);
+        auto endBlock = builder_.createBasicBlock("while.end." + suffix);
+
+        builder_.createBr(condBlock->getName());
+        currentFunc->addBasicBlock(condBlock);
+        builder_.setInsertPoint(condBlock);
+
+        node.getCondition()->accept(*this);
+        auto condVal = lastValue_;
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        builder_.createCondBr(condVal, bodyBlock->getName(), endBlock->getName());
+        currentFunc->addBasicBlock(bodyBlock);
+        builder_.setInsertPoint(bodyBlock);
+
+        loopStack_.push_back({condBlock->getName(), endBlock->getName()});
+        node.getBody()->accept(*this);
+        loopStack_.pop_back();
+
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(condBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedForNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        if (node.getInit()) {
+            node.getInit()->accept(*this);
+        }
+
+        auto condBlock = builder_.createBasicBlock("for.cond." + suffix);
+        auto bodyBlock = builder_.createBasicBlock("for.body." + suffix);
+        auto iterBlock = builder_.createBasicBlock("for.iter." + suffix);
+        auto endBlock = builder_.createBasicBlock("for.end." + suffix);
+
+        builder_.createBr(condBlock->getName());
+        currentFunc->addBasicBlock(condBlock);
+        builder_.setInsertPoint(condBlock);
+
+        std::shared_ptr<Value> condVal;
+        if (node.getCondition()) {
+            node.getCondition()->accept(*this);
+            condVal = lastValue_;
+        } else {
+            condVal = std::make_shared<ImmediateValue>(Type::getBoolType(), "1");
+        }
+
+        if (!condVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        builder_.createCondBr(condVal, bodyBlock->getName(), endBlock->getName());
+        currentFunc->addBasicBlock(bodyBlock);
+        builder_.setInsertPoint(bodyBlock);
+
+        // Continue jumps to the iteration (operation) block
+        loopStack_.push_back({iterBlock->getName(), endBlock->getName()});
+        node.getBody()->accept(*this);
+        loopStack_.pop_back();
+
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(iterBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(iterBlock);
+        builder_.setInsertPoint(iterBlock);
+
+        if (node.getOperation()) {
+            node.getOperation()->accept(*this);
+        }
+
+        curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(condBlock->getName());
+            }
+        }
+
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedBreakNode &node) {
+        if (loopStack_.empty())
+            return;
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(loopStack_.back().endBlockName);
+            }
+        }
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedContinueNode &node) {
+        if (loopStack_.empty())
+            return;
+        auto curBlock = builder_.getInsertPoint();
+        if (curBlock) {
+            auto &insts = curBlock->getInstructions();
+            if (insts.empty() || !isTerminator(insts.back()->getOpcode())) {
+                builder_.createBr(loopStack_.back().condBlockName);
+            }
+        }
+        lastValue_ = nullptr;
     }
 
     void IRGenerator::visit(Sem::TypedBlockNode &node) {
@@ -103,6 +314,12 @@ namespace Ryntra::IR {
             node.getValue());
         lastValue_ = builder_.createLoadConstant(
             builder_.generateUniqueName(""), constant);
+    }
+
+    void IRGenerator::visit(Sem::TypedBoolLiteralNode &node) {
+        lastValue_ = std::make_shared<ImmediateValue>(
+            Type::getBoolType(),
+            node.getValue() ? "1" : "0");
     }
 
     void IRGenerator::visit(Sem::TypedIntegerLiteralNode &node) {
@@ -148,6 +365,8 @@ namespace Ryntra::IR {
                     suffix = "i32";
                 else if (argType->isInt64())
                     suffix = "i64";
+                else if (argType->isBool())
+                    suffix = "bool";
                 else if (argType->isString())
                     suffix = "string";
                 actualName = calleeName + "_" + suffix;
@@ -159,6 +378,8 @@ namespace Ryntra::IR {
                     suffix = "i32";
                 else if (retType->toString() == "long")
                     suffix = "i64";
+                else if (retType->toString() == "bool")
+                    suffix = "bool";
                 actualName = calleeName + "_" + suffix;
             }
         }
@@ -186,29 +407,40 @@ namespace Ryntra::IR {
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedVariableDeclarationNode &node) {
+        auto varName = node.getName();
+        auto varIRType = toIRType(node.getType());
+
+        // Allocate a local slot for the variable
+        auto allocaInst = builder_.createAlloca(
+            builder_.generateUniqueName(varName + "."), varIRType);
+        allocaMap_[varName] = allocaInst;
+
         if (node.getInitializer()) {
             node.getInitializer()->accept(*this);
             if (lastValue_) {
-                auto varName = node.getName();
-                if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
-                    auto constInst = builder_.createConstant(
+                // Materialize ImmediateValue into a Constant instruction if needed
+                std::shared_ptr<Value> storeVal = lastValue_;
+                if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                    storeVal = builder_.createConstant(
                         builder_.generateUniqueName(""),
-                        lastValue_->getType(),
-                        lastValue_);
-                    variableMap_[varName] = constInst;
-                } else {
-                    variableMap_[varName] = lastValue_;
+                        imm->getType(), imm);
                 }
+                builder_.createStore(storeVal, allocaInst);
                 lastValue_ = nullptr;
             }
         }
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedVariableNode &node) {
-        auto it = variableMap_.find(node.getName());
-        if (it != variableMap_.end()) {
-            lastValue_ = it->second;
+        auto it = allocaMap_.find(node.getName());
+        if (it != allocaMap_.end()) {
+            auto loadType = toIRType(node.getType());
+            lastValue_ = builder_.createLoad(
+                builder_.generateUniqueName(""),
+                it->second,
+                loadType);
         } else {
+            // Variable not found in alloca map; fallback (shouldn't happen after semantic analysis)
             lastValue_ = nullptr;
         }
     }
@@ -226,6 +458,18 @@ namespace Ryntra::IR {
         case Compiler::UnaryOpType::BitNot:
             irOp = Instruction::Opcode::BitNot;
             break;
+        case Compiler::UnaryOpType::LogicalNot:
+            irOp = Instruction::Opcode::LogicalNot;
+            break;
+        case Compiler::UnaryOpType::Negate: {
+            auto zeroImm = std::make_shared<ImmediateValue>(operand->getType(), "0");
+            auto zeroConst = builder_.createConstant(
+                builder_.generateUniqueName(""), operand->getType(), zeroImm);
+            auto result = builder_.createBinaryOp(
+                Instruction::Opcode::Sub, builder_.generateUniqueName(""), zeroConst, operand);
+            lastValue_ = result;
+            return;
+        }
         default:
             lastValue_ = nullptr;
             return;
@@ -341,19 +585,131 @@ namespace Ryntra::IR {
         }
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedComparisonNode &node) {
+        node.getLeft()->accept(*this);
+        auto lhs = lastValue_;
+
+        node.getRight()->accept(*this);
+        auto rhs = lastValue_;
+
+        if (!lhs || !rhs) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        if (!lhs->getType()->isEqual(rhs->getType().get())) {
+            if (lhs->getType()->isInt64() && rhs->getType()->isInt32()) {
+                if (auto rhsImm = std::dynamic_pointer_cast<ImmediateValue>(rhs))
+                    rhs = std::make_shared<ImmediateValue>(Type::getInt64Type(), rhsImm->getLiteralValue());
+                else
+                    rhs = builder_.createSExt(builder_.generateUniqueName(""), rhs, Type::getInt64Type());
+            } else if (lhs->getType()->isInt32() && rhs->getType()->isInt64()) {
+                if (auto lhsImm = std::dynamic_pointer_cast<ImmediateValue>(lhs))
+                    lhs = std::make_shared<ImmediateValue>(Type::getInt64Type(), lhsImm->getLiteralValue());
+                else
+                    lhs = builder_.createSExt(builder_.generateUniqueName(""), lhs, Type::getInt64Type());
+            }
+        }
+
+        Instruction::Opcode irOp;
+        switch (node.getOp()) {
+        case Compiler::ComparisonOpType::Eq: irOp = Instruction::Opcode::Eq; break;
+        case Compiler::ComparisonOpType::Ne: irOp = Instruction::Opcode::Ne; break;
+        case Compiler::ComparisonOpType::Lt: irOp = Instruction::Opcode::Lt; break;
+        case Compiler::ComparisonOpType::Gt: irOp = Instruction::Opcode::Gt; break;
+        case Compiler::ComparisonOpType::Le: irOp = Instruction::Opcode::Le; break;
+        case Compiler::ComparisonOpType::Ge: irOp = Instruction::Opcode::Ge; break;
+        }
+
+        lastValue_ = builder_.createCompare(irOp, builder_.generateUniqueName(""), lhs, rhs);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPrefixOpNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto varIRType = toIRType(node.getType());
+
+        // Load current value
+        auto loadInst = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, varIRType);
+
+        // Create immediate 1 of the appropriate type
+        auto oneImm = std::make_shared<ImmediateValue>(varIRType, "1");
+        auto oneConst = builder_.createConstant(
+            builder_.generateUniqueName(""), varIRType, oneImm);
+
+        // Add or subtract 1
+        Instruction::Opcode arithOp = (node.getOp() == Compiler::IncDecOpType::Increment)
+                                          ? Instruction::Opcode::Add
+                                          : Instruction::Opcode::Sub;
+        auto result = builder_.createBinaryOp(
+            arithOp, builder_.generateUniqueName(""), loadInst, oneConst);
+
+        // Store result back
+        builder_.createStore(result, it->second);
+
+        // Prefix expression yields the new value
+        lastValue_ = result;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPostfixOpNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto varIRType = toIRType(node.getType());
+
+        // Load current value (this is the old value, which is the result)
+        auto loadInst = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, varIRType);
+
+        // Create immediate 1 of the appropriate type
+        auto oneImm = std::make_shared<ImmediateValue>(varIRType, "1");
+        auto oneConst = builder_.createConstant(
+            builder_.generateUniqueName(""), varIRType, oneImm);
+
+        // Add or subtract 1
+        Instruction::Opcode arithOp = (node.getOp() == Compiler::IncDecOpType::Increment)
+                                          ? Instruction::Opcode::Add
+                                          : Instruction::Opcode::Sub;
+        auto newVal = builder_.createBinaryOp(
+            arithOp, builder_.generateUniqueName(""), loadInst, oneConst);
+
+        // Store new value back
+        builder_.createStore(newVal, it->second);
+
+        // Postfix expression yields the OLD value
+        lastValue_ = loadInst;
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedAssignmentNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
         node.getRHS()->accept(*this);
         if (lastValue_) {
-            auto varName = node.getVariableName();
-            if (std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
-                auto constInst = builder_.createConstant(
+            // Materialize ImmediateValue if needed
+            std::shared_ptr<Value> storeVal = lastValue_;
+            if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+                storeVal = builder_.createConstant(
                     builder_.generateUniqueName(""),
-                    lastValue_->getType(),
-                    lastValue_);
-                variableMap_[varName] = constInst;
-            } else {
-                variableMap_[varName] = lastValue_;
+                    imm->getType(), imm);
             }
+            builder_.createStore(storeVal, it->second);
+            // Assignment expression yields the stored value (for potential chaining)
+            lastValue_ = storeVal;
         }
     }
 } // namespace Ryntra::IR

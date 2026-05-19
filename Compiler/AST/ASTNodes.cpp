@@ -12,6 +12,16 @@ namespace Ryntra::Compiler {
         return "(TypeSpecifier " + name + ")";
     }
 
+    void BoolLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BoolLiteralNode::toString() const {
+        return value ? "(BoolLiteral true)" : "(BoolLiteral false)";
+    }
+
     void StringLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<StringLiteralNode> *>(&visitor)) {
             v->visit(*this);
@@ -88,6 +98,22 @@ namespace Ryntra::Compiler {
         return "(Return " + value->toString() + ")";
     }
 
+    void IfNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<IfNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string IfNode::toString() const {
+        std::stringstream ss;
+        ss << "(If " << condition->toString() << " " << thenBlock->toString();
+        if (elseBranch) {
+            ss << " " << elseBranch->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     void BlockNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BlockNode> *>(&visitor)) {
             v->visit(*this);
@@ -102,6 +128,36 @@ namespace Ryntra::Compiler {
         }
         ss << ")";
         return ss.str();
+    }
+
+    void WhileNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<WhileNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string WhileNode::toString() const {
+        return "(While " + condition->toString() + " " + body->toString() + ")";
+    }
+
+    void BreakNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<BreakNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string BreakNode::toString() const {
+        return "(Break)";
+    }
+
+    void ContinueNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ContinueNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ContinueNode::toString() const {
+        return "(Continue)";
     }
 
     void FunctionDefinitionNode::accept(IVisitor &visitor) {
@@ -211,6 +267,12 @@ namespace Ryntra::Compiler {
         case UnaryOpType::BitNot:
             opStr = "~";
             break;
+        case UnaryOpType::LogicalNot:
+            opStr = "!";
+            break;
+        case UnaryOpType::Negate:
+            opStr = "-";
+            break;
         }
         return "(UnaryOp " + opStr + " " + operand->toString() + ")";
     }
@@ -225,6 +287,25 @@ namespace Ryntra::Compiler {
         return "(Cast " + targetType->toString() + " " + operand->toString() + ")";
     }
 
+    void ComparisonNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ComparisonNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ComparisonNode::toString() const {
+        std::string opStr;
+        switch (op) {
+        case ComparisonOpType::Eq: opStr = "=="; break;
+        case ComparisonOpType::Ne: opStr = "!="; break;
+        case ComparisonOpType::Lt: opStr = "<"; break;
+        case ComparisonOpType::Gt: opStr = ">"; break;
+        case ComparisonOpType::Le: opStr = "<="; break;
+        case ComparisonOpType::Ge: opStr = ">="; break;
+        }
+        return "(Comparison " + left->toString() + " " + opStr + " " + right->toString() + ")";
+    }
+
     void AssignmentNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
             v->visit(*this);
@@ -233,6 +314,45 @@ namespace Ryntra::Compiler {
 
     std::string AssignmentNode::toString() const {
         return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
+    }
+
+    void PrefixOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PrefixOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PrefixOpNode::toString() const {
+        std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+        return "(PrefixOp " + opStr + " " + operand->toString() + ")";
+    }
+
+    void PostfixOpNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PostfixOpNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PostfixOpNode::toString() const {
+        std::string opStr = (op == IncDecOpType::Increment) ? "++" : "--";
+        return "(PostfixOp " + operand->toString() + " " + opStr + ")";
+    }
+
+    void ForNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ForNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ForNode::toString() const {
+        std::stringstream ss;
+        ss << "(For";
+        if (init) ss << " " << init->toString();
+        if (condition) ss << " " << condition->toString();
+        if (operation) ss << " " << operation->toString();
+        ss << " " << body->toString();
+        ss << ")";
+        return ss.str();
     }
 
 } // namespace Ryntra::Compiler

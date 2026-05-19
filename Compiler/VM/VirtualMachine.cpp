@@ -1,6 +1,7 @@
 #include "VirtualMachine.h"
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 
 namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
@@ -38,13 +39,50 @@ namespace Ryntra::VM {
                 }
                 return VMValue();
             },
-            // 3: __builtin_scan_i32 — reads int32 from stdin
+            // 3: __builtin_print_bool — prints "true" or "false"
+            [](const std::vector<VMValue> &args) -> VMValue {
+                if (!args.empty() && args[0].isInt32()) {
+                    std::cout << (args[0].asInt32() ? "true" : "false");
+                }
+                return VMValue();
+            },
+            // 4: __builtin_print_string — prints string
+            [](const std::vector<VMValue> &args) -> VMValue {
+                if (!args.empty() && args[0].isString()) {
+                    const std::string &s = args[0].asString();
+                    for (char c : s) {
+                        if (c == '\0')
+                            break;
+                        std::cout << c;
+                    }
+                }
+                return VMValue();
+            },
+            // 5: __builtin_scan_bool — reads bool from stdin
+            [](const std::vector<VMValue> &args) -> VMValue {
+                std::string input;
+                std::cin >> input;
+                std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+                if (input == "true") {
+                    return VMValue(static_cast<int32_t>(1));
+                } else if (input == "false") {
+                    return VMValue(static_cast<int32_t>(0));
+                } else {
+                    try {
+                        int32_t val = std::stoi(input);
+                        return VMValue(val != 0 ? static_cast<int32_t>(1) : static_cast<int32_t>(0));
+                    } catch (...) {
+                        return VMValue(static_cast<int32_t>(0));
+                    }
+                }
+            },
+            // 6: __builtin_scan_i32 — reads int32 from stdin
             [](const std::vector<VMValue> &args) -> VMValue {
                 int32_t val;
                 std::cin >> val;
                 return VMValue(val);
             },
-            // 4: __builtin_scan_i64 — reads int64 from stdin
+            // 7: __builtin_scan_i64 — reads int64 from stdin
             [](const std::vector<VMValue> &args) -> VMValue {
                 int64_t val;
                 std::cin >> val;
@@ -52,7 +90,7 @@ namespace Ryntra::VM {
             },
         };
 
-        builtinArgCounts_ = {1, 1, 1, 0, 0}; // arg count per builtin index
+        builtinArgCounts_ = {1, 1, 1, 1, 1, 0, 0, 0}; // arg count per builtin index
     }
 
     void VirtualMachine::load(const std::vector<std::shared_ptr<BytecodeFunction>> &funcs,
@@ -185,6 +223,14 @@ namespace Ryntra::VM {
                     push(VMValue(~a.asInt32()));
                 break;
             }
+            case OpCode::LogicalNot: {
+                auto a = pop();
+                if (a.isInt32())
+                    push(VMValue(a.asInt32() == 0 ? 1 : 0));
+                else if (a.isInt64())
+                    push(VMValue(a.asInt64() == 0 ? 1 : 0));
+                break;
+            }
             case OpCode::BitAnd: {
                 auto b = pop();
                 auto a = pop();
@@ -251,6 +297,60 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::Eq: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() == b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() == b.asInt32())));
+                break;
+            }
+            case OpCode::Ne: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() != b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() != b.asInt32())));
+                break;
+            }
+            case OpCode::Lt: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() < b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() < b.asInt32())));
+                break;
+            }
+            case OpCode::Gt: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() > b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() > b.asInt32())));
+                break;
+            }
+            case OpCode::Le: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() <= b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() <= b.asInt32())));
+                break;
+            }
+            case OpCode::Ge: {
+                auto b = pop();
+                auto a = pop();
+                if (a.isInt64() && b.isInt64())
+                    push(VMValue(static_cast<int32_t>(a.asInt64() >= b.asInt64())));
+                else if (a.isInt32() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() >= b.asInt32())));
+                break;
+            }
             case OpCode::Dup: {
                 if (!stack_.empty()) {
                     push(stack_.back());
@@ -279,6 +379,23 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::Jmp:
+                ip = static_cast<size_t>(inst.operand);
+                continue;
+
+            case OpCode::Jz: {
+                auto val = pop();
+                if (val.isInt32() && val.asInt32() == 0) {
+                    ip = static_cast<size_t>(inst.operand);
+                    continue;
+                }
+                if (val.isInt64() && val.asInt64() == 0) {
+                    ip = static_cast<size_t>(inst.operand);
+                    continue;
+                }
+                break;
+            }
+
             case OpCode::Halt:
                 return VMValue();
 
@@ -303,6 +420,7 @@ namespace Ryntra::VM {
         "Div",
         "Mod",
         "BitNot",
+        "LogicalNot",
         "BitAnd",
         "BitOr",
         "BitXor",
@@ -310,10 +428,18 @@ namespace Ryntra::VM {
         "Shr",
         "SExt",
         "Trunc",
+        "Eq",
+        "Ne",
+        "Lt",
+        "Gt",
+        "Le",
+        "Ge",
         "Dup",
         "Pop",
         "StoreLocal",
         "LoadLocal",
+        "Jmp",
+        "Jz",
         "Halt",
     };
 
@@ -334,7 +460,9 @@ namespace Ryntra::VM {
                     std::cout << "  " << i << ": " << name;
                     if (inst.opcode == OpCode::LoadConst ||
                         inst.opcode == OpCode::StoreLocal ||
-                        inst.opcode == OpCode::LoadLocal) {
+                        inst.opcode == OpCode::LoadLocal ||
+                        inst.opcode == OpCode::Jmp ||
+                        inst.opcode == OpCode::Jz) {
                         std::cout << " " << inst.operand;
                     } else if (inst.opcode == OpCode::Call || inst.opcode == OpCode::BCall) {
                         std::cout << " " << inst.operand;

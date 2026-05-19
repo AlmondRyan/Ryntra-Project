@@ -6,6 +6,15 @@ INT: 'int';
 LONG: 'long';
 VOID: 'void';
 RETURN: 'return';
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+FOR: 'for';
+BREAK: 'break';
+CONTINUE: 'continue';
+BOOL: 'bool';
+TRUE: 'true';
+FALSE: 'false';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -14,6 +23,8 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
+INC: '++';
+DEC: '--';
 ASSIGN: '=';
 ADD_ASSIGN: '+=';
 SUB_ASSIGN: '-=';
@@ -31,8 +42,17 @@ BIT_AND: '&';
 BIT_OR: '|';
 BIT_XOR: '^';
 BIT_NOT: '~';
+NOT: '!';
 SHL: '<<';
 SHR: '>>';
+
+// Comparison Operators
+EQ: '==';
+NE: '!=';
+GE: '>=';
+LE: '<=';
+GT: '>';
+LT: '<';
 
 // Bitwise Compound Assignment
 AND_ASSIGN: '&=';
@@ -64,6 +84,7 @@ typeSpecifier
     : INT
     | LONG
     | VOID
+    | BOOL
     ;
 
 block
@@ -74,6 +95,49 @@ statement
     : variableDeclaration SEMICOLON
     | expression SEMICOLON
     | returnStatement
+    | ifStatement
+    | whileStatement
+    | forStatement
+    | breakStatement
+    | continueStatement
+    ;
+
+whileStatement
+    : WHILE LPAREN expression RPAREN block
+    ;
+
+forStatement
+    : FOR LPAREN forInitClause? SEMICOLON forCondClause? SEMICOLON forOperClause? RPAREN block
+    ;
+
+forInitClause
+    : variableDeclaration
+    | expression
+    ;
+
+forCondClause
+    : expression
+    ;
+
+forOperClause
+    : expression
+    ;
+
+breakStatement
+    : BREAK SEMICOLON
+    ;
+
+continueStatement
+    : CONTINUE SEMICOLON
+    ;
+
+ifStatement
+    : IF LPAREN expression RPAREN block elseBranch?
+    ;
+
+elseBranch
+    : ELSE block
+    | ELSE ifStatement
     ;
 
 variableDeclaration
@@ -87,18 +151,27 @@ returnStatement
 expression
     : LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
+    | expression INC                                                # PostfixIncExpression
+    | expression DEC                                                # PostfixDecExpression
+    | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
+    | INC expression                                                # PrefixIncExpression
+    | DEC expression                                                # PrefixDecExpression
+    | MINUS expression                                              # UnaryMinusExpression
     | BIT_NOT expression                                            # UnaryExpression
+    | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
     | left=expression op=(PLUS|MINUS) right=expression               # PlusMinusExpression
     | left=expression op=(SHL|SHR) right=expression                  # ShiftExpression
     | left=expression op=BIT_AND right=expression                    # BitAndExpression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression
+    | left=expression op=(EQ|NE|GE|LE|GT|LT) right=expression         # ComparisonExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
-    | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
     | IDENTIFIER                                                    # VariableReference
     | STRING_LITERAL                                                # StringLiteral
     | INTEGER_LITERAL                                               # IntegerLiteral
+    | TRUE                                                          # TrueLiteral
+    | FALSE                                                         # FalseLiteral
     ;
 
 argumentList

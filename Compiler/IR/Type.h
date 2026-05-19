@@ -11,6 +11,7 @@ namespace Ryntra::IR {
             Void,
             Int32,
             Int64,
+            Bool,
             String,
             Function
         };
@@ -26,12 +27,14 @@ namespace Ryntra::IR {
         bool isVoid() const { return kind_ == Kind::Void; }
         bool isInt32() const { return kind_ == Kind::Int32; }
         bool isInt64() const { return kind_ == Kind::Int64; }
+        bool isBool() const { return kind_ == Kind::Bool; }
         bool isString() const { return kind_ == Kind::String; }
         bool isFunction() const { return kind_ == Kind::Function; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
         static std::shared_ptr<Type> getInt64Type();
+        static std::shared_ptr<Type> getBoolType();
         static std::shared_ptr<Type> getStringType();
 
     private:
@@ -74,6 +77,19 @@ namespace Ryntra::IR {
 
         bool isEqual(const Type *other) const override {
             return other->isInt64();
+        }
+    };
+
+    class BoolType : public Type {
+    public:
+        BoolType() : Type(Kind::Bool) {}
+
+        std::string toString() const override {
+            return "i1";
+        }
+
+        bool isEqual(const Type *other) const override {
+            return other->isBool();
         }
     };
 
@@ -152,5 +168,10 @@ namespace Ryntra::IR {
     inline std::shared_ptr<Type> Type::getInt64Type() {
         static std::shared_ptr<Type> int64Type = std::make_shared<Int64Type>();
         return int64Type;
+    }
+
+    inline std::shared_ptr<Type> Type::getBoolType() {
+        static std::shared_ptr<Type> boolType = std::make_shared<BoolType>();
+        return boolType;
     }
 } // namespace Ryntra::IR

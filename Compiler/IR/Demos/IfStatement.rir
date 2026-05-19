@@ -1,0 +1,25 @@
+module IfStatement {
+    external func @__builtin_print_string(string) -> void
+
+    @unnamed0 = global constant string "true\0"
+    @unnamed1 = global constant string "false\0"
+
+    func @main() -> void {
+    entry:
+        %cond = constant i1 true
+        br i1 %cond, label %then, label %else
+
+    then:
+        %0 = loadc @unnamed0
+        call @__builtin_print_string(%0)
+        jmp label %merge
+
+    else:
+        %1 = loadc %unnamed1
+        call @__builtin_print_string(%1)
+        jmp label %merge
+
+    merge:
+        ret void
+    }
+}

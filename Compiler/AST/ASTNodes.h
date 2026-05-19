@@ -41,6 +41,17 @@ namespace Ryntra::Compiler {
         std::string name;
     };
 
+    class BoolLiteralNode : public ExpressionNode {
+    public:
+        BoolLiteralNode(bool value) : value(value) {}
+        bool getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        bool value;
+    };
+
     class StringLiteralNode : public ExpressionNode {
     public:
         StringLiteralNode(const std::string &value) : value(value) {}
@@ -60,7 +71,8 @@ namespace Ryntra::Compiler {
         std::string toString() const override;
 
     private:
-        int value;
+        int value; // I think programmers should explicitly mark `L/l` suffix to make the
+                   // literal as long literal.
     };
 
     class LongLiteralNode : public ExpressionNode {
@@ -121,7 +133,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> value;
     };
 
-    class BlockNode : public IASTNode {
+    class BlockNode : public StatementNode {
     public:
         BlockNode(std::vector<std::shared_ptr<StatementNode>> stmts) : statements(std::move(stmts)) {}
         const std::vector<std::shared_ptr<StatementNode>> &getStatements() const { return statements; }
@@ -130,6 +142,105 @@ namespace Ryntra::Compiler {
 
     private:
         std::vector<std::shared_ptr<StatementNode>> statements;
+    };
+
+    class IfNode : public StatementNode {
+    public:
+        IfNode(std::shared_ptr<ExpressionNode> condition,
+               std::shared_ptr<BlockNode> thenBlock,
+               std::shared_ptr<StatementNode> elseBranch)
+            : condition(std::move(condition)), thenBlock(std::move(thenBlock)), elseBranch(std::move(elseBranch)) {}
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getThenBlock() const { return thenBlock; }
+        std::shared_ptr<StatementNode> getElseBranch() const { return elseBranch; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<BlockNode> thenBlock;
+        std::shared_ptr<StatementNode> elseBranch; // IfNode, BlockNode, or nullptr
+    };
+
+    class WhileNode : public StatementNode {
+    public:
+        WhileNode(std::shared_ptr<ExpressionNode> condition,
+                  std::shared_ptr<BlockNode> body)
+            : condition(std::move(condition)), body(std::move(body)) {}
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class BreakNode : public StatementNode {
+    public:
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
+    class ContinueNode : public StatementNode {
+    public:
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
+    enum class IncDecOpType : uint8_t {
+        Increment, // ++
+        Decrement  // --
+    };
+
+    class PrefixOpNode : public ExpressionNode {
+    public:
+        PrefixOpNode(IncDecOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        IncDecOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        IncDecOpType op;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class PostfixOpNode : public ExpressionNode {
+    public:
+        PostfixOpNode(IncDecOpType op, std::shared_ptr<ExpressionNode> operand)
+            : op(op), operand(std::move(operand)) {}
+        IncDecOpType getOp() const { return op; }
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        IncDecOpType op;
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class ForNode : public StatementNode {
+    public:
+        ForNode(std::shared_ptr<StatementNode> init,
+                std::shared_ptr<ExpressionNode> condition,
+                std::shared_ptr<ExpressionNode> operation,
+                std::shared_ptr<BlockNode> body)
+            : init(std::move(init)), condition(std::move(condition)), operation(std::move(operation)), body(std::move(body)) {}
+        std::shared_ptr<StatementNode> getInit() const { return init; }
+        std::shared_ptr<ExpressionNode> getCondition() const { return condition; }
+        std::shared_ptr<ExpressionNode> getOperation() const { return operation; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<StatementNode> init;
+        std::shared_ptr<ExpressionNode> condition;
+        std::shared_ptr<ExpressionNode> operation;
+        std::shared_ptr<BlockNode> body;
     };
 
     class FunctionDefinitionNode : public IASTNode {
@@ -216,7 +327,9 @@ namespace Ryntra::Compiler {
     };
 
     enum class UnaryOpType : uint8_t {
-        BitNot // ~
+        BitNot, // ~
+        LogicalNot, // !
+        Negate // -
     };
 
     class UnaryOpNode : public ExpressionNode {
@@ -245,6 +358,31 @@ namespace Ryntra::Compiler {
     private:
         std::shared_ptr<TypeSpecifierNode> targetType;
         std::shared_ptr<ExpressionNode> operand;
+    };
+
+    enum class ComparisonOpType : uint8_t {
+        Eq,  // ==
+        Ne,  // !=
+        Lt,  // <
+        Gt,  // >
+        Le,  // <=
+        Ge   // >=
+    };
+
+    class ComparisonNode : public ExpressionNode {
+    public:
+        ComparisonNode(std::shared_ptr<ExpressionNode> left, ComparisonOpType op, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), op(op), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        ComparisonOpType getOp() const { return op; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        ComparisonOpType op;
+        std::shared_ptr<ExpressionNode> right;
     };
 
     class AssignmentNode : public ExpressionNode {

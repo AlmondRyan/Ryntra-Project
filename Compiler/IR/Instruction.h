@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ImmediateValue.h"
 #include "Value.h"
 #include <memory>
 #include <vector>
@@ -17,14 +18,26 @@ namespace Ryntra::IR {
             Mul,
             Div,
             Mod,
-            BitNot, // ~
-            BitAnd, // &
+            BitNot,     // ~
+            LogicalNot, // !
+            BitAnd,     // &
             BitOr,  // |
             BitXor, // ^
             Shl,    // <<
             Shr,    // >>
             SExt,   // sign extend i32 → i64
-            Trunc   // truncate i64 → i32
+            Trunc,  // truncate i64 → i32
+            Eq,     // ==
+            Ne,     // !=
+            Lt,     // <
+            Gt,     // >
+            Le,     // <=
+            Ge,     // >=
+            Alloca, // allocate a local variable slot
+            Load,   // load value from alloca slot
+            Store,  // store value to alloca slot
+            Br,     // unconditional branch to basic block
+            CondBr  // conditional branch to basic block
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -81,6 +94,8 @@ namespace Ryntra::IR {
                 result += "ret ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                else
+                    result += "void";
                 break;
 
             case Opcode::Add:
@@ -142,6 +157,35 @@ namespace Ryntra::IR {
                 break;
             }
 
+            case Opcode::LogicalNot: {
+                result += "logicalnot ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Eq:
+            case Opcode::Ne:
+            case Opcode::Lt:
+            case Opcode::Gt:
+            case Opcode::Le:
+            case Opcode::Ge: {
+                switch (opcode_) {
+                case Opcode::Eq: result += "eq "; break;
+                case Opcode::Ne: result += "ne "; break;
+                case Opcode::Lt: result += "lt "; break;
+                case Opcode::Gt: result += "gt "; break;
+                case Opcode::Le: result += "le "; break;
+                case Opcode::Ge: result += "ge "; break;
+                default: break;
+                }
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
             case Opcode::SExt: {
                 result += "sext ";
                 if (!operands_.empty())
@@ -153,6 +197,57 @@ namespace Ryntra::IR {
                 result += "trunc ";
                 if (!operands_.empty())
                     result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Alloca: {
+                result += "alloca ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Load: {
+                result += "load ";
+                if (operands_.size() >= 1)
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Store: {
+                result += "store ";
+                if (operands_.size() >= 1)
+                    result += operands_[0]->getReferenceName();
+                if (operands_.size() >= 2)
+                    result += ", " + operands_[1]->getReferenceName();
+                break;
+            }
+
+            case Opcode::Br: {
+                result += "br label ";
+                if (!operands_.empty()) {
+                    if (auto *imm = dynamic_cast<ImmediateValue *>(operands_[0].get()))
+                        result += imm->getLiteralValue();
+                }
+                break;
+            }
+
+            case Opcode::CondBr: {
+                result += "condbr ";
+                if (!operands_.empty()) {
+                    result += operands_[0]->getType()->toString() + " ";
+                    result += operands_[0]->getReferenceName();
+                }
+                if (operands_.size() >= 2) {
+                    result += ", label ";
+                    if (auto *imm = dynamic_cast<ImmediateValue *>(operands_[1].get()))
+                        result += imm->getLiteralValue();
+                }
+                if (operands_.size() >= 3) {
+                    result += ", label ";
+                    if (auto *imm = dynamic_cast<ImmediateValue *>(operands_[2].get()))
+                        result += imm->getLiteralValue();
+                }
                 break;
             }
 
