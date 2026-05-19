@@ -346,6 +346,68 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createNewArray(const std::string &name,
+                                                            std::shared_ptr<Type> elementType,
+                                                            std::shared_ptr<Value> size) {
+        if (!size)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {size};
+        auto arrayType = std::make_shared<ArrayType>(elementType);
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::NewArray,
+            arrayType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createArrLoad(const std::string &name,
+                                                           std::shared_ptr<Value> array,
+                                                           std::shared_ptr<Value> index,
+                                                           std::shared_ptr<Type> elementType) {
+        if (!array || !index)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {array, index};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::ArrLoad,
+            elementType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createArrStore(std::shared_ptr<Value> array,
+                                                            std::shared_ptr<Value> index,
+                                                            std::shared_ptr<Value> value) {
+        if (!array || !index || !value)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {array, index, value};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::ArrStore,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+
+        return instruction;
+    }
+
     void IRBuilder::setInsertPoint(std::shared_ptr<BasicBlock> block) {
         currentBlock_ = block;
     }

@@ -13,7 +13,8 @@ namespace Ryntra::IR {
             Int64,
             Bool,
             String,
-            Function
+            Function,
+            Array
         };
 
         Type(Kind kind) : kind_(kind) {}
@@ -30,6 +31,7 @@ namespace Ryntra::IR {
         bool isBool() const { return kind_ == Kind::Bool; }
         bool isString() const { return kind_ == Kind::String; }
         bool isFunction() const { return kind_ == Kind::Function; }
+        bool isArray() const { return kind_ == Kind::Array; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
@@ -104,6 +106,28 @@ namespace Ryntra::IR {
         bool isEqual(const Type *other) const override {
             return other->isString();
         }
+    };
+
+    class ArrayType : public Type {
+    public:
+        ArrayType(std::shared_ptr<Type> elementType)
+            : Type(Kind::Array), elementType_(std::move(elementType)) {}
+
+        std::shared_ptr<Type> getElementType() const { return elementType_; }
+
+        std::string toString() const override {
+            return elementType_->toString() + "[]";
+        }
+
+        bool isEqual(const Type *other) const override {
+            if (!other->isArray())
+                return false;
+            auto *arrType = static_cast<const ArrayType *>(other);
+            return elementType_->isEqual(arrType->elementType_.get());
+        }
+
+    private:
+        std::shared_ptr<Type> elementType_;
     };
 
     class FunctionType : public Type {

@@ -22,7 +22,7 @@ Something will do afterward:
 - ✅ V0.0.5.3 `continue` Blocks
 - ✅ V0.0.5.4 Self Increase/Decrease Operator
 - ✅ V0.0.5.5 `for` Blocks
-- ❌ V0.0.6.1 Array Declaration
+- ✅ V0.0.6.1 Array Declaration
 - ❌ V0.0.6.2 Array Index Access
 - ❌ V0.0.6.3 Array Index Assignment
 - ❌ V0.0.7.1 Generic Operator `<>`

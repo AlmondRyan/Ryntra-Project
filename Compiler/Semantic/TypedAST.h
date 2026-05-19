@@ -33,6 +33,9 @@ namespace Ryntra::Compiler::Semantic {
     class TypedReturnNode;
     class TypedVariableNode;
     class TypedVariableDeclarationNode;
+    class TypedArrayDeclarationNode;
+    class TypedArrayIndexAccessNode;
+    class TypedArrayIndexAssignmentNode;
     class TypedBinaryOpNode;
     class TypedUnaryOpNode;
     class TypedCastNode;
@@ -62,6 +65,9 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedFunctionCallNode &node) = 0;
         virtual void visit(TypedVariableNode &node) = 0;
         virtual void visit(TypedVariableDeclarationNode &node) = 0;
+        virtual void visit(TypedArrayDeclarationNode &node) = 0;
+        virtual void visit(TypedArrayIndexAccessNode &node) = 0;
+        virtual void visit(TypedArrayIndexAssignmentNode &node) = 0;
         virtual void visit(TypedBinaryOpNode &node) = 0;
         virtual void visit(TypedUnaryOpNode &node) = 0;
         virtual void visit(TypedCastNode &node) = 0;
@@ -290,6 +296,91 @@ namespace Ryntra::Compiler::Semantic {
         std::string name;
         std::shared_ptr<Type> type;
         std::shared_ptr<TypedExpressionNode> initializer;
+    };
+
+    class TypedArrayDeclarationNode : public TypedStatementNode {
+    public:
+        TypedArrayDeclarationNode(std::string name,
+                                   std::shared_ptr<Type> elementType,
+                                   std::shared_ptr<TypedExpressionNode> size)
+            : name(std::move(name)), elementType(std::move(elementType)), size(std::move(size)) {}
+
+        const std::string &getName() const { return name; }
+        std::shared_ptr<Type> getElementType() const { return elementType; }
+        std::shared_ptr<TypedExpressionNode> getSize() const { return size; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedArrayDeclaration(" + name + "): " + elementType->toString() + "[]"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            if (size) {
+                printIndent(indent + 1);
+                std::cout << "Size:" << std::endl;
+                size->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::string name;
+        std::shared_ptr<Type> elementType;
+        std::shared_ptr<TypedExpressionNode> size;
+    };
+
+    class TypedArrayIndexAccessNode : public TypedExpressionNode {
+    public:
+        TypedArrayIndexAccessNode(std::string arrayName,
+                                  std::shared_ptr<TypedExpressionNode> index,
+                                  std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), arrayName(std::move(arrayName)), index(std::move(index)) {}
+
+        const std::string &getArrayName() const { return arrayName; }
+        std::shared_ptr<TypedExpressionNode> getIndex() const { return index; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedArrayIndexAccess(" + arrayName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Index:" << std::endl;
+            index->dump(indent + 2);
+        }
+
+    private:
+        std::string arrayName;
+        std::shared_ptr<TypedExpressionNode> index;
+    };
+
+    class TypedArrayIndexAssignmentNode : public TypedExpressionNode {
+    public:
+        TypedArrayIndexAssignmentNode(std::string arrayName,
+                                      std::shared_ptr<TypedExpressionNode> index,
+                                      std::shared_ptr<TypedExpressionNode> value,
+                                      std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), arrayName(std::move(arrayName)), index(std::move(index)), value(std::move(value)) {}
+
+        const std::string &getArrayName() const { return arrayName; }
+        std::shared_ptr<TypedExpressionNode> getIndex() const { return index; }
+        std::shared_ptr<TypedExpressionNode> getValue() const { return value; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedArrayIndexAssign(" + arrayName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Index:" << std::endl;
+            index->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Value:" << std::endl;
+            value->dump(indent + 2);
+        }
+
+    private:
+        std::string arrayName;
+        std::shared_ptr<TypedExpressionNode> index;
+        std::shared_ptr<TypedExpressionNode> value;
     };
 
     class TypedBinaryOpNode : public TypedExpressionNode {

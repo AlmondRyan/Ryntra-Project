@@ -37,7 +37,10 @@ namespace Ryntra::IR {
             Load,   // load value from alloca slot
             Store,  // store value to alloca slot
             Br,     // unconditional branch to basic block
-            CondBr  // conditional branch to basic block
+            CondBr, // conditional branch to basic block
+            NewArray, // allocate array on heap
+            ArrLoad,  // load element from array by index
+            ArrStore  // store element to array by index
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -247,6 +250,31 @@ namespace Ryntra::IR {
                     result += ", label ";
                     if (auto *imm = dynamic_cast<ImmediateValue *>(operands_[2].get()))
                         result += imm->getLiteralValue();
+                }
+                break;
+            }
+
+            case Opcode::NewArray: {
+                result += "newarray ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::ArrLoad: {
+                result += "arrload ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::ArrStore: {
+                result += "arrstore ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
                 }
                 break;
             }

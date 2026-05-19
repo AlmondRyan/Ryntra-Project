@@ -32,6 +32,9 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedFunctionCallNode &node) override;
         void visit(Compiler::Semantic::TypedVariableNode &node) override;
         void visit(Compiler::Semantic::TypedVariableDeclarationNode &node) override;
+        void visit(Compiler::Semantic::TypedArrayDeclarationNode &node) override;
+        void visit(Compiler::Semantic::TypedArrayIndexAccessNode &node) override;
+        void visit(Compiler::Semantic::TypedArrayIndexAssignmentNode &node) override;
         void visit(Compiler::Semantic::TypedUnaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedBinaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedCastNode &node) override;

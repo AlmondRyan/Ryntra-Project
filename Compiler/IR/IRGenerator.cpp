@@ -44,6 +44,11 @@ namespace Ryntra::IR {
             return std::make_shared<IR::FunctionType>(retIR, params);
         }
 
+        case Sem::TypeKind::ARRAY: {
+            const auto &arrType = static_cast<const Sem::ArrayType &>(*semType);
+            return std::make_shared<IR::ArrayType>(toIRType(arrType.getElementType()));
+        }
+
         default:
             return Type::getVoidType();
         }
@@ -431,6 +436,40 @@ namespace Ryntra::IR {
         }
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedArrayDeclarationNode &node) {
+        auto varName = node.getName();
+        auto elementIRType = toIRType(node.getElementType());
+
+        // Visit size expression
+        node.getSize()->accept(*this);
+        auto sizeVal = lastValue_;
+        if (!sizeVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize size ImmediateValue if needed
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(sizeVal)) {
+            sizeVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Create NewArray instruction
+        auto newArrayInst = builder_.createNewArray(
+            builder_.generateUniqueName("arr." + varName + "."),
+            elementIRType, sizeVal);
+
+        // Allocate a local slot for the array reference
+        auto arrIRType = std::make_shared<IR::ArrayType>(elementIRType);
+        auto allocaInst = builder_.createAlloca(
+            builder_.generateUniqueName(varName + "."), arrIRType);
+        allocaMap_[varName] = allocaInst;
+
+        // Store the new array into the alloca
+        builder_.createStore(newArrayInst, allocaInst);
+        lastValue_ = nullptr;
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedVariableNode &node) {
         auto it = allocaMap_.find(node.getName());
         if (it != allocaMap_.end()) {
@@ -443,6 +482,87 @@ namespace Ryntra::IR {
             // Variable not found in alloca map; fallback (shouldn't happen after semantic analysis)
             lastValue_ = nullptr;
         }
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedArrayIndexAccessNode &node) {
+        auto it = allocaMap_.find(node.getArrayName());
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the array reference from the alloca slot
+        auto allocaInst = it->second;
+        auto arrIRType = std::make_shared<IR::ArrayType>(toIRType(node.getType()));
+        auto arrayVal = builder_.createLoad(
+            builder_.generateUniqueName(""), allocaInst, arrIRType);
+
+        // Visit the index expression
+        node.getIndex()->accept(*this);
+        auto indexVal = lastValue_;
+        if (!indexVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+            indexVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // ArrLoad
+        auto elemIRType = toIRType(node.getType());
+        lastValue_ = builder_.createArrLoad(
+            builder_.generateUniqueName(""), arrayVal, indexVal, elemIRType);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedArrayIndexAssignmentNode &node) {
+        auto it = allocaMap_.find(node.getArrayName());
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the array reference
+        auto allocaInst = it->second;
+        auto elemIRType = toIRType(node.getType());
+        auto arrIRType = std::make_shared<IR::ArrayType>(elemIRType);
+        auto arrayVal = builder_.createLoad(
+            builder_.generateUniqueName(""), allocaInst, arrIRType);
+
+        // Visit the index expression
+        node.getIndex()->accept(*this);
+        auto indexVal = lastValue_;
+        if (!indexVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+            indexVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Visit the value expression
+        node.getValue()->accept(*this);
+        auto valueVal = lastValue_;
+        if (!valueVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> storeVal = valueVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(valueVal)) {
+            storeVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // ArrStore
+        builder_.createArrStore(arrayVal, indexVal, storeVal);
+
+        // Assignment expression yields the stored value
+        lastValue_ = storeVal;
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedUnaryOpNode &node) {

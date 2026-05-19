@@ -32,6 +32,9 @@ namespace Ryntra::Compiler {
         if (ctx->variableDeclaration()) {
             return visitVariableDeclaration(ctx->variableDeclaration());
         }
+        if (ctx->arrayDeclaration()) {
+            return visitArrayDeclaration(ctx->arrayDeclaration());
+        }
         if (ctx->returnStatement()) {
             return visitReturnStatement(ctx->returnStatement());
         }
@@ -173,6 +176,9 @@ namespace Ryntra::Compiler {
         if (auto *callCtx = dynamic_cast<Ryntra::antlr::RyntraParser::FunctionCallContext *>(ctx)) {
             return visitFunctionCall(callCtx);
         }
+        if (auto *arrIdxCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ArrayIndexAccessContext *>(ctx)) {
+            return visitArrayIndexAccess(arrIdxCtx);
+        }
         if (auto *varCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(ctx)) {
             return visitVariableReference(varCtx);
         }
@@ -290,6 +296,27 @@ namespace Ryntra::Compiler {
         return createNode<VariableDeclarationNode>(ctx, std::move(type), std::move(nameNode), std::move(initializer));
     }
 
+    std::shared_ptr<ArrayDeclarationNode> ASTBuilder::visitArrayDeclaration(Ryntra::antlr::RyntraParser::ArrayDeclarationContext *ctx) {
+        auto elementType = visitTypeSpecifier(ctx->typeSpecifier(0));
+        auto arrayType = std::make_shared<ArrayTypeNode>(elementType);
+        arrayType->setLocation(getLoc(ctx));
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        auto newElementType = visitTypeSpecifier(ctx->typeSpecifier(1));
+        auto size = visitExpression(ctx->expression());
+        return createNode<ArrayDeclarationNode>(ctx, arrayType, nameNode, newElementType, size);
+    }
+
+    std::shared_ptr<ArrayIndexAccessNode> ASTBuilder::visitArrayIndexAccess(Ryntra::antlr::RyntraParser::ArrayIndexAccessContext *ctx) {
+        auto arrayCtx = ctx->array;
+        auto varRefCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(arrayCtx);
+        if (!varRefCtx) {
+            return nullptr;
+        }
+        auto arrayName = createNode<IdentifierNode>(varRefCtx->IDENTIFIER(), varRefCtx->IDENTIFIER()->getText());
+        auto index = visitExpression(ctx->index);
+        return createNode<ArrayIndexAccessNode>(ctx, arrayName, index);
+    }
+
     std::shared_ptr<VariableNode> ASTBuilder::visitVariableReference(Ryntra::antlr::RyntraParser::VariableReferenceContext *ctx) {
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
         return createNode<VariableNode>(ctx, std::move(nameNode));
@@ -389,49 +416,85 @@ namespace Ryntra::Compiler {
         return createNode<ComparisonNode>(ctx, std::move(left), op, std::move(right));
     }
 
-    std::shared_ptr<AssignmentNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {
+    std::shared_ptr<ExpressionNode> ASTBuilder::visitAssignmentExpression(Ryntra::antlr::RyntraParser::AssignmentExpressionContext *ctx) {
         auto rhs = visitExpression(ctx->right);
 
         auto leftExprCtx = ctx->left;
         auto varRefCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(leftExprCtx);
-        if (!varRefCtx) {
-            return nullptr;
+        if (varRefCtx) {
+            auto lhsName = createNode<IdentifierNode>(varRefCtx->IDENTIFIER(), varRefCtx->IDENTIFIER()->getText());
+
+            if (ctx->ASSIGN()) {
+                return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+            }
+
+            BinaryOpType binOp;
+            if (ctx->ADD_ASSIGN())
+                binOp = BinaryOpType::Add;
+            else if (ctx->SUB_ASSIGN())
+                binOp = BinaryOpType::Sub;
+            else if (ctx->MUL_ASSIGN())
+                binOp = BinaryOpType::Mul;
+            else if (ctx->DIV_ASSIGN())
+                binOp = BinaryOpType::Div;
+            else if (ctx->MOD_ASSIGN())
+                binOp = BinaryOpType::Mod;
+            else if (ctx->AND_ASSIGN())
+                binOp = BinaryOpType::BitAnd;
+            else if (ctx->OR_ASSIGN())
+                binOp = BinaryOpType::BitOr;
+            else if (ctx->XOR_ASSIGN())
+                binOp = BinaryOpType::BitXor;
+            else if (ctx->SHL_ASSIGN())
+                binOp = BinaryOpType::Shl;
+            else if (ctx->SHR_ASSIGN())
+                binOp = BinaryOpType::Shr;
+            else
+                return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+
+            auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));
+            varRef->setLocation(lhsName->getLocation());
+            auto binExpr = std::make_shared<BinaryOpNode>(std::move(varRef), binOp, std::move(rhs));
+            binExpr->setLocation(lhsName->getLocation());
+            return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(binExpr));
         }
-        auto lhsName = createNode<IdentifierNode>(varRefCtx->IDENTIFIER(), varRefCtx->IDENTIFIER()->getText());
 
-        if (ctx->ASSIGN()) {
-            return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
+        auto arrIdxCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ArrayIndexAccessContext *>(leftExprCtx);
+        if (arrIdxCtx) {
+            auto varRefArrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(arrIdxCtx->array);
+            if (!varRefArrCtx) {
+                return nullptr;
+            }
+            auto arrayName = createNode<IdentifierNode>(varRefArrCtx->IDENTIFIER(), varRefArrCtx->IDENTIFIER()->getText());
+            auto index = visitExpression(arrIdxCtx->index);
+
+            if (ctx->ASSIGN()) {
+                return createNode<ArrayIndexAssignmentNode>(ctx, arrayName, index, rhs);
+            }
+
+            // Compound assignments for array indices: arr[i] += v -> arr[i] = arr[i] + v
+            BinaryOpType binOp;
+            if (ctx->ADD_ASSIGN()) binOp = BinaryOpType::Add;
+            else if (ctx->SUB_ASSIGN()) binOp = BinaryOpType::Sub;
+            else if (ctx->MUL_ASSIGN()) binOp = BinaryOpType::Mul;
+            else if (ctx->DIV_ASSIGN()) binOp = BinaryOpType::Div;
+            else if (ctx->MOD_ASSIGN()) binOp = BinaryOpType::Mod;
+            else if (ctx->AND_ASSIGN()) binOp = BinaryOpType::BitAnd;
+            else if (ctx->OR_ASSIGN()) binOp = BinaryOpType::BitOr;
+            else if (ctx->XOR_ASSIGN()) binOp = BinaryOpType::BitXor;
+            else if (ctx->SHL_ASSIGN()) binOp = BinaryOpType::Shl;
+            else if (ctx->SHR_ASSIGN()) binOp = BinaryOpType::Shr;
+            else return nullptr;
+
+            auto arrRef = std::make_shared<ArrayIndexAccessNode>(
+                std::make_shared<IdentifierNode>(arrayName->getName()), index);
+            arrRef->setLocation(arrayName->getLocation());
+            auto binExpr = std::make_shared<BinaryOpNode>(arrRef, binOp, rhs);
+            binExpr->setLocation(arrayName->getLocation());
+            return createNode<ArrayIndexAssignmentNode>(ctx, arrayName, index, binExpr);
         }
 
-        BinaryOpType binOp;
-        if (ctx->ADD_ASSIGN())
-            binOp = BinaryOpType::Add;
-        else if (ctx->SUB_ASSIGN())
-            binOp = BinaryOpType::Sub;
-        else if (ctx->MUL_ASSIGN())
-            binOp = BinaryOpType::Mul;
-        else if (ctx->DIV_ASSIGN())
-            binOp = BinaryOpType::Div;
-        else if (ctx->MOD_ASSIGN())
-            binOp = BinaryOpType::Mod;
-        else if (ctx->AND_ASSIGN())
-            binOp = BinaryOpType::BitAnd;
-        else if (ctx->OR_ASSIGN())
-            binOp = BinaryOpType::BitOr;
-        else if (ctx->XOR_ASSIGN())
-            binOp = BinaryOpType::BitXor;
-        else if (ctx->SHL_ASSIGN())
-            binOp = BinaryOpType::Shl;
-        else if (ctx->SHR_ASSIGN())
-            binOp = BinaryOpType::Shr;
-        else
-            return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
-
-        auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));
-        varRef->setLocation(lhsName->getLocation());
-        auto binExpr = std::make_shared<BinaryOpNode>(std::move(varRef), binOp, std::move(rhs));
-        binExpr->setLocation(lhsName->getLocation());
-        return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(binExpr));
+        return nullptr;
     }
 
     std::shared_ptr<PrefixOpNode> ASTBuilder::visitPrefixIncExpression(antlr::RyntraParser::PrefixIncExpressionContext *ctx) {

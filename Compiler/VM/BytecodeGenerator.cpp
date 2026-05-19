@@ -328,6 +328,30 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::NewArray: {
+            // operands[0] = size value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::NewArray, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::ArrLoad: {
+            // operands[0] = array, operands[1] = index
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            currentFunction_->addInstruction(OpCode::ArrGet, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::ArrStore: {
+            // operands[0] = array, operands[1] = index, operands[2] = value
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            pushOperandValue(operands[2]);
+            currentFunction_->addInstruction(OpCode::ArrSet, 0);
+            break;
+        }
+
         default:
             break;
         }

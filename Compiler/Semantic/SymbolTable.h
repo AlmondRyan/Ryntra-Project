@@ -28,7 +28,8 @@ namespace Ryntra::Compiler::Semantic {
             Float64,                  // double
             Float128,                 // decimal
 
-            String
+            String,
+            Array
         };
         // clang-format on
 
@@ -78,6 +79,15 @@ namespace Ryntra::Compiler::Semantic {
         class BoolType : public Type {
         public:
             TypeKind getKind() const override { return TypeKind::Bool; }
+        };
+
+        class ArrayType : public Type {
+        public:
+            ArrayType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+            TypeKind getKind() const override { return TypeKind::Array; }
+            const std::shared_ptr<Type> &getElementType() const { return elementType; }
+        private:
+            std::shared_ptr<Type> elementType;
         };
 
         // TODO: More in the future

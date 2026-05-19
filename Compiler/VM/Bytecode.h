@@ -37,6 +37,9 @@ namespace Ryntra::VM {
             LoadLocal,      // Load value from local variable slot onto stack
             Jmp,            // Unconditional jump to instruction offset
             Jz,             // Pop value, jump if zero to instruction offset
+            NewArray,       // Pop size, create array, push reference
+            ArrGet,         // Pop index, pop array, push element
+            ArrSet,         // Pop value, pop index, pop array, set element
             Halt            // Stop execution
     };
     // clang-format on

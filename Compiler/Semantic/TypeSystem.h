@@ -11,7 +11,8 @@ namespace Ryntra::Compiler::Semantic {
         PRIMITIVE,
         FUNCTION,
         VOID,
-        UNKNOWN
+        UNKNOWN,
+        ARRAY
     };
 
     class Type {
@@ -40,6 +41,28 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::string name;
+    };
+
+    class ArrayType : public Type {
+    public:
+        ArrayType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+
+        TypeKind getKind() const override { return TypeKind::ARRAY; }
+
+        std::string toString() const override {
+            return elementType->toString() + "[]";
+        }
+
+        bool equals(const Type &other) const override {
+            if (other.getKind() != TypeKind::ARRAY)
+                return false;
+            return elementType->equals(*static_cast<const ArrayType &>(other).elementType);
+        }
+
+        std::shared_ptr<Type> getElementType() const { return elementType; }
+
+    private:
+        std::shared_ptr<Type> elementType;
     };
 
     class VoidType : public Type {
@@ -103,6 +126,9 @@ namespace Ryntra::Compiler::Semantic {
         }
         static std::shared_ptr<FunctionType> getFunction(std::shared_ptr<Type> ret, std::vector<std::shared_ptr<Type>> params) {
             return std::make_shared<FunctionType>(std::move(ret), std::move(params));
+        }
+        static std::shared_ptr<ArrayType> getArray(std::shared_ptr<Type> elementType) {
+            return std::make_shared<ArrayType>(std::move(elementType));
         }
     };
 

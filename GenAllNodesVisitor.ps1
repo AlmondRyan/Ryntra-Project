@@ -1,2 +1,2 @@
-cd Scripts/GenAllNodesVisitor
+Set-Location Scripts/GenAllNodesVisitor
 python GenAllNodesVisitor.py ../../cmake-build-debug/Compiler/GeneratedHeader/AllNodesVisitor.h
