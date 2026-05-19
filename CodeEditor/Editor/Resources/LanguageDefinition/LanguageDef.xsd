@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="LanguageDefinition">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Properties" type="PropertiesType" />
+                <xs:element name="Contents" type="ContentsType" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="PropertiesType">
+        <xs:sequence>
+            <xs:element name="Name" type="xs:string" />
+            <xs:element name="Version" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ContentsType">
+        <xs:sequence>
+            <xs:element name="Keywords" type="KeywordsType" />
+            <xs:element name="Match" type="MatchType" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="KeywordsType">
+        <xs:sequence>
+            <xs:element name="Keyword" type="xs:string" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="MatchType">
+        <xs:sequence>
+            <xs:element name="Number" type="xs:string" />
+            <xs:element name="Comments" type="CommentsType" />
+            <xs:element name="Characters" type="xs:string" />
+            <xs:element name="String" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CommentsType">
+        <xs:sequence>
+            <xs:element name="Multiline" type="xs:string" />
+            <xs:element name="Singleline" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

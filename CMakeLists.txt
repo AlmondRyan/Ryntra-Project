@@ -40,6 +40,7 @@ set(AST_SOURCE
 
 set(UTILITY_SOURCE
         Utility/ErrorHandler/ErrorHandler.cpp
+        Utility/ErrorHandler/LexParseErrorHandler.h
 )
 
 set(SEMANTIC_SOURCE

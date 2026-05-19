@@ -176,6 +176,7 @@ namespace Ryntra::CodeEditor {
 
     void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
         QPainter painter(lineNumberArea);
+        painter.setFont(font());
 
         QColor bgColor = palette().color(QPalette::Base);
         painter.fillRect(event->rect(), bgColor);
