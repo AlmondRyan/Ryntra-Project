@@ -1,7 +1,6 @@
 #include "AST/ASTBuilder.h"
 #include "ErrorHandler/ErrorHandler.h"
-#include "IR/BasicBlock.h"
-#include "IR/IRBuilder.h"
+#include "ErrorHandler/LexParseErrorHandler.h"
 #include "IR/IRGenerator.h"
 #include "Semantic/SemanticAnalyzer.h"
 #include "VM/BytecodeGenerator.h"
@@ -11,7 +10,6 @@
 #include <antlr4-runtime.h>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 int main(int argc, char **argv) {
     try {
@@ -23,15 +21,20 @@ int main(int argc, char **argv) {
                                  std::istreambuf_iterator<char>());
         }
 
-        std::cout << "Source: ";
-        std::cout << Source << std::endl;
-        std::cout << "====================================================" << std::endl;
+        // std::cout << "Source: " << std::endl;
+        // std::cout << Source << std::endl;
+        //
+        // std::cout << "====================================================" << std::endl;
 
         antlr4::ANTLRInputStream input(Source);
         Ryntra::antlr::RyntraLexer lexer(&input);
         antlr4::CommonTokenStream tokens(&lexer);
         tokens.fill();
         Ryntra::antlr::RyntraParser parser(&tokens);
+
+        parser.removeErrorListeners();
+        parser.addErrorListener(new Ryntra::Compiler::LexParseErrorHandler());
+
         auto tree = parser.program();
 
         // std::cout << tree->toStringTree(&parser) << std::endl;
@@ -39,11 +42,11 @@ int main(int argc, char **argv) {
 
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
-        std::cout << std::endl;
-        std::cout << ast->toString() << std::endl;
-        std::cout << std::endl;
-        std::cout << "====================================================" << std::endl;
-        std::cout << std::endl;
+        // std::cout << std::endl;
+        // std::cout << ast->toString() << std::endl;
+        // std::cout << std::endl;
+        // std::cout << "====================================================" << std::endl;
+        // std::cout << std::endl;
 
         Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
         analyzer.analyze(ast);
@@ -60,7 +63,7 @@ int main(int argc, char **argv) {
         if (hasError) {
             std::cout << "Semantic Analysis Failed." << std::endl;
         } else {
-            std::cout << "Semantic Analysis Passed." << std::endl;
+            // std::cout << "Semantic Analysis Passed." << std::endl;
             if (auto typedAST = analyzer.getTypedAST()) {
                 // std::cout << "Typed AST:" << std::endl;
                 // typedAST->dump();
@@ -69,14 +72,14 @@ int main(int argc, char **argv) {
 
                 Ryntra::IR::IRGenerator irGen;
                 auto module = irGen.generate(*typedAST, "HelloWorld");
-                std::cout << module->toString() << std::endl;
-                std::cout << "====================================================" << std::endl;
+                // std::cout << module->toString() << std::endl;
+                // std::cout << "====================================================" << std::endl;
 
                 // Generate bytecode and execute
                 Ryntra::VM::BytecodeGenerator bcGen;
                 auto bytecode = bcGen.generate(module);
 
-                std::cout << "Executing VM..." << std::endl;
+                // std::cout << "Executing VM..." << std::endl;
                 Ryntra::VM::VirtualMachine vm;
                 vm.load(bytecode, bcGen.getConstantPool());
                 auto result = vm.execute("main");
@@ -95,7 +98,8 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
         return 0;
     } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        // std::cerr << "Error: " << e.what() << std::endl;
+        std::print(std::cerr, "Error: {}\n", e.what());
         return 1;
     }
 }

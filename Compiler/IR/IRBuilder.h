@@ -84,6 +84,19 @@ namespace Ryntra::IR {
                                                    const std::string &trueBlockName,
                                                    const std::string &falseBlockName);
 
+        std::shared_ptr<Instruction> createNewArray(const std::string &name,
+                                                     std::shared_ptr<Type> elementType,
+                                                     std::shared_ptr<Value> size);
+
+        std::shared_ptr<Instruction> createArrLoad(const std::string &name,
+                                                    std::shared_ptr<Value> array,
+                                                    std::shared_ptr<Value> index,
+                                                    std::shared_ptr<Type> elementType);
+
+        std::shared_ptr<Instruction> createArrStore(std::shared_ptr<Value> array,
+                                                     std::shared_ptr<Value> index,
+                                                     std::shared_ptr<Value> value);
+
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;
 

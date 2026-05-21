@@ -41,6 +41,17 @@ namespace Ryntra::Compiler {
         std::string name;
     };
 
+    class ArrayTypeNode : public IASTNode {
+    public:
+        ArrayTypeNode(std::shared_ptr<TypeSpecifierNode> elementType) : elementType(std::move(elementType)) {}
+        std::shared_ptr<TypeSpecifierNode> getElementType() const { return elementType; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> elementType;
+    };
+
     class BoolLiteralNode : public ExpressionNode {
     public:
         BoolLiteralNode(bool value) : value(value) {}
@@ -286,6 +297,27 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> initializer;
     };
 
+    class ArrayDeclarationNode : public StatementNode {
+    public:
+        ArrayDeclarationNode(std::shared_ptr<ArrayTypeNode> arrayType,
+                              std::shared_ptr<IdentifierNode> name,
+                              std::shared_ptr<TypeSpecifierNode> elementType,
+                              std::shared_ptr<ExpressionNode> size)
+            : arrayType(std::move(arrayType)), name(std::move(name)), elementType(std::move(elementType)), size(std::move(size)) {}
+        std::shared_ptr<ArrayTypeNode> getArrayType() const { return arrayType; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        std::shared_ptr<TypeSpecifierNode> getElementType() const { return elementType; }
+        std::shared_ptr<ExpressionNode> getSize() const { return size; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ArrayTypeNode> arrayType;
+        std::shared_ptr<IdentifierNode> name;
+        std::shared_ptr<TypeSpecifierNode> elementType;
+        std::shared_ptr<ExpressionNode> size;
+    };
+
     class VariableNode : public ExpressionNode {
     public:
         VariableNode(std::shared_ptr<IdentifierNode> name) : name(std::move(name)) {}
@@ -397,5 +429,37 @@ namespace Ryntra::Compiler {
     private:
         std::shared_ptr<IdentifierNode> lhs;
         std::shared_ptr<ExpressionNode> rhs;
+    };
+
+    class ArrayIndexAccessNode : public ExpressionNode {
+    public:
+        ArrayIndexAccessNode(std::shared_ptr<IdentifierNode> arrayName, std::shared_ptr<ExpressionNode> index)
+            : arrayName(std::move(arrayName)), index(std::move(index)) {}
+        std::shared_ptr<IdentifierNode> getArrayName() const { return arrayName; }
+        std::shared_ptr<ExpressionNode> getIndex() const { return index; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> arrayName;
+        std::shared_ptr<ExpressionNode> index;
+    };
+
+    class ArrayIndexAssignmentNode : public ExpressionNode {
+    public:
+        ArrayIndexAssignmentNode(std::shared_ptr<IdentifierNode> arrayName,
+                                  std::shared_ptr<ExpressionNode> index,
+                                  std::shared_ptr<ExpressionNode> value)
+            : arrayName(std::move(arrayName)), index(std::move(index)), value(std::move(value)) {}
+        std::shared_ptr<IdentifierNode> getArrayName() const { return arrayName; }
+        std::shared_ptr<ExpressionNode> getIndex() const { return index; }
+        std::shared_ptr<ExpressionNode> getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> arrayName;
+        std::shared_ptr<ExpressionNode> index;
+        std::shared_ptr<ExpressionNode> value;
     };
 } // namespace Ryntra::Compiler

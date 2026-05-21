@@ -15,6 +15,7 @@ CONTINUE: 'continue';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
+NEW: 'new';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -23,6 +24,8 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
+LBRACK: '[';
+RBRACK: ']';
 INC: '++';
 DEC: '--';
 ASSIGN: '=';
@@ -93,6 +96,7 @@ block
 
 statement
     : variableDeclaration SEMICOLON
+    | arrayDeclaration
     | expression SEMICOLON
     | returnStatement
     | ifStatement
@@ -144,6 +148,10 @@ variableDeclaration
     : typeSpecifier IDENTIFIER (ASSIGN expression)?
     ;
 
+arrayDeclaration
+    : typeSpecifier LBRACK RBRACK IDENTIFIER ASSIGN NEW typeSpecifier LBRACK expression RBRACK SEMICOLON
+    ;
+
 returnStatement
     : RETURN expression SEMICOLON
     ;
@@ -154,6 +162,7 @@ expression
     | expression INC                                                # PostfixIncExpression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
+    | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
     | MINUS expression                                              # UnaryMinusExpression

@@ -396,6 +396,56 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::NewArray: {
+                auto sizeVal = pop();
+                int32_t size = 0;
+                if (sizeVal.isInt32())
+                    size = sizeVal.asInt32();
+                else if (sizeVal.isInt64())
+                    size = static_cast<int32_t>(sizeVal.asInt64());
+                auto arrData = std::make_shared<ArrayData>();
+                arrData->elements.resize(size, VMValue(static_cast<int32_t>(0)));
+                push(VMValue(arrData));
+                break;
+            }
+
+            case OpCode::ArrGet: {
+                auto idxVal = pop();
+                auto arrVal = pop();
+                if (!arrVal.isArray()) {
+                    throw std::runtime_error("ArrGet on non-array value");
+                }
+                auto arrData = arrVal.asArray();
+                int32_t idx = 0;
+                if (idxVal.isInt32())
+                    idx = idxVal.asInt32();
+                else if (idxVal.isInt64())
+                    idx = static_cast<int32_t>(idxVal.asInt64());
+                if (idx < 0 || static_cast<size_t>(idx) >= arrData->elements.size())
+                    throw std::runtime_error("Array index out of bounds: " + std::to_string(idx));
+                push(arrData->elements[idx]);
+                break;
+            }
+
+            case OpCode::ArrSet: {
+                auto val = pop();
+                auto idxVal = pop();
+                auto arrVal = pop();
+                if (!arrVal.isArray()) {
+                    throw std::runtime_error("ArrSet on non-array value");
+                }
+                auto arrData = arrVal.asArray();
+                int32_t idx = 0;
+                if (idxVal.isInt32())
+                    idx = idxVal.asInt32();
+                else if (idxVal.isInt64())
+                    idx = static_cast<int32_t>(idxVal.asInt64());
+                if (idx < 0 || static_cast<size_t>(idx) >= arrData->elements.size())
+                    throw std::runtime_error("Array index out of bounds: " + std::to_string(idx));
+                arrData->elements[idx] = val;
+                break;
+            }
+
             case OpCode::Halt:
                 return VMValue();
 
@@ -440,6 +490,9 @@ namespace Ryntra::VM {
         "LoadLocal",
         "Jmp",
         "Jz",
+        "NewArray",
+        "ArrGet",
+        "ArrSet",
         "Halt",
     };
 

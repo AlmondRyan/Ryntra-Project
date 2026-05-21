@@ -32,6 +32,10 @@ namespace Ryntra::Compiler::Semantic {
             return TypeFactory::getPrimitive("long");
         case STType::TypeKind::Bool:
             return TypeFactory::getPrimitive("bool");
+        case STType::TypeKind::Array: {
+            auto &arrSTType = static_cast<const STType::ArrayType &>(*stType);
+            return TypeFactory::getArray(toTypedType(arrSTType.getElementType()));
+        }
         default:
             return TypeFactory::getPrimitive("unknown");
         }
@@ -174,7 +178,7 @@ namespace Ryntra::Compiler::Semantic {
                     "[RCE004]: 'main' function must have a return type.", node.getLocation());
             } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
                 ErrorHandler::getInstance().makeError(
-                    "[RCE004]: 'main' function must return 'void'.", node.getLocation());
+                    "[RCE005]: 'main' function must return 'void'.", node.getLocation());
             }
         }
 
@@ -379,9 +383,10 @@ namespace Ryntra::Compiler::Semantic {
             auto exprType = typedExpr->getType();
             if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
                 auto rawExpr = node.getExpression();
-                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
-                    !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
-                    !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
+            if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());
@@ -602,6 +607,16 @@ namespace Ryntra::Compiler::Semantic {
         lastType = makeSTType(node.getName());
     }
 
+    void SemanticAnalyzer::visit(ArrayTypeNode &node) {
+        node.getElementType()->accept(*this);
+        auto elemType = lastType;
+        if (elemType) {
+            lastType = std::make_shared<STType::ArrayType>(elemType);
+        } else {
+            lastType = nullptr;
+        }
+    }
+
     void SemanticAnalyzer::visit(VariableDeclarationNode &node) {
         auto varName = node.getName()->getName();
 
@@ -640,6 +655,60 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedDecl;
     }
 
+    void SemanticAnalyzer::visit(ArrayDeclarationNode &node) {
+        auto varName = node.getName()->getName();
+
+        node.getArrayType()->accept(*this);
+        auto arrayType = lastType;
+        if (!arrayType) {
+            lastNode = nullptr;
+            return;
+        }
+
+        // Check element type from "new type[size]" matches declaration type
+        node.getElementType()->accept(*this);
+        auto newElemType = lastType;
+        if (!newElemType) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto declElemType = std::dynamic_pointer_cast<STType::ArrayType>(arrayType)->getElementType();
+        if (declElemType->getKind() != newElemType->getKind()) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE033]: Array element type mismatch. Declaration has '" +
+                    toTypedType(declElemType)->toString() + "', but 'new' has '" +
+                    toTypedType(newElemType)->toString() + "'.",
+                node.getLocation());
+        }
+
+        // Visit size expression
+        expectedReturnType = TypeFactory::getPrimitive("int");
+        node.getSize()->accept(*this);
+        expectedReturnType = nullptr;
+        auto typedSize = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (typedSize) {
+            auto intType = TypeFactory::getPrimitive("int");
+            auto longType = TypeFactory::getPrimitive("long");
+            auto sizeType = typedSize->getType();
+            if (!sizeType->equals(*intType) && !sizeType->equals(*longType) && sizeType->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE034]: Array size must be 'int' or 'long', but got '" +
+                        sizeType->toString() + "'.",
+                    node.getSize()->getLocation());
+            }
+        }
+
+        // Define array variable in symbol table
+        auto varSym = std::make_shared<VariableSymbol>(varName, arrayType);
+        symbolTable.define(varSym, node.getLocation());
+
+        auto typedDecl = std::make_shared<TypedArrayDeclarationNode>(varName, toTypedType(declElemType), typedSize);
+        typedDecl->setLocation(node.getLocation());
+        lastNode = typedDecl;
+    }
+
     void SemanticAnalyzer::visit(VariableNode &node) {
         auto varName = node.getName()->getName();
         auto sym = symbolTable.resolve(varName);
@@ -662,6 +731,134 @@ namespace Ryntra::Compiler::Semantic {
         auto typedVar = std::make_shared<TypedVariableNode>(varName, type);
         typedVar->setLocation(node.getLocation());
         lastNode = typedVar;
+    }
+
+    void SemanticAnalyzer::visit(ArrayIndexAccessNode &node) {
+        auto arrayName = node.getArrayName()->getName();
+        auto sym = symbolTable.resolve(arrayName);
+
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE035]: Array '" + arrayName + "' is not defined.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
+        if (!varSym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE036]: '" + arrayName + "' is not a variable.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSTType = varSym->getType();
+        if (varSTType->getKind() != STType::TypeKind::Array) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE037]: '" + arrayName + "' is not an array.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto arrSTType = std::dynamic_pointer_cast<STType::ArrayType>(varSTType);
+        auto elemType = toTypedType(arrSTType->getElementType());
+
+        // Visit index expression
+        node.getIndex()->accept(*this);
+        auto typedIndex = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (typedIndex) {
+            auto intType = TypeFactory::getPrimitive("int");
+            auto longType = TypeFactory::getPrimitive("long");
+            if (!typedIndex->getType()->equals(*intType) && !typedIndex->getType()->equals(*longType) && typedIndex->getType()->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE038]: Array index must be 'int' or 'long', but got '" +
+                        typedIndex->getType()->toString() + "'.",
+                    node.getIndex()->getLocation());
+            }
+        }
+
+        auto typedAccess = std::make_shared<TypedArrayIndexAccessNode>(arrayName, typedIndex, elemType);
+        typedAccess->setLocation(node.getLocation());
+        lastNode = typedAccess;
+    }
+
+    void SemanticAnalyzer::visit(ArrayIndexAssignmentNode &node) {
+        auto arrayName = node.getArrayName()->getName();
+        auto sym = symbolTable.resolve(arrayName);
+
+        if (!sym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE039]: Array '" + arrayName + "' is not defined.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym);
+        if (!varSym) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE040]: '" + arrayName + "' is not a variable.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto varSTType = varSym->getType();
+        if (varSTType->getKind() != STType::TypeKind::Array) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE041]: '" + arrayName + "' is not an array.",
+                node.getArrayName()->getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto arrSTType = std::dynamic_pointer_cast<STType::ArrayType>(varSTType);
+        auto elemSTType = arrSTType->getElementType();
+        auto elemTyped = toTypedType(elemSTType);
+
+        // Visit index expression
+        node.getIndex()->accept(*this);
+        auto typedIndex = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedIndex) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto intType = TypeFactory::getPrimitive("int");
+        auto longType = TypeFactory::getPrimitive("long");
+        if (!typedIndex->getType()->equals(*intType) && !typedIndex->getType()->equals(*longType) && typedIndex->getType()->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE042]: Array index must be 'int' or 'long', but got '" +
+                    typedIndex->getType()->toString() + "'.",
+                node.getIndex()->getLocation());
+        }
+
+        // Visit value expression
+        node.getValue()->accept(*this);
+        auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedValue) {
+            lastNode = nullptr;
+            return;
+        }
+
+        // Type check
+        bool isAssignable = elemTyped->equals(*typedValue->getType()) ||
+                            (typedValue->getType()->toString() == "int" && elemTyped->toString() == "long");
+        if (!isAssignable && typedValue->getType()->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE043]: Cannot assign value of type '" + typedValue->getType()->toString() +
+                    "' to array element of type '" + elemTyped->toString() + "'.",
+                node.getValue()->getLocation());
+        }
+
+        auto resultType = isAssignable ? elemTyped : TypeFactory::getPrimitive("unknown");
+        auto typedAssign = std::make_shared<TypedArrayIndexAssignmentNode>(arrayName, typedIndex, typedValue, resultType);
+        typedAssign->setLocation(node.getLocation());
+        lastNode = typedAssign;
     }
 
     void SemanticAnalyzer::visit(UnaryOpNode &node) {

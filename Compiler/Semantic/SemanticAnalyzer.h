@@ -31,9 +31,13 @@ namespace Ryntra::Compiler::Semantic {
         void visit(LongLiteralNode &node) override;
         void visit(IdentifierNode &node) override;
         void visit(TypeSpecifierNode &node) override;
+        void visit(ArrayTypeNode &node) override;
         void visit(ReturnNode &node) override;
         void visit(VariableNode &node) override;
         void visit(VariableDeclarationNode &node) override;
+        void visit(ArrayDeclarationNode &node) override;
+        void visit(ArrayIndexAccessNode &node) override;
+        void visit(ArrayIndexAssignmentNode &node) override;
         void visit(BinaryOpNode &node) override;
         void visit(UnaryOpNode &node) override;
         void visit(CastNode &node) override;

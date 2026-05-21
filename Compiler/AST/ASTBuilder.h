@@ -28,6 +28,8 @@ namespace Ryntra::Compiler {
         std::shared_ptr<LongLiteralNode> visitLongLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
         std::shared_ptr<BoolLiteralNode> visitTrueLiteral(antlr::RyntraParser::TrueLiteralContext *ctx);
         std::shared_ptr<BoolLiteralNode> visitFalseLiteral(antlr::RyntraParser::FalseLiteralContext *ctx);
+        std::shared_ptr<ArrayDeclarationNode> visitArrayDeclaration(antlr::RyntraParser::ArrayDeclarationContext *ctx);
+        std::shared_ptr<ArrayIndexAccessNode> visitArrayIndexAccess(antlr::RyntraParser::ArrayIndexAccessContext *ctx);
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
         std::shared_ptr<BinaryOpNode> visitMulDivModExpression(antlr::RyntraParser::MulDivModExpressionContext *ctx);
@@ -45,7 +47,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BinaryOpNode> visitBitOrExpression(antlr::RyntraParser::BitOrExpressionContext *ctx);
         std::shared_ptr<CastNode> visitCastExpression(antlr::RyntraParser::CastExpressionContext *ctx);
         std::shared_ptr<ComparisonNode> visitComparisonExpression(antlr::RyntraParser::ComparisonExpressionContext *ctx);
-        std::shared_ptr<AssignmentNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
+        std::shared_ptr<ExpressionNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:

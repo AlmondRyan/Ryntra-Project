@@ -12,6 +12,16 @@ namespace Ryntra::Compiler {
         return "(TypeSpecifier " + name + ")";
     }
 
+    void ArrayTypeNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ArrayTypeNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ArrayTypeNode::toString() const {
+        return "(ArrayType " + elementType->toString() + ")";
+    }
+
     void BoolLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
             v->visit(*this);
@@ -202,6 +212,19 @@ namespace Ryntra::Compiler {
         return ss.str();
     }
 
+    void ArrayDeclarationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ArrayDeclarationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ArrayDeclarationNode::toString() const {
+        std::stringstream ss;
+        ss << "(ArrayDeclaration " << arrayType->toString() << " " << name->toString()
+           << " " << elementType->toString() << " " << size->toString() << ")";
+        return ss.str();
+    }
+
     void VariableNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<VariableNode> *>(&visitor)) {
             v->visit(*this);
@@ -314,6 +337,26 @@ namespace Ryntra::Compiler {
 
     std::string AssignmentNode::toString() const {
         return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
+    }
+
+    void ArrayIndexAccessNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ArrayIndexAccessNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ArrayIndexAccessNode::toString() const {
+        return "(ArrayIndexAccess " + arrayName->toString() + " " + index->toString() + ")";
+    }
+
+    void ArrayIndexAssignmentNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ArrayIndexAssignmentNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ArrayIndexAssignmentNode::toString() const {
+        return "(ArrayIndexAssign " + arrayName->toString() + " " + index->toString() + " " + value->toString() + ")";
     }
 
     void PrefixOpNode::accept(IVisitor &visitor) {
