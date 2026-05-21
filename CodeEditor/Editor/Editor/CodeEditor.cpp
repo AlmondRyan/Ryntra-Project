@@ -9,7 +9,7 @@
 namespace Ryntra::CodeEditor {
     CodeEditor::CodeEditor(QWidget *parent) : QPlainTextEdit(parent) {
         lineNumberArea = new LineNumberArea(this);
-        QFont font("Consolas", 10);
+        QFont font("Cascadia Code", 10);
         setFont(font);
         connect(this, &CodeEditor::blockCountChanged, this, &CodeEditor::updateLineNumberAreaWidth);
         connect(this, &CodeEditor::updateRequest, this, &CodeEditor::updateLineNumberArea);

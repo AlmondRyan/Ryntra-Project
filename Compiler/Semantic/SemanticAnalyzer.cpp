@@ -383,9 +383,10 @@ namespace Ryntra::Compiler::Semantic {
             auto exprType = typedExpr->getType();
             if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
                 auto rawExpr = node.getExpression();
-                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
-                    !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
-                    !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
+            if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());
