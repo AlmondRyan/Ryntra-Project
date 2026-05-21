@@ -178,7 +178,7 @@ namespace Ryntra::Compiler::Semantic {
                     "[RCE004]: 'main' function must have a return type.", node.getLocation());
             } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
                 ErrorHandler::getInstance().makeError(
-                    "[RCE004]: 'main' function must return 'void'.", node.getLocation());
+                    "[RCE005]: 'main' function must return 'void'.", node.getLocation());
             }
         }
 

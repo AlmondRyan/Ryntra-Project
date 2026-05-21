@@ -25,12 +25,12 @@ Something will do afterward:
 - ✅ V0.0.5.4 Self Increase/Decrease Operator
 - ✅ V0.0.5.5 `for` Blocks
 - ✅ V0.0.6.1 Array Declaration
-- ❌ V0.0.6.2 Array Index Access
-- ❌ V0.0.6.3 Array Index Assignment
-- ❌ V0.0.6.4 Collector Initializer `{element}`
-- ❌ V0.0.7.1 Generic Operator `<>`
+- ✅ V0.0.6.2 Array Index Access
+- ✅ V0.0.6.3 Array Index Assignment
+- ❌ V0.0.7.1 Angle bracket syntax for type parameters `<>`
 - ❌ V0.0.7.2 Reference `ref<T>` (automatically dereference)
 - ❌ V0.0.7.3 Unsafe Block `unsafe`
 - ❌ V0.0.7.4 Unsafe Pointer `ptr<T>`
 - ❌ V0.0.7.5 Pointer dereference `ptr<T>.load()` (manually dereference, lowering to `ptrload` instruction)
 - ❌ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)
+- ❌ V0.0.7.7 Array object assignment
