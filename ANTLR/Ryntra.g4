@@ -15,6 +15,7 @@ CONTINUE: 'continue';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
+NULL: 'null';
 NEW: 'new';
 REF: 'ref';
 PTR: 'ptr';
@@ -198,6 +199,7 @@ expression
     | INTEGER_LITERAL                                               # IntegerLiteral
     | TRUE                                                          # TrueLiteral
     | FALSE                                                         # FalseLiteral
+    | NULL                                                          # NullLiteral
     ;
 
 argumentList

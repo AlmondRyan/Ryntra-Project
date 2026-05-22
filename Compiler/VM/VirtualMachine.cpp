@@ -176,6 +176,12 @@ namespace Ryntra::VM {
                     push(VMValue(a.asInt64() + b.asInt64()));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(a.asInt32() + b.asInt32()));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(a.getPointerSlot() + b.asInt32()));
+                else if (a.isPointer() && b.isInt64())
+                    push(VMValue(a.getPointerSlot() + static_cast<int32_t>(b.asInt64())));
+                else if (a.isInt32() && b.isPointer())
+                    push(VMValue(a.asInt32() + b.getPointerSlot()));
                 break;
             }
             case OpCode::Sub: {
@@ -185,6 +191,10 @@ namespace Ryntra::VM {
                     push(VMValue(a.asInt64() - b.asInt64()));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(a.asInt32() - b.asInt32()));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(a.getPointerSlot() - b.asInt32()));
+                else if (a.isPointer() && b.isPointer())
+                    push(VMValue(a.getPointerSlot() - b.getPointerSlot()));
                 break;
             }
             case OpCode::Mul: {
@@ -304,6 +314,12 @@ namespace Ryntra::VM {
                     push(VMValue(static_cast<int32_t>(a.asInt64() == b.asInt64())));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(static_cast<int32_t>(a.asInt32() == b.asInt32())));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() == b.asInt32())));
+                else if (a.isInt32() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() == b.getPointerSlot())));
+                else if (a.isPointer() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() == b.getPointerSlot())));
                 break;
             }
             case OpCode::Ne: {
@@ -313,6 +329,12 @@ namespace Ryntra::VM {
                     push(VMValue(static_cast<int32_t>(a.asInt64() != b.asInt64())));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(static_cast<int32_t>(a.asInt32() != b.asInt32())));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() != b.asInt32())));
+                else if (a.isInt32() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() != b.getPointerSlot())));
+                else if (a.isPointer() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() != b.getPointerSlot())));
                 break;
             }
             case OpCode::Lt: {

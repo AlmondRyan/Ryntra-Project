@@ -86,16 +86,16 @@ int main(int argc, char **argv) {
 
                 // vm.disassemble();
 
-                std::cout << "\nProgram exited with code: ";
-                if (result.isInt32()) {
-                    std::cout << result.asInt32() << std::endl;
-                } else {
-                    std::cout << "0" << std::endl;
-                }
+                // std::cout << "\nProgram exited with code: ";
+                // if (result.isInt32()) {
+                //     std::cout << result.asInt32() << std::endl;
+                // } else {
+                //     std::cout << "0" << std::endl;
+                // }
             }
         }
 
-        std::cout << std::endl;
+        // std::cout << std::endl;
         return 0;
     } catch (const std::exception &e) {
         // std::cerr << "Error: " << e.what() << std::endl;

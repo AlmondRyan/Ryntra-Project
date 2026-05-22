@@ -380,11 +380,16 @@ namespace Ryntra::VM {
         }
 
         case IR::Instruction::Opcode::PtrCreate: {
-            // operands[0] = alloca instruction
+            // operands[0] = alloca instruction or computed slot value
             auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
-            if (allocaInst) {
+            if (allocaInst && allocaSlotMap_.count(allocaInst.get())) {
+                // alloca operand: emit the slot index directly
                 int32_t slotNum = allocaSlotMap_[allocaInst.get()];
                 currentFunction_->addInstruction(OpCode::LoadConst, addConstant(VMValue(slotNum)));
+                currentFunction_->addInstruction(OpCode::PtrCreate, 0);
+            } else {
+                // computed slot value: push it, then call PtrCreate
+                pushOperandValue(operands[0]);
                 currentFunction_->addInstruction(OpCode::PtrCreate, 0);
             }
             break;

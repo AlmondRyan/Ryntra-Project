@@ -49,6 +49,10 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedPtrCreateNode &node) override;
         void visit(Compiler::Semantic::TypedPtrLoadNode &node) override;
         void visit(Compiler::Semantic::TypedPtrStoreNode &node) override;
+        void visit(Compiler::Semantic::TypedNullLiteralNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrIsNullNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrOffsetNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrDiffNode &node) override;
 
     private:
         IRBuilder builder_;

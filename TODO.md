@@ -40,8 +40,8 @@ Semantic Note:
 - ✅ V0.0.7.4 Unsafe Pointer `ptr<T>`
 - ✅ V0.0.7.5 Pointer dereference `ptr<T>.load()` (manually dereference, lowering to `ptrload` instruction)
 - ✅ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)
-- ❌ V0.0.7.7 `null` Keyword
-- ❌ V0.0.7.8 Pointer + integer (move), Pointer - integer (move), Pointer - pointer (get distance, must in same memory area)
+- ✅ V0.0.7.7 `null` Keyword
+- ✅ V0.0.7.8 Pointer + integer (move), Pointer - integer (move), Pointer - pointer (get distance, must in same memory area)
 - ❌ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
 - ❌ V0.0.7.10 Pointer comparison (`==, !=, >, <, <=, >=`)
 - ❌ V0.0.7.11 (Huge Modification) Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`, just like:

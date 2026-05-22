@@ -23,7 +23,8 @@ namespace Ryntra::VM {
             String,
             FunctionPtr,
             Array,
-            Reference // holds an int32 slot index
+            Reference, // holds an int32 slot index
+            Pointer    // holds an int32 slot index
         };
 
         using ValueData = std::variant<std::monostate, int32_t, int64_t, std::string, void *, std::shared_ptr<ArrayData>>;
@@ -55,9 +56,9 @@ namespace Ryntra::VM {
         bool isReference() const { return type_ == Type::Reference; }
 
         // Pointer support — pointers are stored as int32 slot indices
-        void setPointerSlot(int32_t slot) { type_ = Type::Reference; data_ = slot; }
+        void setPointerSlot(int32_t slot) { type_ = Type::Pointer; data_ = slot; }
         int32_t getPointerSlot() const { return std::get<int32_t>(data_); }
-        bool isPointer() const { return type_ == Type::Reference; }
+        bool isPointer() const { return type_ == Type::Pointer; }
 
     private:
         Type type_;

@@ -147,6 +147,9 @@ namespace Ryntra::Compiler {
         if (auto *ptrStoreCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *>(ctx)) {
             return visitPtrStoreExpression(ptrStoreCtx);
         }
+        if (auto *nullCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NullLiteralContext *>(ctx)) {
+            return visitNullLiteral(nullCtx);
+        }
         if (auto *assignCtx = dynamic_cast<Ryntra::antlr::RyntraParser::AssignmentExpressionContext *>(ctx)) {
             return visitAssignmentExpression(assignCtx);
         }
@@ -293,6 +296,10 @@ namespace Ryntra::Compiler {
         }
         int64_t val = std::stoll(text);
         return createNode<LongLiteralNode>(ctx, val);
+    }
+
+    std::shared_ptr<NullLiteralNode> ASTBuilder::visitNullLiteral(Ryntra::antlr::RyntraParser::NullLiteralContext *ctx) {
+        return createNode<NullLiteralNode>(ctx);
     }
 
     std::shared_ptr<BoolLiteralNode> ASTBuilder::visitTrueLiteral(Ryntra::antlr::RyntraParser::TrueLiteralContext *ctx) {

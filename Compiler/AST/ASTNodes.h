@@ -63,6 +63,13 @@ namespace Ryntra::Compiler {
         std::shared_ptr<TypeSpecifierNode> elementType;
     };
 
+    class NullLiteralNode : public ExpressionNode {
+    public:
+        NullLiteralNode() = default;
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
     class BoolLiteralNode : public ExpressionNode {
     public:
         BoolLiteralNode(bool value) : value(value) {}

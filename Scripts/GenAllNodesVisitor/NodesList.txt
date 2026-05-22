@@ -1,6 +1,7 @@
 TypeSpecifierNode
 ArrayTypeNode
 ReferenceTypeNode
+NullLiteralNode
 BoolLiteralNode
 StringLiteralNode
 IdentifierNode

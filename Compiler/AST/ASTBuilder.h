@@ -30,6 +30,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<LongLiteralNode> visitLongLiteral(antlr::RyntraParser::IntegerLiteralContext *ctx);
         std::shared_ptr<BoolLiteralNode> visitTrueLiteral(antlr::RyntraParser::TrueLiteralContext *ctx);
         std::shared_ptr<BoolLiteralNode> visitFalseLiteral(antlr::RyntraParser::FalseLiteralContext *ctx);
+        std::shared_ptr<NullLiteralNode> visitNullLiteral(antlr::RyntraParser::NullLiteralContext *ctx);
         std::shared_ptr<ArrayDeclarationNode> visitArrayDeclaration(antlr::RyntraParser::ArrayDeclarationContext *ctx);
         std::shared_ptr<ArrayIndexAccessNode> visitArrayIndexAccess(antlr::RyntraParser::ArrayIndexAccessContext *ctx);
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);

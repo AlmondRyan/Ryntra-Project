@@ -48,6 +48,10 @@ namespace Ryntra::Compiler::Semantic {
     class TypedPtrCreateNode;
     class TypedPtrLoadNode;
     class TypedPtrStoreNode;
+    class TypedNullLiteralNode;
+    class TypedPtrIsNullNode;
+    class TypedPtrOffsetNode;
+    class TypedPtrDiffNode;
 
     class ITypedVisitor {
     public:
@@ -87,6 +91,10 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedPtrCreateNode &node) = 0;
         virtual void visit(TypedPtrLoadNode &node) = 0;
         virtual void visit(TypedPtrStoreNode &node) = 0;
+        virtual void visit(TypedNullLiteralNode &node) = 0;
+        virtual void visit(TypedPtrIsNullNode &node) = 0;
+        virtual void visit(TypedPtrOffsetNode &node) = 0;
+        virtual void visit(TypedPtrDiffNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -779,6 +787,84 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> rhs;
     };
 
+    class TypedNullLiteralNode : public TypedExpressionNode {
+    public:
+        explicit TypedNullLiteralNode(std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)) {}
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedNullLiteral: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+    };
+
+    class TypedPtrIsNullNode : public TypedExpressionNode {
+    public:
+        TypedPtrIsNullNode(std::string ptrVarName, bool isEq, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrVarName(std::move(ptrVarName)), isEq(isEq) {}
+
+        const std::string &getPtrVarName() const { return ptrVarName; }
+        bool getIsEq() const { return isEq; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrIsNull(" + ptrVarName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string ptrVarName;
+        bool isEq;
+    };
+
+    class TypedPtrOffsetNode : public TypedExpressionNode {
+    public:
+        TypedPtrOffsetNode(std::string ptrVarName, std::shared_ptr<TypedExpressionNode> offset, bool isAdd, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrVarName(std::move(ptrVarName)), offset(std::move(offset)), isAdd(isAdd) {}
+
+        const std::string &getPtrVarName() const { return ptrVarName; }
+        std::shared_ptr<TypedExpressionNode> getOffset() const { return offset; }
+        bool getIsAdd() const { return isAdd; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrOffset(" + ptrVarName + ", " + (isAdd ? "+" : "-") + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Offset:" << std::endl;
+            offset->dump(indent + 2);
+        }
+
+    private:
+        std::string ptrVarName;
+        std::shared_ptr<TypedExpressionNode> offset;
+        bool isAdd;
+    };
+
+    class TypedPtrDiffNode : public TypedExpressionNode {
+    public:
+        TypedPtrDiffNode(std::string leftPtrName, std::string rightPtrName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), leftPtrName(std::move(leftPtrName)), rightPtrName(std::move(rightPtrName)) {}
+
+        const std::string &getLeftPtrName() const { return leftPtrName; }
+        const std::string &getRightPtrName() const { return rightPtrName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrDiff(" + leftPtrName + " - " + rightPtrName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string leftPtrName;
+        std::string rightPtrName;
+    };
+
     class TypedIfNode : public TypedStatementNode {
     public:
         TypedIfNode(std::shared_ptr<TypedExpressionNode> condition,
@@ -856,7 +942,7 @@ namespace Ryntra::Compiler::Semantic {
 
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedFor"; }
-        void dump(int indent = 0) const override {
+        void dump(const int indent = 0) const override {
             printIndent(indent);
             std::cout << toString() << std::endl;
             if (init) {

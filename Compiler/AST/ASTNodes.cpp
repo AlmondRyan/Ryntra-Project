@@ -32,6 +32,16 @@ namespace Ryntra::Compiler {
         return "(ReferenceType " + elementType->toString() + ")";
     }
 
+    void NullLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<NullLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string NullLiteralNode::toString() const {
+        return "(NullLiteral)";
+    }
+
     void BoolLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
             v->visit(*this);

@@ -22,6 +22,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(IfNode &node) override;
         void visit(WhileNode &node) override;
         void visit(ForNode &node) override;
+        void visit(NullLiteralNode &node) override;
         void visit(BreakNode &node) override;
         void visit(ContinueNode &node) override;
         void visit(ExpressionStatementNode &node) override;
@@ -69,6 +70,10 @@ namespace Ryntra::Compiler::Semantic {
 
         // Build a TypePtr from a type-name string
         static TypePtr makeSTType(const std::string &name);
+
+        // Extract variable name from a typed expression (for pointer operations)
+        static std::string getPtrVarName(const std::shared_ptr<TypedExpressionNode> &expr,
+                                          const SourceLocation &loc);
     };
 
 } // namespace Ryntra::Compiler::Semantic

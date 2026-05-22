@@ -28,6 +28,23 @@ namespace Ryntra::Compiler::Semantic {
         return std::make_shared<STType::Int32Type>();
     }
 
+    std::string SemanticAnalyzer::getPtrVarName(const std::shared_ptr<TypedExpressionNode> &expr,
+                                                  const SourceLocation &loc) {
+        if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(expr)) {
+            return varNode->getName();
+        }
+        if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(expr)) {
+            return ptrCreateNode->getVariableName();
+        }
+        if (auto ptrOffsetNode = std::dynamic_pointer_cast<TypedPtrOffsetNode>(expr)) {
+            return ptrOffsetNode->getPtrVarName();
+        }
+        ErrorHandler::getInstance().makeError(
+            "[RCE059]: Expected a pointer variable or pointer expression.",
+            loc);
+        return "";
+    }
+
     std::shared_ptr<Type> SemanticAnalyzer::toTypedType(const TypePtr &stType) {
         if (!stType)
             return TypeFactory::getPrimitive("unknown");
@@ -423,6 +440,15 @@ namespace Ryntra::Compiler::Semantic {
         auto stType = std::make_shared<STType::StringType>();
         auto typedNode = std::make_shared<TypedStringLiteralNode>(
             node.getValue(), toTypedType(stType));
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(NullLiteralNode &node) {
+        // null gets a special "null" type — it will be checked against ptr<T>
+        // when used in assignments or comparisons
+        auto typedNode = std::make_shared<TypedNullLiteralNode>(
+            TypeFactory::getPrimitive("null"));
         typedNode->setLocation(node.getLocation());
         lastNode = typedNode;
     }
@@ -852,6 +878,10 @@ namespace Ryntra::Compiler::Semantic {
                 // Allow implicit int → long widening promotion
                 bool isAssignable = expectedTyped->equals(*actualType) ||
                                     (actualType->toString() == "int" && expectedTyped->toString() == "long");
+                // Allow null initializer for ptr<T> variables
+                if (!isAssignable && actualType->toString() == "null" && expectedTyped->getKind() == TypeKind::POINTER) {
+                    isAssignable = true;
+                }
                 if (!isAssignable && actualType->toString() != "unknown") {
                     ErrorHandler::getInstance().makeError(
                         "[RCE013]: Variable '" + varName + "' expects type '" +
@@ -1156,6 +1186,82 @@ namespace Ryntra::Compiler::Semantic {
             return;
         }
 
+        auto leftType = typedLeft->getType();
+        auto rightType = typedRight->getType();
+        bool leftIsPtr = leftType->getKind() == TypeKind::POINTER;
+        bool rightIsPtr = rightType->getKind() == TypeKind::POINTER;
+
+        // Detect pointer arithmetic: ptr + int, ptr - int, ptr - ptr
+        if ((leftIsPtr || rightIsPtr) && (node.getOp() == BinaryOpType::Add || node.getOp() == BinaryOpType::Sub)) {
+            if (unsafeDepth_ == 0) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE057]: Pointer arithmetic is only allowed inside 'unsafe' blocks.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto intType = TypeFactory::getPrimitive("int");
+            auto longType = TypeFactory::getPrimitive("long");
+            bool offsetIsInt = false;
+            bool offsetIsLong = false;
+
+            // ptr + int / int + ptr
+            if (node.getOp() == BinaryOpType::Add) {
+                if (leftIsPtr && (typedRight->getType()->equals(*intType) || typedRight->getType()->equals(*longType))) {
+                    offsetIsInt = typedRight->getType()->equals(*intType);
+                    offsetIsLong = typedRight->getType()->equals(*longType);
+                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
+                    if (ptrVarName.empty()) { lastNode = nullptr; return; }
+                    auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedRight, true, leftType);
+                    typedOffset->setLocation(node.getLocation());
+                    lastNode = typedOffset;
+                    return;
+                } else if (rightIsPtr && (typedLeft->getType()->equals(*intType) || typedLeft->getType()->equals(*longType))) {
+                    offsetIsInt = typedLeft->getType()->equals(*intType);
+                    offsetIsLong = typedLeft->getType()->equals(*longType);
+                    std::string ptrVarName = getPtrVarName(typedRight, node.getRight()->getLocation());
+                    if (ptrVarName.empty()) { lastNode = nullptr; return; }
+                    auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedLeft, true, rightType);
+                    typedOffset->setLocation(node.getLocation());
+                    lastNode = typedOffset;
+                    return;
+                }
+            }
+
+            // ptr - int
+            if (node.getOp() == BinaryOpType::Sub && leftIsPtr && !rightIsPtr) {
+                if (typedRight->getType()->equals(*intType) || typedRight->getType()->equals(*longType)) {
+                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
+                    if (ptrVarName.empty()) { lastNode = nullptr; return; }
+                    auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedRight, false, leftType);
+                    typedOffset->setLocation(node.getLocation());
+                    lastNode = typedOffset;
+                    return;
+                }
+            }
+
+            // ptr - ptr
+            if (node.getOp() == BinaryOpType::Sub && leftIsPtr && rightIsPtr) {
+                if (leftType->equals(*rightType)) {
+                    std::string leftPtrName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
+                    std::string rightPtrName = getPtrVarName(typedRight, node.getRight()->getLocation());
+                    if (leftPtrName.empty() || rightPtrName.empty()) { lastNode = nullptr; return; }
+                    auto typedDiff = std::make_shared<TypedPtrDiffNode>(leftPtrName, rightPtrName, intType);
+                    typedDiff->setLocation(node.getLocation());
+                    lastNode = typedDiff;
+                    return;
+                } else {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE058]: Cannot subtract pointers of different types '" +
+                            leftType->toString() + "' and '" + rightType->toString() + "'.",
+                        node.getLocation());
+                    lastNode = nullptr;
+                    return;
+                }
+            }
+        }
+
         auto intType = TypeFactory::getPrimitive("int");
         auto longType = TypeFactory::getPrimitive("long");
         bool leftIsInt = typedLeft->getType()->equals(*intType);
@@ -1248,6 +1354,46 @@ namespace Ryntra::Compiler::Semantic {
 
         if (!typedLeft || !typedRight) {
             lastNode = nullptr;
+            return;
+        }
+
+        // Detect ptr == null / ptr != null patterns
+        auto leftType = typedLeft->getType();
+        auto rightType = typedRight->getType();
+        bool leftIsPtr = leftType->getKind() == TypeKind::POINTER;
+        bool rightIsPtr = rightType->getKind() == TypeKind::POINTER;
+        bool leftIsNull = leftType->toString() == "null";
+        bool rightIsNull = rightType->toString() == "null";
+
+        if ((leftIsPtr && rightIsNull) || (leftIsNull && rightIsPtr)) {
+            if (node.getOp() != ComparisonOpType::Eq && node.getOp() != ComparisonOpType::Ne) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE055]: Only '==' and '!=' are allowed for pointer-null comparison.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            // Extract the pointer variable name
+            std::string ptrVarName;
+            auto ptrExpr = leftIsPtr ? typedLeft : typedRight;
+            if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(ptrExpr)) {
+                ptrVarName = varNode->getName();
+            } else if (auto ptrCreate = std::dynamic_pointer_cast<TypedPtrCreateNode>(ptrExpr)) {
+                ptrVarName = ptrCreate->getVariableName();
+            } else {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE056]: Pointer-null comparison requires a pointer variable.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto boolType = TypeFactory::getPrimitive("bool");
+            bool isEq = (node.getOp() == ComparisonOpType::Eq);
+            auto typedIsNull = std::make_shared<TypedPtrIsNullNode>(ptrVarName, isEq, boolType);
+            typedIsNull->setLocation(node.getLocation());
+            lastNode = typedIsNull;
             return;
         }
 
@@ -1435,6 +1581,10 @@ namespace Ryntra::Compiler::Semantic {
         // Allow implicit int → long widening promotion
         bool isAssignable = varType->equals(*rhsType) ||
                             (rhsType->toString() == "int" && varType->toString() == "long");
+        // Allow null assignment to ptr<T> variables
+        if (!isAssignable && rhsType->toString() == "null" && varType->getKind() == TypeKind::POINTER) {
+            isAssignable = true;
+        }
         if (!isAssignable && rhsType->toString() != "unknown") {
             ErrorHandler::getInstance().makeError(
                 "[RCE018]: Cannot assign value of type '" + rhsType->toString() +

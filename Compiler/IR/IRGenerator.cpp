@@ -885,6 +885,129 @@ namespace Ryntra::IR {
             builder_.generateUniqueName(""), refVal, elemIRType);
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedNullLiteralNode &node) {
+        // null pointer is represented as slot index -1 (int32)
+        lastValue_ = std::make_shared<ImmediateValue>(
+            Type::getInt32Type(), "-1");
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrIsNullNode &node) {
+        auto ptrVarName = node.getPtrVarName();
+        auto it = allocaMap_.find(ptrVarName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the pointer value from the alloca
+        auto ptrIRType = std::make_shared<IR::PtrType>(Type::getInt32Type());
+        auto ptrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, ptrIRType);
+
+        // Create the null constant (-1)
+        auto nullImm = std::make_shared<ImmediateValue>(Type::getInt32Type(), "-1");
+        auto nullConst = builder_.createConstant(
+            builder_.generateUniqueName(""), Type::getInt32Type(), nullImm);
+
+        // Build a compare instruction directly (Eq or Ne), bypassing type checks
+        auto cmpOp = node.getIsEq() ? Instruction::Opcode::Eq : Instruction::Opcode::Ne;
+        std::vector<std::shared_ptr<Value>> cmpOperands = {ptrVal, nullConst};
+        auto cmpInst = std::make_shared<Instruction>(
+            cmpOp, Type::getBoolType(), cmpOperands,
+            builder_.generateUniqueName(""));
+        builder_.addInstruction(cmpInst);
+        lastValue_ = cmpInst;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrOffsetNode &node) {
+        auto ptrVarName = node.getPtrVarName();
+        auto it = allocaMap_.find(ptrVarName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the pointer value from the alloca
+        auto ptrIRType = std::make_shared<IR::PtrType>(Type::getInt32Type());
+        auto ptrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, ptrIRType);
+
+        // Materialize ptr load if needed
+        std::shared_ptr<Value> ptrForArith = ptrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(ptrVal)) {
+            ptrForArith = builder_.createConstant(
+                builder_.generateUniqueName(""), Type::getInt32Type(), imm);
+        }
+
+        // Evaluate the offset expression
+        node.getOffset()->accept(*this);
+        auto offsetVal = lastValue_;
+        if (!offsetVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(offsetVal)) {
+            offsetVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Add/subtract offset from ptr slot index
+        auto arithOp = node.getIsAdd() ? Instruction::Opcode::Add : Instruction::Opcode::Sub;
+        std::vector<std::shared_ptr<Value>> arithOperands = {ptrForArith, offsetVal};
+        auto newSlotInst = std::make_shared<Instruction>(
+            arithOp, Type::getInt32Type(), arithOperands,
+            builder_.generateUniqueName(""));
+        builder_.addInstruction(newSlotInst);
+
+        // Create a pointer directly from the computed slot index.
+        // Use PtrCreate with the computed slot as operand (not an alloca).
+        auto ptrResultType = toIRType(node.getType());
+        std::vector<std::shared_ptr<Value>> createOperands = {newSlotInst};
+        auto ptrResult = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrCreate, ptrResultType, createOperands,
+            builder_.generateUniqueName(""));
+        builder_.addInstruction(ptrResult);
+        lastValue_ = ptrResult;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrDiffNode &node) {
+        auto leftIt = allocaMap_.find(node.getLeftPtrName());
+        auto rightIt = allocaMap_.find(node.getRightPtrName());
+        if (leftIt == allocaMap_.end() || rightIt == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load left pointer value
+        auto ptrIRType = std::make_shared<IR::PtrType>(Type::getInt32Type());
+        auto leftPtrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), leftIt->second, ptrIRType);
+
+        // Load right pointer value
+        auto rightPtrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), rightIt->second, ptrIRType);
+
+        // Materialize if needed
+        std::shared_ptr<Value> leftForArith = leftPtrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(leftPtrVal)) {
+            leftForArith = builder_.createConstant(
+                builder_.generateUniqueName(""), Type::getInt32Type(), imm);
+        }
+        std::shared_ptr<Value> rightForArith = rightPtrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(rightPtrVal)) {
+            rightForArith = builder_.createConstant(
+                builder_.generateUniqueName(""), Type::getInt32Type(), imm);
+        }
+
+        // Subtract right from left, bypassing type checks
+        std::vector<std::shared_ptr<Value>> operands = {leftForArith, rightForArith};
+        auto result = std::make_shared<Instruction>(
+            Instruction::Opcode::Sub, Type::getInt32Type(), operands,
+            builder_.generateUniqueName(""));
+        builder_.addInstruction(result);
+        lastValue_ = result;
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedRefAssignNode &node) {
         auto varName = node.getVariableName();
         auto it = allocaMap_.find(varName);
