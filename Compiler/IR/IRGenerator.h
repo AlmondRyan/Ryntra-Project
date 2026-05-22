@@ -42,6 +42,13 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedAssignmentNode &node) override;
         void visit(Compiler::Semantic::TypedPrefixOpNode &node) override;
         void visit(Compiler::Semantic::TypedPostfixOpNode &node) override;
+        void visit(Compiler::Semantic::TypedRefCreateNode &node) override;
+        void visit(Compiler::Semantic::TypedRefLoadNode &node) override;
+        void visit(Compiler::Semantic::TypedRefAssignNode &node) override;
+        void visit(Compiler::Semantic::TypedUnsafeBlockNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrCreateNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrLoadNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrStoreNode &node) override;
 
     private:
         IRBuilder builder_;

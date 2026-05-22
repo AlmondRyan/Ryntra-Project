@@ -40,7 +40,13 @@ namespace Ryntra::IR {
             CondBr, // conditional branch to basic block
             NewArray, // allocate array on heap
             ArrLoad,  // load element from array by index
-            ArrStore  // store element to array by index
+            ArrStore,  // store element to array by index
+            RefCreate, // create a reference from an alloca
+            RefLoad,   // auto-dereference a ref
+            RefStore,  // store through a ref
+            PtrCreate, // create a pointer from an alloca
+            PtrLoad,   // manually dereference a pointer
+            PtrStore   // store through a pointer
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -272,6 +278,56 @@ namespace Ryntra::IR {
 
             case Opcode::ArrStore: {
                 result += "arrstore ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::RefCreate: {
+                result += "ref.create ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::RefLoad: {
+                result += "ref.load ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::RefStore: {
+                result += "ref.store ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::PtrCreate: {
+                result += "ptr.create ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::PtrLoad: {
+                result += "ptr.load ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::PtrStore: {
+                result += "ptr.store ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
                     if (i > 0) result += ", ";
                     result += operands_[i]->getReferenceName();

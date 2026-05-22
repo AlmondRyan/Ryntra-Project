@@ -449,6 +449,86 @@ namespace Ryntra::VM {
             case OpCode::Halt:
                 return VMValue();
 
+            case OpCode::RefCreate: {
+                auto slotVal = pop();
+                if (!slotVal.isInt32()) {
+                    throw std::runtime_error("RefCreate requires an int32 slot index");
+                }
+                VMValue refVal;
+                refVal.setReferenceSlot(slotVal.asInt32());
+                push(refVal);
+                break;
+            }
+
+            case OpCode::RefLoad: {
+                auto refVal = pop();
+                if (!refVal.isReference()) {
+                    throw std::runtime_error("RefLoad on non-reference value");
+                }
+                int32_t slot = refVal.getReferenceSlot();
+                if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                    push(locals_[slot]);
+                } else {
+                    throw std::runtime_error("RefLoad: invalid reference slot");
+                }
+                break;
+            }
+
+            case OpCode::RefStore: {
+                auto val = pop();
+                auto refVal = pop();
+                if (!refVal.isReference()) {
+                    throw std::runtime_error("RefStore on non-reference value");
+                }
+                int32_t slot = refVal.getReferenceSlot();
+                if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                    locals_[slot] = val;
+                } else {
+                    throw std::runtime_error("RefStore: invalid reference slot");
+                }
+                break;
+            }
+
+            case OpCode::PtrCreate: {
+                auto slotVal = pop();
+                if (!slotVal.isInt32()) {
+                    throw std::runtime_error("PtrCreate requires an int32 slot index");
+                }
+                VMValue ptrVal;
+                ptrVal.setPointerSlot(slotVal.asInt32());
+                push(ptrVal);
+                break;
+            }
+
+            case OpCode::PtrLoad: {
+                auto ptrVal = pop();
+                if (!ptrVal.isPointer()) {
+                    throw std::runtime_error("PtrLoad on non-pointer value");
+                }
+                int32_t slot = ptrVal.getPointerSlot();
+                if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                    push(locals_[slot]);
+                } else {
+                    throw std::runtime_error("PtrLoad: invalid pointer slot");
+                }
+                break;
+            }
+
+            case OpCode::PtrStore: {
+                auto val = pop();
+                auto ptrVal = pop();
+                if (!ptrVal.isPointer()) {
+                    throw std::runtime_error("PtrStore on non-pointer value");
+                }
+                int32_t slot = ptrVal.getPointerSlot();
+                if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                    locals_[slot] = val;
+                } else {
+                    throw std::runtime_error("PtrStore: invalid pointer slot");
+                }
+                break;
+            }
+
             default:
                 break;
             }
@@ -493,6 +573,12 @@ namespace Ryntra::VM {
         "NewArray",
         "ArrGet",
         "ArrSet",
+        "RefCreate",
+        "RefLoad",
+        "RefStore",
+        "PtrCreate",
+        "PtrLoad",
+        "PtrStore",
         "Halt",
     };
 
@@ -515,7 +601,9 @@ namespace Ryntra::VM {
                         inst.opcode == OpCode::StoreLocal ||
                         inst.opcode == OpCode::LoadLocal ||
                         inst.opcode == OpCode::Jmp ||
-                        inst.opcode == OpCode::Jz) {
+                        inst.opcode == OpCode::Jz ||
+                        inst.opcode == OpCode::RefCreate ||
+                        inst.opcode == OpCode::PtrCreate) {
                         std::cout << " " << inst.operand;
                     } else if (inst.opcode == OpCode::Call || inst.opcode == OpCode::BCall) {
                         std::cout << " " << inst.operand;

@@ -408,6 +408,112 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createRefCreate(const std::string &name,
+                                                            std::shared_ptr<Type> refType,
+                                                            std::shared_ptr<Value> alloca) {
+        if (!alloca)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {alloca};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::RefCreate,
+            refType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createRefLoad(const std::string &name,
+                                                           std::shared_ptr<Value> refValue,
+                                                           std::shared_ptr<Type> loadType) {
+        if (!refValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {refValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::RefLoad,
+            loadType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createRefStore(std::shared_ptr<Value> refValue,
+                                                             std::shared_ptr<Value> value) {
+        if (!refValue || !value)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {refValue, value};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::RefStore,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPtrCreate(const std::string &name,
+                                                             std::shared_ptr<Type> ptrType,
+                                                             std::shared_ptr<Value> alloca) {
+        if (!alloca)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {alloca};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrCreate,
+            ptrType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPtrLoad(const std::string &name,
+                                                           std::shared_ptr<Value> ptrValue,
+                                                           std::shared_ptr<Type> loadType) {
+        if (!ptrValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrLoad,
+            loadType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPtrStore(std::shared_ptr<Value> ptrValue,
+                                                            std::shared_ptr<Value> value) {
+        if (!ptrValue || !value)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue, value};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrStore,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
     void IRBuilder::setInsertPoint(std::shared_ptr<BasicBlock> block) {
         currentBlock_ = block;
     }

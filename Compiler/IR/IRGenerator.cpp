@@ -49,6 +49,16 @@ namespace Ryntra::IR {
             return std::make_shared<IR::ArrayType>(toIRType(arrType.getElementType()));
         }
 
+        case Sem::TypeKind::REFERENCE: {
+            const auto &refType = static_cast<const Sem::ReferenceType &>(*semType);
+            return std::make_shared<IR::RefType>(toIRType(refType.getElementType()));
+        }
+
+        case Sem::TypeKind::POINTER: {
+            const auto &ptrType = static_cast<const Sem::PointerType &>(*semType);
+            return std::make_shared<IR::PtrType>(toIRType(ptrType.getElementType()));
+        }
+
         default:
             return Type::getVoidType();
         }
@@ -841,5 +851,137 @@ namespace Ryntra::IR {
             // Assignment expression yields the stored value (for potential chaining)
             lastValue_ = storeVal;
         }
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedRefCreateNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto refIRType = toIRType(node.getType());
+        lastValue_ = builder_.createRefCreate(
+            builder_.generateUniqueName(""), refIRType, it->second);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedRefLoadNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the ref value from the alloca
+        auto refIRType = std::make_shared<IR::RefType>(toIRType(node.getType()));
+        auto refVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, refIRType);
+
+        // Dereference the ref to get the underlying value
+        auto elemIRType = toIRType(node.getType());
+        lastValue_ = builder_.createRefLoad(
+            builder_.generateUniqueName(""), refVal, elemIRType);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedRefAssignNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the ref value from the alloca
+        auto refIRType = std::make_shared<IR::RefType>(toIRType(node.getType()));
+        auto refVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, refIRType);
+
+        // Visit the RHS
+        node.getRHS()->accept(*this);
+        if (!lastValue_) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> storeVal = lastValue_;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+            storeVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Store through the ref
+        builder_.createRefStore(refVal, storeVal);
+        lastValue_ = storeVal;
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedUnsafeBlockNode &node) {
+        node.getBody()->accept(*this);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrCreateNode &node) {
+        auto varName = node.getVariableName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto ptrIRType = toIRType(node.getType());
+        lastValue_ = builder_.createPtrCreate(
+            builder_.generateUniqueName(""), ptrIRType, it->second);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrLoadNode &node) {
+        auto ptrVarName = node.getPtrVarName();
+        auto it = allocaMap_.find(ptrVarName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the pointer value from the alloca
+        auto ptrIRType = std::make_shared<IR::PtrType>(toIRType(node.getType()));
+        auto ptrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, ptrIRType);
+
+        // Dereference the pointer to get the underlying value
+        auto elemIRType = toIRType(node.getType());
+        lastValue_ = builder_.createPtrLoad(
+            builder_.generateUniqueName(""), ptrVal, elemIRType);
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrStoreNode &node) {
+        auto ptrVarName = node.getPtrVarName();
+        auto it = allocaMap_.find(ptrVarName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Load the pointer value from the alloca
+        auto ptrIRType = std::make_shared<IR::PtrType>(toIRType(node.getType()));
+        auto ptrVal = builder_.createLoad(
+            builder_.generateUniqueName(""), it->second, ptrIRType);
+
+        // Visit the RHS
+        node.getRHS()->accept(*this);
+        if (!lastValue_) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> storeVal = lastValue_;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(lastValue_)) {
+            storeVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Store through the pointer
+        builder_.createPtrStore(ptrVal, storeVal);
+        lastValue_ = storeVal;
     }
 } // namespace Ryntra::IR

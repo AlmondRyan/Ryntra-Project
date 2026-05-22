@@ -22,6 +22,16 @@ namespace Ryntra::Compiler {
         return "(ArrayType " + elementType->toString() + ")";
     }
 
+    void ReferenceTypeNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ReferenceTypeNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ReferenceTypeNode::toString() const {
+        return "(ReferenceType " + elementType->toString() + ")";
+    }
+
     void BoolLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
             v->visit(*this);
@@ -337,6 +347,56 @@ namespace Ryntra::Compiler {
 
     std::string AssignmentNode::toString() const {
         return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
+    }
+
+    void UnsafeBlockNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<UnsafeBlockNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string UnsafeBlockNode::toString() const {
+        return "(UnsafeBlock " + body->toString() + ")";
+    }
+
+    void PtrExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrExpressionNode::toString() const {
+        return "(Ptr " + operand->toString() + ")";
+    }
+
+    void PtrLoadNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrLoadNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrLoadNode::toString() const {
+        return "(PtrLoad " + ptrExpr->toString() + ")";
+    }
+
+    void PtrStoreNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrStoreNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrStoreNode::toString() const {
+        return "(PtrStore " + ptrExpr->toString() + " " + value->toString() + ")";
+    }
+
+    void RefExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<RefExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string RefExpressionNode::toString() const {
+        return "(Ref " + operand->toString() + ")";
     }
 
     void ArrayIndexAccessNode::accept(IVisitor &visitor) {

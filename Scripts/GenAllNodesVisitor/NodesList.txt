@@ -1,9 +1,15 @@
 TypeSpecifierNode
 ArrayTypeNode
+ReferenceTypeNode
 BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode
+RefExpressionNode
+PtrExpressionNode
+PtrLoadNode
+PtrStoreNode
+UnsafeBlockNode
 ExpressionStatementNode
 BlockNode
 FunctionDefinitionNode

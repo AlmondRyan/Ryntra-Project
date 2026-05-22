@@ -29,7 +29,9 @@ namespace Ryntra::Compiler::Semantic {
             Float128,                 // decimal
 
             String,
-            Array
+            Array,
+            Reference,
+            Pointer
         };
         // clang-format on
 
@@ -90,7 +92,23 @@ namespace Ryntra::Compiler::Semantic {
             std::shared_ptr<Type> elementType;
         };
 
-        // TODO: More in the future
+        class ReferenceType : public Type {
+        public:
+            ReferenceType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+            TypeKind getKind() const override { return TypeKind::Reference; }
+            const std::shared_ptr<Type> &getElementType() const { return elementType; }
+        private:
+            std::shared_ptr<Type> elementType;
+        };
+
+        class PointerType : public Type {
+        public:
+            PointerType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+            TypeKind getKind() const override { return TypeKind::Pointer; }
+            const std::shared_ptr<Type> &getElementType() const { return elementType; }
+        private:
+            std::shared_ptr<Type> elementType;
+        };
     } // namespace STType
 
     using TypePtr = std::shared_ptr<STType::Type>;

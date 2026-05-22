@@ -20,6 +20,11 @@ namespace Ryntra::Compiler {
         return createNode<TypeSpecifierNode>(ctx, ctx->getText());
     }
 
+    std::shared_ptr<ReferenceTypeNode> ASTBuilder::visitReferenceType(antlr::RyntraParser::TypeSpecifierContext *ctx) {
+        auto elementType = createNode<TypeSpecifierNode>(ctx->typeSpecifier(), ctx->typeSpecifier()->getText());
+        return std::make_shared<ReferenceTypeNode>(elementType);
+    }
+
     std::shared_ptr<BlockNode> ASTBuilder::visitBlock(antlr::RyntraParser::BlockContext *ctx) {
         std::vector<std::shared_ptr<StatementNode>> statements;
         for (auto *stmtCtx : ctx->statement()) {
@@ -34,6 +39,9 @@ namespace Ryntra::Compiler {
         }
         if (ctx->arrayDeclaration()) {
             return visitArrayDeclaration(ctx->arrayDeclaration());
+        }
+        if (ctx->unsafeBlock()) {
+            return visitUnsafeBlock(ctx->unsafeBlock());
         }
         if (ctx->returnStatement()) {
             return visitReturnStatement(ctx->returnStatement());
@@ -58,6 +66,11 @@ namespace Ryntra::Compiler {
             return createNode<ExpressionStatementNode>(ctx, std::move(expr));
         }
         return nullptr;
+    }
+
+    std::shared_ptr<UnsafeBlockNode> ASTBuilder::visitUnsafeBlock(antlr::RyntraParser::UnsafeBlockContext *ctx) {
+        auto body = visitBlock(ctx->block());
+        return createNode<UnsafeBlockNode>(ctx, std::move(body));
     }
 
     std::shared_ptr<ReturnNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx) {
@@ -122,6 +135,18 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ExpressionNode> ASTBuilder::visitExpression(Ryntra::antlr::RyntraParser::ExpressionContext *ctx) {
+        if (auto *refCtx = dynamic_cast<Ryntra::antlr::RyntraParser::RefExpressionContext *>(ctx)) {
+            return visitRefExpression(refCtx);
+        }
+        if (auto *ptrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrExpressionContext *>(ctx)) {
+            return visitPtrExpression(ptrCtx);
+        }
+        if (auto *ptrLoadCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *>(ctx)) {
+            return visitPtrLoadExpression(ptrLoadCtx);
+        }
+        if (auto *ptrStoreCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *>(ctx)) {
+            return visitPtrStoreExpression(ptrStoreCtx);
+        }
         if (auto *assignCtx = dynamic_cast<Ryntra::antlr::RyntraParser::AssignmentExpressionContext *>(ctx)) {
             return visitAssignmentExpression(assignCtx);
         }
@@ -398,6 +423,27 @@ namespace Ryntra::Compiler {
         auto targetType = visitTypeSpecifier(ctx->typeSpecifier());
         auto operand = visitExpression(ctx->expression());
         return createNode<CastNode>(ctx, std::move(targetType), std::move(operand));
+    }
+
+    std::shared_ptr<PtrExpressionNode> ASTBuilder::visitPtrExpression(Ryntra::antlr::RyntraParser::PtrExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<PtrExpressionNode>(ctx, std::move(operand));
+    }
+
+    std::shared_ptr<PtrLoadNode> ASTBuilder::visitPtrLoadExpression(Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *ctx) {
+        auto ptrExpr = visitExpression(ctx->ptr);
+        return createNode<PtrLoadNode>(ctx, std::move(ptrExpr));
+    }
+
+    std::shared_ptr<PtrStoreNode> ASTBuilder::visitPtrStoreExpression(Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *ctx) {
+        auto ptrExpr = visitExpression(ctx->ptr);
+        auto value = visitExpression(ctx->value);
+        return createNode<PtrStoreNode>(ctx, std::move(ptrExpr), std::move(value));
+    }
+
+    std::shared_ptr<RefExpressionNode> ASTBuilder::visitRefExpression(Ryntra::antlr::RyntraParser::RefExpressionContext *ctx) {
+        auto operand = visitExpression(ctx->expression());
+        return createNode<RefExpressionNode>(ctx, std::move(operand));
     }
 
     std::shared_ptr<ComparisonNode> ASTBuilder::visitComparisonExpression(Ryntra::antlr::RyntraParser::ComparisonExpressionContext *ctx) {

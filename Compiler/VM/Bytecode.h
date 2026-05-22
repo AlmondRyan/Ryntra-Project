@@ -40,6 +40,12 @@ namespace Ryntra::VM {
             NewArray,       // Pop size, create array, push reference
             ArrGet,         // Pop index, pop array, push element
             ArrSet,         // Pop value, pop index, pop array, set element
+            RefCreate,      // Pop slot index (from alloca), create ref, push ref
+            RefLoad,        // Pop ref, load value from referenced slot, push value
+            RefStore,       // Pop value, pop ref, store value to referenced slot
+            PtrCreate,      // Pop slot index (from alloca), create ptr, push ptr
+            PtrLoad,        // Pop ptr, load value from pointed-to slot, push value
+            PtrStore,       // Pop value, pop ptr, store value to pointed-to slot
             Halt            // Stop execution
     };
     // clang-format on

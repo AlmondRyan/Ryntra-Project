@@ -94,8 +94,30 @@ namespace Ryntra::IR {
                                                     std::shared_ptr<Type> elementType);
 
         std::shared_ptr<Instruction> createArrStore(std::shared_ptr<Value> array,
-                                                     std::shared_ptr<Value> index,
-                                                     std::shared_ptr<Value> value);
+                                                      std::shared_ptr<Value> index,
+                                                      std::shared_ptr<Value> value);
+
+        std::shared_ptr<Instruction> createRefCreate(const std::string &name,
+                                                      std::shared_ptr<Type> refType,
+                                                      std::shared_ptr<Value> alloca);
+
+        std::shared_ptr<Instruction> createRefLoad(const std::string &name,
+                                                    std::shared_ptr<Value> refValue,
+                                                    std::shared_ptr<Type> loadType);
+
+        std::shared_ptr<Instruction> createRefStore(std::shared_ptr<Value> refValue,
+                                                      std::shared_ptr<Value> value);
+
+        std::shared_ptr<Instruction> createPtrCreate(const std::string &name,
+                                                      std::shared_ptr<Type> ptrType,
+                                                      std::shared_ptr<Value> alloca);
+
+        std::shared_ptr<Instruction> createPtrLoad(const std::string &name,
+                                                     std::shared_ptr<Value> ptrValue,
+                                                     std::shared_ptr<Type> loadType);
+
+        std::shared_ptr<Instruction> createPtrStore(std::shared_ptr<Value> ptrValue,
+                                                      std::shared_ptr<Value> value);
 
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;

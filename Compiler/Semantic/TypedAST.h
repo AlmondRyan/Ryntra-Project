@@ -41,6 +41,13 @@ namespace Ryntra::Compiler::Semantic {
     class TypedCastNode;
     class TypedComparisonNode;
     class TypedAssignmentNode;
+    class TypedRefCreateNode;
+    class TypedRefLoadNode;
+    class TypedRefAssignNode;
+    class TypedUnsafeBlockNode;
+    class TypedPtrCreateNode;
+    class TypedPtrLoadNode;
+    class TypedPtrStoreNode;
 
     class ITypedVisitor {
     public:
@@ -73,6 +80,13 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedCastNode &node) = 0;
         virtual void visit(TypedComparisonNode &node) = 0;
         virtual void visit(TypedAssignmentNode &node) = 0;
+        virtual void visit(TypedRefCreateNode &node) = 0;
+        virtual void visit(TypedRefLoadNode &node) = 0;
+        virtual void visit(TypedRefAssignNode &node) = 0;
+        virtual void visit(TypedUnsafeBlockNode &node) = 0;
+        virtual void visit(TypedPtrCreateNode &node) = 0;
+        virtual void visit(TypedPtrLoadNode &node) = 0;
+        virtual void visit(TypedPtrStoreNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -609,6 +623,65 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> rhs;
     };
 
+    class TypedRefCreateNode : public TypedExpressionNode {
+    public:
+        TypedRefCreateNode(std::string variableName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)) {}
+
+        const std::string &getVariableName() const { return variableName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedRefCreate(" + variableName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string variableName;
+    };
+
+    class TypedRefLoadNode : public TypedExpressionNode {
+    public:
+        TypedRefLoadNode(std::string variableName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)) {}
+
+        const std::string &getVariableName() const { return variableName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedRefLoad(" + variableName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string variableName;
+    };
+
+    class TypedRefAssignNode : public TypedExpressionNode {
+    public:
+        TypedRefAssignNode(std::string variableName, std::shared_ptr<TypedExpressionNode> rhs, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)), rhs(std::move(rhs)) {}
+
+        const std::string &getVariableName() const { return variableName; }
+        std::shared_ptr<TypedExpressionNode> getRHS() const { return rhs; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedRefAssign(" + variableName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "RHS:" << std::endl;
+            rhs->dump(indent + 2);
+        }
+
+    private:
+        std::string variableName;
+        std::shared_ptr<TypedExpressionNode> rhs;
+    };
+
     class TypedBlockNode : public TypedStatementNode {
     public:
         explicit TypedBlockNode(std::vector<std::shared_ptr<TypedStatementNode>> stmts)
@@ -627,6 +700,83 @@ namespace Ryntra::Compiler::Semantic {
 
     private:
         std::vector<std::shared_ptr<TypedStatementNode>> statements;
+    };
+
+    class TypedUnsafeBlockNode : public TypedStatementNode {
+    public:
+        explicit TypedUnsafeBlockNode(std::shared_ptr<TypedBlockNode> body)
+            : body(std::move(body)) {}
+
+        std::shared_ptr<TypedBlockNode> getBody() const { return body; }
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedUnsafeBlock"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            body->dump(indent + 1);
+        }
+
+    private:
+        std::shared_ptr<TypedBlockNode> body;
+    };
+
+    class TypedPtrCreateNode : public TypedExpressionNode {
+    public:
+        TypedPtrCreateNode(std::string variableName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), variableName(std::move(variableName)) {}
+
+        const std::string &getVariableName() const { return variableName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrCreate(" + variableName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string variableName;
+    };
+
+    class TypedPtrLoadNode : public TypedExpressionNode {
+    public:
+        TypedPtrLoadNode(std::string ptrVarName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrVarName(std::move(ptrVarName)) {}
+
+        const std::string &getPtrVarName() const { return ptrVarName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrLoad(" + ptrVarName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string ptrVarName;
+    };
+
+    class TypedPtrStoreNode : public TypedExpressionNode {
+    public:
+        TypedPtrStoreNode(std::string ptrVarName, std::shared_ptr<TypedExpressionNode> rhs, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrVarName(std::move(ptrVarName)), rhs(std::move(rhs)) {}
+
+        const std::string &getPtrVarName() const { return ptrVarName; }
+        std::shared_ptr<TypedExpressionNode> getRHS() const { return rhs; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrStore(" + ptrVarName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "RHS:" << std::endl;
+            rhs->dump(indent + 2);
+        }
+
+    private:
+        std::string ptrVarName;
+        std::shared_ptr<TypedExpressionNode> rhs;
     };
 
     class TypedIfNode : public TypedStatementNode {

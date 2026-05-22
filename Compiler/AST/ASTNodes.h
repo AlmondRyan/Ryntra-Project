@@ -52,6 +52,17 @@ namespace Ryntra::Compiler {
         std::shared_ptr<TypeSpecifierNode> elementType;
     };
 
+    class ReferenceTypeNode : public IASTNode {
+    public:
+        ReferenceTypeNode(std::shared_ptr<TypeSpecifierNode> elementType) : elementType(std::move(elementType)) {}
+        std::shared_ptr<TypeSpecifierNode> getElementType() const { return elementType; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> elementType;
+    };
+
     class BoolLiteralNode : public ExpressionNode {
     public:
         BoolLiteralNode(bool value) : value(value) {}
@@ -429,6 +440,64 @@ namespace Ryntra::Compiler {
     private:
         std::shared_ptr<IdentifierNode> lhs;
         std::shared_ptr<ExpressionNode> rhs;
+    };
+
+    class UnsafeBlockNode : public StatementNode {
+    public:
+        UnsafeBlockNode(std::shared_ptr<BlockNode> body) : body(std::move(body)) {}
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class PtrExpressionNode : public ExpressionNode {
+    public:
+        PtrExpressionNode(std::shared_ptr<ExpressionNode> operand) : operand(std::move(operand)) {}
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> operand;
+    };
+
+    class PtrLoadNode : public ExpressionNode {
+    public:
+        PtrLoadNode(std::shared_ptr<ExpressionNode> ptrExpr) : ptrExpr(std::move(ptrExpr)) {}
+        std::shared_ptr<ExpressionNode> getPtrExpression() const { return ptrExpr; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> ptrExpr;
+    };
+
+    class PtrStoreNode : public ExpressionNode {
+    public:
+        PtrStoreNode(std::shared_ptr<ExpressionNode> ptrExpr, std::shared_ptr<ExpressionNode> value)
+            : ptrExpr(std::move(ptrExpr)), value(std::move(value)) {}
+        std::shared_ptr<ExpressionNode> getPtrExpression() const { return ptrExpr; }
+        std::shared_ptr<ExpressionNode> getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> ptrExpr;
+        std::shared_ptr<ExpressionNode> value;
+    };
+
+    class RefExpressionNode : public ExpressionNode {
+    public:
+        RefExpressionNode(std::shared_ptr<ExpressionNode> operand) : operand(std::move(operand)) {}
+        std::shared_ptr<ExpressionNode> getOperand() const { return operand; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> operand;
     };
 
     class ArrayIndexAccessNode : public ExpressionNode {

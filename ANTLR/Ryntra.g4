@@ -16,10 +16,16 @@ BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
 NEW: 'new';
+REF: 'ref';
+PTR: 'ptr';
+UNSAFE: 'unsafe';
+LOAD: 'load';
+STORE: 'store';
 
 // Symbols & Operators
 SEMICOLON: ';';
 COMMA: ',';
+DOT: '.';
 LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
@@ -88,6 +94,8 @@ typeSpecifier
     | LONG
     | VOID
     | BOOL
+    | REF LT typeSpecifier GT
+    | PTR LT typeSpecifier GT
     ;
 
 block
@@ -104,6 +112,11 @@ statement
     | forStatement
     | breakStatement
     | continueStatement
+    | unsafeBlock
+    ;
+
+unsafeBlock
+    : UNSAFE block
     ;
 
 whileStatement
@@ -157,11 +170,15 @@ returnStatement
     ;
 
 expression
-    : LPAREN typeSpecifier RPAREN expression                        # CastExpression
+    : REF LPAREN expression RPAREN                                  # RefExpression
+    | PTR LPAREN expression RPAREN                                  # PtrExpression
+    | LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
     | expression INC                                                # PostfixIncExpression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
+    | ptr=expression DOT LOAD LPAREN RPAREN                         # PtrLoadExpression
+    | ptr=expression DOT STORE LPAREN value=expression RPAREN       # PtrStoreExpression
     | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression

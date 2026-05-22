@@ -14,6 +14,16 @@ namespace Ryntra::Compiler::Semantic {
             return std::make_shared<STType::Int64Type>();
         if (name == "bool")
             return std::make_shared<STType::BoolType>();
+        if (name.rfind("ref<", 0) == 0 && name.size() > 5 && name.back() == '>') {
+            auto innerName = name.substr(4, name.size() - 5);
+            auto innerType = makeSTType(innerName);
+            return std::make_shared<STType::ReferenceType>(innerType);
+        }
+        if (name.rfind("ptr<", 0) == 0 && name.size() > 5 && name.back() == '>') {
+            auto innerName = name.substr(4, name.size() - 5);
+            auto innerType = makeSTType(innerName);
+            return std::make_shared<STType::PointerType>(innerType);
+        }
         // int / int32 both map to Int32
         return std::make_shared<STType::Int32Type>();
     }
@@ -35,6 +45,14 @@ namespace Ryntra::Compiler::Semantic {
         case STType::TypeKind::Array: {
             auto &arrSTType = static_cast<const STType::ArrayType &>(*stType);
             return TypeFactory::getArray(toTypedType(arrSTType.getElementType()));
+        }
+        case STType::TypeKind::Reference: {
+            auto &refSTType = static_cast<const STType::ReferenceType &>(*stType);
+            return TypeFactory::getReference(toTypedType(refSTType.getElementType()));
+        }
+        case STType::TypeKind::Pointer: {
+            auto &ptrSTType = static_cast<const STType::PointerType &>(*stType);
+            return TypeFactory::getPointer(toTypedType(ptrSTType.getElementType()));
         }
         default:
             return TypeFactory::getPrimitive("unknown");
@@ -607,11 +625,208 @@ namespace Ryntra::Compiler::Semantic {
         lastType = makeSTType(node.getName());
     }
 
+    void SemanticAnalyzer::visit(RefExpressionNode &node) {
+        node.getOperand()->accept(*this);
+        auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedOperand) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto operandType = typedOperand->getType();
+        auto refType = TypeFactory::getReference(operandType);
+
+        std::string targetVarName;
+        if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedOperand)) {
+            targetVarName = varNode->getName();
+        } else if (auto refLoadNode = std::dynamic_pointer_cast<TypedRefLoadNode>(typedOperand)) {
+            targetVarName = refLoadNode->getVariableName();
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE044]: 'ref' requires a variable operand.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedRef = std::make_shared<TypedRefCreateNode>(targetVarName, refType);
+        typedRef->setLocation(node.getLocation());
+        lastNode = typedRef;
+    }
+
+    void SemanticAnalyzer::visit(UnsafeBlockNode &node) {
+        ++unsafeDepth_;
+        node.getBody()->accept(*this);
+        --unsafeDepth_;
+        if (auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode)) {
+            auto typedUnsafe = std::make_shared<TypedUnsafeBlockNode>(typedBody);
+            typedUnsafe->setLocation(node.getLocation());
+            lastNode = typedUnsafe;
+        } else {
+            lastNode = nullptr;
+        }
+    }
+
+    void SemanticAnalyzer::visit(PtrExpressionNode &node) {
+        if (unsafeDepth_ == 0) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE046]: 'ptr' expression is only allowed inside 'unsafe' blocks.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getOperand()->accept(*this);
+        auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedOperand) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto operandType = typedOperand->getType();
+        auto ptrType = TypeFactory::getPointer(operandType);
+
+        std::string targetVarName;
+        if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedOperand)) {
+            targetVarName = varNode->getName();
+        } else if (auto refLoadNode = std::dynamic_pointer_cast<TypedRefLoadNode>(typedOperand)) {
+            targetVarName = refLoadNode->getVariableName();
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE047]: 'ptr' requires a variable operand.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedPtr = std::make_shared<TypedPtrCreateNode>(targetVarName, ptrType);
+        typedPtr->setLocation(node.getLocation());
+        lastNode = typedPtr;
+    }
+
+    void SemanticAnalyzer::visit(PtrLoadNode &node) {
+        if (unsafeDepth_ == 0) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE048]: '.load()' is only allowed inside 'unsafe' blocks.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getPtrExpression()->accept(*this);
+        auto typedPtrExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedPtrExpr) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto ptrExprType = typedPtrExpr->getType();
+        if (ptrExprType->getKind() != TypeKind::POINTER && ptrExprType->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE049]: '.load()' requires a pointer expression, but got '" +
+                    ptrExprType->toString() + "'.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        std::string ptrVarName;
+        if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedPtrExpr)) {
+            ptrVarName = ptrCreateNode->getVariableName();
+        } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedPtrExpr)) {
+            ptrVarName = varNode->getName();
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE050]: '.load()' requires a pointer variable.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto elemType = std::dynamic_pointer_cast<PointerType>(ptrExprType)->getElementType();
+        auto typedPtrLoad = std::make_shared<TypedPtrLoadNode>(ptrVarName, elemType);
+        typedPtrLoad->setLocation(node.getLocation());
+        lastNode = typedPtrLoad;
+    }
+
+    void SemanticAnalyzer::visit(PtrStoreNode &node) {
+        if (unsafeDepth_ == 0) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE051]: '.store()' is only allowed inside 'unsafe' blocks.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getPtrExpression()->accept(*this);
+        auto typedPtrExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedPtrExpr) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto ptrExprType = typedPtrExpr->getType();
+        if (ptrExprType->getKind() != TypeKind::POINTER && ptrExprType->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE052]: '.store()' requires a pointer expression, but got '" +
+                    ptrExprType->toString() + "'.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        std::string ptrVarName;
+        if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedPtrExpr)) {
+            ptrVarName = ptrCreateNode->getVariableName();
+        } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedPtrExpr)) {
+            ptrVarName = varNode->getName();
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE053]: '.store()' requires a pointer variable.",
+                node.getLocation());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto elemType = std::dynamic_pointer_cast<PointerType>(ptrExprType)->getElementType();
+
+        node.getValue()->accept(*this);
+        auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedValue) {
+            lastNode = nullptr;
+            return;
+        }
+
+        bool isAssignable = elemType->equals(*typedValue->getType()) ||
+                            (typedValue->getType()->toString() == "int" && elemType->toString() == "long");
+        if (!isAssignable && typedValue->getType()->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE054]: Cannot store value of type '" + typedValue->getType()->toString() +
+                    "' to pointer of type '" + elemType->toString() + "'.",
+                node.getValue()->getLocation());
+        }
+
+        auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
+        auto typedPtrStore = std::make_shared<TypedPtrStoreNode>(ptrVarName, typedValue, resultType);
+        typedPtrStore->setLocation(node.getLocation());
+        lastNode = typedPtrStore;
+    }
+
     void SemanticAnalyzer::visit(ArrayTypeNode &node) {
         node.getElementType()->accept(*this);
         auto elemType = lastType;
         if (elemType) {
             lastType = std::make_shared<STType::ArrayType>(elemType);
+        } else {
+            lastType = nullptr;
+        }
+    }
+
+    void SemanticAnalyzer::visit(ReferenceTypeNode &node) {
+        node.getElementType()->accept(*this);
+        auto elemType = lastType;
+        if (elemType) {
+            lastType = std::make_shared<STType::ReferenceType>(elemType);
         } else {
             lastType = nullptr;
         }
@@ -720,7 +935,17 @@ namespace Ryntra::Compiler::Semantic {
                 node.getLocation());
             type = TypeFactory::getPrimitive("unknown");
         } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
-            type = toTypedType(varSym->getType());
+            auto varSTType = varSym->getType();
+            // Auto-dereference ref<T> to T when used as an rvalue expression
+            if (varSTType->getKind() == STType::TypeKind::Reference) {
+                auto &refSTType = static_cast<const STType::ReferenceType &>(*varSTType);
+                auto derefType = toTypedType(refSTType.getElementType());
+                auto typedRefLoad = std::make_shared<TypedRefLoadNode>(varName, derefType);
+                typedRefLoad->setLocation(node.getLocation());
+                lastNode = typedRefLoad;
+                return;
+            }
+            type = toTypedType(varSTType);
         } else {
             ErrorHandler::getInstance().makeError(
                 "[RCE015]: '" + varName + "' is not a variable.",
@@ -1179,7 +1404,32 @@ namespace Ryntra::Compiler::Semantic {
             return;
         }
 
-        auto varType = toTypedType(varSym->getType());
+        auto varSTType = varSym->getType();
+
+        // Handle assignment to ref<T> variable
+        if (varSTType->getKind() == STType::TypeKind::Reference) {
+            auto &refSTType = dynamic_cast<const STType::ReferenceType &>(*varSTType);
+            auto elemTyped = toTypedType(refSTType.getElementType());
+            auto rhsType = typedRHS->getType();
+
+            // If RHS type matches the element type, store through the ref
+            bool isAssignable = elemTyped->equals(*rhsType) ||
+                                (rhsType->toString() == "int" && elemTyped->toString() == "long");
+            if (!isAssignable && rhsType->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE045]: Cannot assign value of type '" + rhsType->toString() +
+                        "' to ref<" + elemTyped->toString() + "> variable '" + varName + "'.",
+                    node.getRHS()->getLocation());
+            }
+
+            auto resultType = isAssignable ? elemTyped : TypeFactory::getPrimitive("unknown");
+            auto typedRefAssign = std::make_shared<TypedRefAssignNode>(varName, typedRHS, resultType);
+            typedRefAssign->setLocation(node.getLocation());
+            lastNode = typedRefAssign;
+            return;
+        }
+
+        auto varType = toTypedType(varSTType);
         auto rhsType = typedRHS->getType();
 
         // Allow implicit int → long widening promotion

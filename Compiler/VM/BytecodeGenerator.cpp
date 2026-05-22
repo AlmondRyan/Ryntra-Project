@@ -352,6 +352,59 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::RefCreate: {
+            // operands[0] = alloca instruction
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                // Push the slot index as a constant, then create ref
+                currentFunction_->addInstruction(OpCode::LoadConst, addConstant(VMValue(slotNum)));
+                currentFunction_->addInstruction(OpCode::RefCreate, 0);
+            }
+            break;
+        }
+
+        case IR::Instruction::Opcode::RefLoad: {
+            // operands[0] = ref value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::RefLoad, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::RefStore: {
+            // operands[0] = ref value, operands[1] = value to store
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            currentFunction_->addInstruction(OpCode::RefStore, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::PtrCreate: {
+            // operands[0] = alloca instruction
+            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
+            if (allocaInst) {
+                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
+                currentFunction_->addInstruction(OpCode::LoadConst, addConstant(VMValue(slotNum)));
+                currentFunction_->addInstruction(OpCode::PtrCreate, 0);
+            }
+            break;
+        }
+
+        case IR::Instruction::Opcode::PtrLoad: {
+            // operands[0] = ptr value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::PtrLoad, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::PtrStore: {
+            // operands[0] = ptr value, operands[1] = value to store
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            currentFunction_->addInstruction(OpCode::PtrStore, 0);
+            break;
+        }
+
         default:
             break;
         }
