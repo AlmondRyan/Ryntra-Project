@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         Ryntra::Compiler::ErrorHandler::getInstance().print();
         bool hasError = false;
         for (const auto &error : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
-            if (error.type == Ryntra::Compiler::ET_ERROR) {
+            if (error.type == Ryntra::Compiler::kError) {
                 hasError = true;
                 break;
             }
