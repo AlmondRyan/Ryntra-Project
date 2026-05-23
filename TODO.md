@@ -44,20 +44,5 @@ Semantic Note:
 - ✅ V0.0.7.8 Pointer + integer (move), Pointer - integer (move), Pointer - pointer (get distance, must in same memory area)
 - ✅ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
 - ✅ V0.0.7.10 Pointer comparison (`==, !=`)
-- ✅ V0.0.7.11 (Huge Modification) Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`, just like:
-```
-int[] arr = new int[5];
-arr[0] = 10;
-arr[1] = 20;
-arr[2] = 30;
-arr[3] = 40;
-arr[4] = 50;
-unsafe {
-    fixed ptr<int> p = ptr(arr);
-    __builtin_print(p.load()); __builtin_print("\n"); // 10
-    __builtin_print(ptr(p + 1).load); __builtin_print("\n"); // 20
-    __builtin_print(p[3]); __builtin_print("\n"); // 40
-    p[3] = 400; // write 400
-}
-__builtin_print(p[3]); // 400
-```
+- ✅ V0.0.7.11 Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`
+- ❌ V0.0.8 Optimize Code Structure

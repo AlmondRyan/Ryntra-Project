@@ -1,0 +1,20 @@
+public void main() {
+    int a = 10;
+    a = 20;
+    __builtin_print(a); __builtin_print("\n"); // 20
+
+    a += 10;
+    __builtin_print(a); __builtin_print("\n"); // 30
+
+    a -= 10;
+    __builtin_print(a); __builtin_print("\n"); // 20
+
+    a *= 10;
+    __builtin_print(a); __builtin_print("\n"); // 200
+
+    a /= 10;
+    __builtin_print(a); __builtin_print("\n"); // 20
+
+    a %= 10;
+    __builtin_print(a); __builtin_print("\n"); // 0
+}

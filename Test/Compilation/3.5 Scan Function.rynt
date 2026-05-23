@@ -1,0 +1,7 @@
+public void main() {
+    int a = __builtin_scan();
+    long b = __builtin_scan();
+
+    __builtin_print(a); __builtin_print("\n");
+    __builtin_print(b); __builtin_print("\n");
+}

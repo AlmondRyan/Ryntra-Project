@@ -1,0 +1,19 @@
+public void main() {
+    int a = 10;
+    __builtin_print(a); __builtin_print("\n"); // 10
+
+    int b = a + 10;
+    __builtin_print(b); __builtin_print("\n"); // 20
+
+    int c = b - 10;
+    __builtin_print(c); __builtin_print("\n"); // 10
+
+    int d = c * 10;
+    __builtin_print(d); __builtin_print("\n"); // 100
+
+    int e = d / 10;
+    __builtin_print(e); __builtin_print("\n"); // 10
+
+    int f = e % 2;
+    __builtin_print(f); __builtin_print("\n"); // 0
+}

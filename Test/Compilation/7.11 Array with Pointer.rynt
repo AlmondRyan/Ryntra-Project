@@ -1,0 +1,29 @@
+public void main() {
+    int[] arr = new int[5];
+    arr[0] = 10;
+    arr[1] = 20;
+    arr[2] = 30;
+    arr[3] = 40;
+    arr[4] = 50;
+
+    __builtin_print(arr[0]); __builtin_print("\n"); // 10
+
+    unsafe {
+        fixed (ptr<int> p = ptr(arr)) {
+            __builtin_print(p.load()); __builtin_print("\n"); // 10
+            __builtin_print(p[1]); __builtin_print("\n"); // 20
+            __builtin_print(p[3]); __builtin_print("\n"); // 40
+            p[3] = 400;
+        }
+    }
+
+    __builtin_print(arr[3]); __builtin_print("\n"); // 400
+
+    unsafe {
+        fixed (ptr<int> p = ptr(arr)) {
+            p[0] += 5;
+        }
+    }
+
+    __builtin_print(arr[0]); __builtin_print("\n"); // 15
+}
