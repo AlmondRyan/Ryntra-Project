@@ -50,9 +50,14 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedPtrLoadNode &node) override;
         void visit(Compiler::Semantic::TypedPtrStoreNode &node) override;
         void visit(Compiler::Semantic::TypedNullLiteralNode &node) override;
-        void visit(Compiler::Semantic::TypedPtrIsNullNode &node) override;
         void visit(Compiler::Semantic::TypedPtrOffsetNode &node) override;
         void visit(Compiler::Semantic::TypedPtrDiffNode &node) override;
+        void visit(Compiler::Semantic::TypedNewNode &node) override;
+        void visit(Compiler::Semantic::TypedDeleteNode &node) override;
+        void visit(Compiler::Semantic::TypedFixedNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrIndexAccessNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrIndexAssignmentNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrFromArrayNode &node) override;
 
     private:
         IRBuilder builder_;

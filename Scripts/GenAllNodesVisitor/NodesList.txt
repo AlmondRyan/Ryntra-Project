@@ -35,3 +35,6 @@ BreakNode
 ContinueNode
 PrefixOpNode
 PostfixOpNode
+NewExpressionNode
+DeleteStatementNode
+FixedNode

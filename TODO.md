@@ -42,9 +42,9 @@ Semantic Note:
 - ✅ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)
 - ✅ V0.0.7.7 `null` Keyword
 - ✅ V0.0.7.8 Pointer + integer (move), Pointer - integer (move), Pointer - pointer (get distance, must in same memory area)
-- ❌ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
-- ❌ V0.0.7.10 Pointer comparison (`==, !=, >, <, <=, >=`)
-- ❌ V0.0.7.11 (Huge Modification) Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`, just like:
+- ✅ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
+- ✅ V0.0.7.10 Pointer comparison (`==, !=`)
+- ✅ V0.0.7.11 (Huge Modification) Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`, just like:
 ```
 int[] arr = new int[5];
 arr[0] = 10;

@@ -52,6 +52,9 @@ namespace Ryntra::Compiler::Semantic {
         void visit(PtrExpressionNode &node) override;
         void visit(PtrLoadNode &node) override;
         void visit(PtrStoreNode &node) override;
+        void visit(NewExpressionNode &node) override;
+        void visit(DeleteStatementNode &node) override;
+        void visit(FixedNode &node) override;
 
     private:
         SymbolTable symbolTable;

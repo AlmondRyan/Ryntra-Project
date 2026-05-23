@@ -410,6 +410,57 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::NewHeap: {
+            // operands[0] = initializer value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::New, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::DeleteHeap: {
+            // operands[0] = pointer value (heap pointer)
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::Delete, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::ArrRef: {
+            // operands[0] = array, operands[1] = index
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            currentFunction_->addInstruction(OpCode::ArrRef, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::PtrIndexRef: {
+            // operands[0] = ptr, operands[1] = index
+            pushOperandValue(operands[0]);
+            pushOperandValue(operands[1]);
+            currentFunction_->addInstruction(OpCode::PtrIndexRef, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::PinArray: {
+            // operands[0] = pointer value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::PinArray, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::UnpinArray: {
+            // operands[0] = pointer value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::UnpinArray, 0);
+            break;
+        }
+
+        case IR::Instruction::Opcode::PtrFromArray: {
+            // operands[0] = array value
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::PtrFromArray, 0);
+            break;
+        }
+
         default:
             break;
         }

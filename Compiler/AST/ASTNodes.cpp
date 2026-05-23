@@ -416,7 +416,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string ArrayIndexAccessNode::toString() const {
-        return "(ArrayIndexAccess " + arrayName->toString() + " " + index->toString() + ")";
+        return "(ArrayIndexAccess " + arrayExpr->toString() + " " + index->toString() + ")";
     }
 
     void ArrayIndexAssignmentNode::accept(IVisitor &visitor) {
@@ -426,7 +426,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string ArrayIndexAssignmentNode::toString() const {
-        return "(ArrayIndexAssign " + arrayName->toString() + " " + index->toString() + " " + value->toString() + ")";
+        return "(ArrayIndexAssign " + arrayExpr->toString() + " " + index->toString() + " " + value->toString() + ")";
     }
 
     void PrefixOpNode::accept(IVisitor &visitor) {
@@ -465,6 +465,43 @@ namespace Ryntra::Compiler {
         if (operation) ss << " " << operation->toString();
         ss << " " << body->toString();
         ss << ")";
+        return ss.str();
+    }
+
+    void NewExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<NewExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string NewExpressionNode::toString() const {
+        std::stringstream ss;
+        ss << "(New " << elementType->toString();
+        if (initializer) ss << " " << initializer->toString();
+        ss << ")";
+        return ss.str();
+    }
+
+    void DeleteStatementNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<DeleteStatementNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string DeleteStatementNode::toString() const {
+        return "(Delete " + expression->toString() + ")";
+    }
+
+    void FixedNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<FixedNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string FixedNode::toString() const {
+        std::stringstream ss;
+        ss << "(Fixed " << ptrType->toString() << " " << name->toString()
+           << " = " << init->toString() << " " << body->toString() << ")";
         return ss.str();
     }
 

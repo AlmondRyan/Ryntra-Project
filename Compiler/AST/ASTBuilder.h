@@ -32,6 +32,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BoolLiteralNode> visitFalseLiteral(antlr::RyntraParser::FalseLiteralContext *ctx);
         std::shared_ptr<NullLiteralNode> visitNullLiteral(antlr::RyntraParser::NullLiteralContext *ctx);
         std::shared_ptr<ArrayDeclarationNode> visitArrayDeclaration(antlr::RyntraParser::ArrayDeclarationContext *ctx);
+        std::shared_ptr<FixedNode> visitFixedStatement(antlr::RyntraParser::FixedStatementContext *ctx);
         std::shared_ptr<ArrayIndexAccessNode> visitArrayIndexAccess(antlr::RyntraParser::ArrayIndexAccessContext *ctx);
         std::shared_ptr<VariableDeclarationNode> visitVariableDeclaration(antlr::RyntraParser::VariableDeclarationContext *ctx);
         std::shared_ptr<VariableNode> visitVariableReference(antlr::RyntraParser::VariableReferenceContext *ctx);
@@ -53,6 +54,8 @@ namespace Ryntra::Compiler {
         std::shared_ptr<PtrLoadNode> visitPtrLoadExpression(antlr::RyntraParser::PtrLoadExpressionContext *ctx);
         std::shared_ptr<PtrStoreNode> visitPtrStoreExpression(antlr::RyntraParser::PtrStoreExpressionContext *ctx);
         std::shared_ptr<RefExpressionNode> visitRefExpression(antlr::RyntraParser::RefExpressionContext *ctx);
+        std::shared_ptr<NewExpressionNode> visitNewExpression(antlr::RyntraParser::NewExpressionContext *ctx);
+        std::shared_ptr<NewExpressionNode> visitNewWithInitExpression(antlr::RyntraParser::NewWithInitExpressionContext *ctx);
         std::shared_ptr<ComparisonNode> visitComparisonExpression(antlr::RyntraParser::ComparisonExpressionContext *ctx);
         std::shared_ptr<ExpressionNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);

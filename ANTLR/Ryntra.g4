@@ -17,9 +17,11 @@ TRUE: 'true';
 FALSE: 'false';
 NULL: 'null';
 NEW: 'new';
+DELETE: 'delete';
 REF: 'ref';
 PTR: 'ptr';
 UNSAFE: 'unsafe';
+FIXED: 'fixed';
 LOAD: 'load';
 STORE: 'store';
 
@@ -114,6 +116,12 @@ statement
     | breakStatement
     | continueStatement
     | unsafeBlock
+    | fixedStatement
+    | DELETE expression SEMICOLON
+    ;
+
+fixedStatement
+    : FIXED LPAREN PTR LT typeSpecifier GT IDENTIFIER ASSIGN expression RPAREN block
     ;
 
 unsafeBlock
@@ -173,6 +181,8 @@ returnStatement
 expression
     : REF LPAREN expression RPAREN                                  # RefExpression
     | PTR LPAREN expression RPAREN                                  # PtrExpression
+    | NEW typeSpecifier                                             # NewExpression
+    | NEW typeSpecifier LPAREN expression RPAREN                    # NewWithInitExpression
     | LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
     | expression INC                                                # PostfixIncExpression

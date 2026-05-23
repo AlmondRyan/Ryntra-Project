@@ -498,7 +498,7 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createPtrStore(std::shared_ptr<Value> ptrValue,
-                                                            std::shared_ptr<Value> value) {
+                                                             std::shared_ptr<Value> value) {
         if (!ptrValue || !value)
             return nullptr;
 
@@ -508,6 +508,128 @@ namespace Ryntra::IR {
             Type::getVoidType(),
             operands,
             "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createNewHeap(const std::string &name,
+                                                           std::shared_ptr<Type> ptrType,
+                                                           std::shared_ptr<Value> initializer) {
+        if (!initializer)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {initializer};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::NewHeap,
+            ptrType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createDeleteHeap(std::shared_ptr<Value> ptrValue) {
+        if (!ptrValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::DeleteHeap,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createArrRef(const std::string &name,
+                                                          std::shared_ptr<Value> array,
+                                                          std::shared_ptr<Value> index,
+                                                          std::shared_ptr<Type> refType) {
+        if (!array || !index)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {array, index};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::ArrRef,
+            refType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPtrIndexRef(const std::string &name,
+                                                               std::shared_ptr<Value> ptrValue,
+                                                               std::shared_ptr<Value> index,
+                                                               std::shared_ptr<Type> refType) {
+        if (!ptrValue || !index)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue, index};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrIndexRef,
+            refType,
+            operands,
+            name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPinArray(std::shared_ptr<Value> ptrValue) {
+        if (!ptrValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PinArray,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createUnpinArray(std::shared_ptr<Value> ptrValue) {
+        if (!ptrValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::UnpinArray,
+            Type::getVoidType(),
+            operands,
+            "");
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createPtrFromArray(const std::string &name,
+                                                                std::shared_ptr<Type> ptrType,
+                                                                std::shared_ptr<Value> arrayValue) {
+        if (!arrayValue)
+            return nullptr;
+
+        std::vector<std::shared_ptr<Value>> operands = {arrayValue};
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::PtrFromArray,
+            ptrType,
+            operands,
+            name);
 
         if (currentBlock_)
             currentBlock_->addInstruction(instruction);

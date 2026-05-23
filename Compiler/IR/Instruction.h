@@ -46,7 +46,14 @@ namespace Ryntra::IR {
             RefStore,  // store through a ref
             PtrCreate, // create a pointer from an alloca
             PtrLoad,   // manually dereference a pointer
-            PtrStore   // store through a pointer
+            PtrStore,  // store through a pointer
+            NewHeap,   // allocate on heap
+            DeleteHeap, // free from heap
+            ArrRef,    // create ref to array element (for arr[i] returning ref<T>)
+            PtrIndexRef, // create ref to pointer + index (for p[i] returning ref<T>)
+            PinArray,  // pin an array for fixed statement
+            UnpinArray, // unpin an array for fixed statement
+            PtrFromArray // create a pointer to array element 0 from an array value
         };
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
@@ -328,6 +335,65 @@ namespace Ryntra::IR {
 
             case Opcode::PtrStore: {
                 result += "ptr.store ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::NewHeap: {
+                result += "newheap ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::DeleteHeap: {
+                result += "deleteheap ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::ArrRef: {
+                result += "arrref ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::PtrIndexRef: {
+                result += "ptrindexref ";
+                for (size_t i = 0; i < operands_.size(); ++i) {
+                    if (i > 0) result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                break;
+            }
+
+            case Opcode::PinArray: {
+                result += "pinarray ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::UnpinArray: {
+                result += "unpinarray ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::PtrFromArray: {
+                result += "ptrfromarray ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
                     if (i > 0) result += ", ";
                     result += operands_[i]->getReferenceName();

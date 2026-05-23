@@ -117,7 +117,31 @@ namespace Ryntra::IR {
                                                      std::shared_ptr<Type> loadType);
 
         std::shared_ptr<Instruction> createPtrStore(std::shared_ptr<Value> ptrValue,
-                                                      std::shared_ptr<Value> value);
+                                                       std::shared_ptr<Value> value);
+
+        std::shared_ptr<Instruction> createNewHeap(const std::string &name,
+                                                     std::shared_ptr<Type> ptrType,
+                                                     std::shared_ptr<Value> initializer);
+
+        std::shared_ptr<Instruction> createDeleteHeap(std::shared_ptr<Value> ptrValue);
+
+        std::shared_ptr<Instruction> createArrRef(const std::string &name,
+                                                   std::shared_ptr<Value> array,
+                                                   std::shared_ptr<Value> index,
+                                                   std::shared_ptr<Type> refType);
+
+        std::shared_ptr<Instruction> createPtrIndexRef(const std::string &name,
+                                                        std::shared_ptr<Value> ptrValue,
+                                                        std::shared_ptr<Value> index,
+                                                        std::shared_ptr<Type> refType);
+
+        std::shared_ptr<Instruction> createPinArray(std::shared_ptr<Value> ptrValue);
+
+        std::shared_ptr<Instruction> createUnpinArray(std::shared_ptr<Value> ptrValue);
+
+        std::shared_ptr<Instruction> createPtrFromArray(const std::string &name,
+                                                         std::shared_ptr<Type> ptrType,
+                                                         std::shared_ptr<Value> arrayValue);
 
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;

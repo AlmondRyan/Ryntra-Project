@@ -1,0 +1,17 @@
+public void main() {
+    unsafe {
+        ptr<int> p1 = new int;
+        p1.store(114);
+        __builtin_print(p1.load()); __builtin_print("\n");
+
+        ptr<int> p2 = new int(100);
+        __builtin_print(p2.load()); __builtin_print("\n");
+
+        ptr<long> p3 = new long(1145L);
+        __builtin_print(p3.load()); __builtin_print("\n");
+
+        delete p1;
+        delete p2;
+        delete p3;
+    }
+}

@@ -61,6 +61,13 @@ namespace Ryntra::Compiler {
         if (ctx->continueStatement()) {
             return visitContinueStatement(ctx->continueStatement());
         }
+        if (ctx->fixedStatement()) {
+            return visitFixedStatement(ctx->fixedStatement());
+        }
+        if (ctx->DELETE()) {
+            auto expr = visitExpression(ctx->expression());
+            return createNode<DeleteStatementNode>(ctx, std::move(expr));
+        }
         if (ctx->expression()) {
             auto expr = visitExpression(ctx->expression());
             return createNode<ExpressionStatementNode>(ctx, std::move(expr));
@@ -140,6 +147,12 @@ namespace Ryntra::Compiler {
         }
         if (auto *ptrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrExpressionContext *>(ctx)) {
             return visitPtrExpression(ptrCtx);
+        }
+        if (auto *newCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NewExpressionContext *>(ctx)) {
+            return visitNewExpression(newCtx);
+        }
+        if (auto *newInitCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NewWithInitExpressionContext *>(ctx)) {
+            return visitNewWithInitExpression(newInitCtx);
         }
         if (auto *ptrLoadCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *>(ctx)) {
             return visitPtrLoadExpression(ptrLoadCtx);
@@ -339,14 +352,9 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ArrayIndexAccessNode> ASTBuilder::visitArrayIndexAccess(Ryntra::antlr::RyntraParser::ArrayIndexAccessContext *ctx) {
-        auto arrayCtx = ctx->array;
-        auto varRefCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(arrayCtx);
-        if (!varRefCtx) {
-            return nullptr;
-        }
-        auto arrayName = createNode<IdentifierNode>(varRefCtx->IDENTIFIER(), varRefCtx->IDENTIFIER()->getText());
+        auto arrayExpr = visitExpression(ctx->array);
         auto index = visitExpression(ctx->index);
-        return createNode<ArrayIndexAccessNode>(ctx, arrayName, index);
+        return createNode<ArrayIndexAccessNode>(ctx, std::move(arrayExpr), std::move(index));
     }
 
     std::shared_ptr<VariableNode> ASTBuilder::visitVariableReference(Ryntra::antlr::RyntraParser::VariableReferenceContext *ctx) {
@@ -514,18 +522,14 @@ namespace Ryntra::Compiler {
 
         auto arrIdxCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ArrayIndexAccessContext *>(leftExprCtx);
         if (arrIdxCtx) {
-            auto varRefArrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::VariableReferenceContext *>(arrIdxCtx->array);
-            if (!varRefArrCtx) {
-                return nullptr;
-            }
-            auto arrayName = createNode<IdentifierNode>(varRefArrCtx->IDENTIFIER(), varRefArrCtx->IDENTIFIER()->getText());
-            auto index = visitExpression(arrIdxCtx->index);
-
+            // For simple assignment, visit once
             if (ctx->ASSIGN()) {
-                return createNode<ArrayIndexAssignmentNode>(ctx, arrayName, index, rhs);
+                auto arrayExpr = visitExpression(arrIdxCtx->array);
+                auto index = visitExpression(arrIdxCtx->index);
+                return createNode<ArrayIndexAssignmentNode>(ctx, std::move(arrayExpr), std::move(index), std::move(rhs));
             }
 
-            // Compound assignments for array indices: arr[i] += v -> arr[i] = arr[i] + v
+            // Compound assignments for index access: arr[i] += v -> arr[i] = arr[i] + v
             BinaryOpType binOp;
             if (ctx->ADD_ASSIGN()) binOp = BinaryOpType::Add;
             else if (ctx->SUB_ASSIGN()) binOp = BinaryOpType::Sub;
@@ -539,12 +543,20 @@ namespace Ryntra::Compiler {
             else if (ctx->SHR_ASSIGN()) binOp = BinaryOpType::Shr;
             else return nullptr;
 
-            auto arrRef = std::make_shared<ArrayIndexAccessNode>(
-                std::make_shared<IdentifierNode>(arrayName->getName()), index);
-            arrRef->setLocation(arrayName->getLocation());
-            auto binExpr = std::make_shared<BinaryOpNode>(arrRef, binOp, rhs);
-            binExpr->setLocation(arrayName->getLocation());
-            return createNode<ArrayIndexAssignmentNode>(ctx, arrayName, index, binExpr);
+            // For compound assignment: re-visit the sub-expressions for both read and write sides
+            // Read side: arr[i] + v
+            auto readArrayExpr = visitExpression(arrIdxCtx->array);
+            auto readIndex = visitExpression(arrIdxCtx->index);
+            auto lhsForRead = std::make_shared<ArrayIndexAccessNode>(
+                readArrayExpr, readIndex);
+            lhsForRead->setLocation(getLoc(arrIdxCtx));
+            auto binExpr = std::make_shared<BinaryOpNode>(std::move(lhsForRead), binOp, std::move(rhs));
+            binExpr->setLocation(getLoc(arrIdxCtx));
+
+            // Write side: arr[i] = (arr[i] + v)
+            auto writeArrayExpr = visitExpression(arrIdxCtx->array);
+            auto writeIndex = visitExpression(arrIdxCtx->index);
+            return createNode<ArrayIndexAssignmentNode>(ctx, std::move(writeArrayExpr), std::move(writeIndex), std::move(binExpr));
         }
 
         return nullptr;
@@ -568,6 +580,25 @@ namespace Ryntra::Compiler {
     std::shared_ptr<PostfixOpNode> ASTBuilder::visitPostfixDecExpression(antlr::RyntraParser::PostfixDecExpressionContext *ctx) {
         auto operand = visitExpression(ctx->expression());
         return createNode<PostfixOpNode>(ctx, IncDecOpType::Decrement, std::move(operand));
+    }
+
+    std::shared_ptr<NewExpressionNode> ASTBuilder::visitNewExpression(antlr::RyntraParser::NewExpressionContext *ctx) {
+        auto elemType = visitTypeSpecifier(ctx->typeSpecifier());
+        return createNode<NewExpressionNode>(ctx, std::move(elemType), nullptr);
+    }
+
+    std::shared_ptr<NewExpressionNode> ASTBuilder::visitNewWithInitExpression(antlr::RyntraParser::NewWithInitExpressionContext *ctx) {
+        auto elemType = visitTypeSpecifier(ctx->typeSpecifier());
+        auto init = visitExpression(ctx->expression());
+        return createNode<NewExpressionNode>(ctx, std::move(elemType), std::move(init));
+    }
+
+    std::shared_ptr<FixedNode> ASTBuilder::visitFixedStatement(antlr::RyntraParser::FixedStatementContext *ctx) {
+        auto ptrType = visitTypeSpecifier(ctx->typeSpecifier());
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        auto init = visitExpression(ctx->expression());
+        auto body = visitBlock(ctx->block());
+        return createNode<FixedNode>(ctx, std::move(ptrType), std::move(nameNode), std::move(init), std::move(body));
     }
 
 } // namespace Ryntra::Compiler

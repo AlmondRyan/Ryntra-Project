@@ -511,9 +511,12 @@ namespace Ryntra::IR {
             return;
         }
 
+        // node.getType() is the element type (T), not ref<T>
+        auto elemIRType = toIRType(node.getType());
+
         // Load the array reference from the alloca slot
         auto allocaInst = it->second;
-        auto arrIRType = std::make_shared<IR::ArrayType>(toIRType(node.getType()));
+        auto arrIRType = std::make_shared<IR::ArrayType>(elemIRType);
         auto arrayVal = builder_.createLoad(
             builder_.generateUniqueName(""), allocaInst, arrIRType);
 
@@ -531,10 +534,12 @@ namespace Ryntra::IR {
                 builder_.generateUniqueName(""), imm->getType(), imm);
         }
 
-        // ArrLoad
-        auto elemIRType = toIRType(node.getType());
-        lastValue_ = builder_.createArrLoad(
-            builder_.generateUniqueName(""), arrayVal, indexVal, elemIRType);
+        // Create ref to array element, then auto-dereference for value reading
+        auto refType = std::make_shared<IR::RefType>(elemIRType);
+        auto arrRef = builder_.createArrRef(
+            builder_.generateUniqueName(""), arrayVal, indexVal, refType);
+        lastValue_ = builder_.createRefLoad(
+            builder_.generateUniqueName(""), arrRef, elemIRType);
     }
 
     void IRGenerator::visit(Compiler::Semantic::TypedArrayIndexAssignmentNode &node) {
@@ -544,9 +549,11 @@ namespace Ryntra::IR {
             return;
         }
 
-        // Load the array reference
-        auto allocaInst = it->second;
+        // Extract element type - node.getType() is the element type (T), not ref<T>
         auto elemIRType = toIRType(node.getType());
+
+        // Load the array reference from the alloca slot
+        auto allocaInst = it->second;
         auto arrIRType = std::make_shared<IR::ArrayType>(elemIRType);
         auto arrayVal = builder_.createLoad(
             builder_.generateUniqueName(""), allocaInst, arrIRType);
@@ -558,6 +565,8 @@ namespace Ryntra::IR {
             lastValue_ = nullptr;
             return;
         }
+
+        // Materialize ImmediateValue if needed
         if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
             indexVal = builder_.createConstant(
                 builder_.generateUniqueName(""), imm->getType(), imm);
@@ -578,12 +587,88 @@ namespace Ryntra::IR {
                 builder_.generateUniqueName(""), imm->getType(), imm);
         }
 
-        // ArrStore
-        builder_.createArrStore(arrayVal, indexVal, storeVal);
+        // Create ref to array element, then store through it
+        auto refType = std::make_shared<IR::RefType>(elemIRType);
+        auto arrRef = builder_.createArrRef(
+            builder_.generateUniqueName(""), arrayVal, indexVal, refType);
 
-        // Assignment expression yields the stored value
+        builder_.createRefStore(arrRef, storeVal);
         lastValue_ = storeVal;
     }
+
+    //     // Load the array reference from the alloca slot
+    //     auto allocaInst = it->second;
+    //     auto arrIRType = std::make_shared<IR::ArrayType>(toIRType(node.getType()));
+    //     auto arrayVal = builder_.createLoad(
+    //         builder_.generateUniqueName(""), allocaInst, arrIRType);
+    //
+    //     // Visit the index expression
+    //     node.getIndex()->accept(*this);
+    //     auto indexVal = lastValue_;
+    //     if (!indexVal) {
+    //         lastValue_ = nullptr;
+    //         return;
+    //     }
+    //
+    //     // Materialize ImmediateValue if needed
+    //     if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+    //         indexVal = builder_.createConstant(
+    //             builder_.generateUniqueName(""), imm->getType(), imm);
+    //     }
+    //
+    //     // ArrLoad
+    //     auto elemIRType = toIRType(node.getType());
+    //     lastValue_ = builder_.createArrLoad(
+    //         builder_.generateUniqueName(""), arrayVal, indexVal, elemIRType);
+    // }
+
+    // void IRGenerator::visit(Compiler::Semantic::TypedArrayIndexAssignmentNode &node) {
+    //     auto it = allocaMap_.find(node.getArrayName());
+    //     if (it == allocaMap_.end()) {
+    //         lastValue_ = nullptr;
+    //         return;
+    //     }
+    //
+    //     // Load the array reference
+    //     auto allocaInst = it->second;
+    //     auto elemIRType = toIRType(node.getType());
+    //     auto arrIRType = std::make_shared<IR::ArrayType>(elemIRType);
+    //     auto arrayVal = builder_.createLoad(
+    //         builder_.generateUniqueName(""), allocaInst, arrIRType);
+    //
+    //     // Visit the index expression
+    //     node.getIndex()->accept(*this);
+    //     auto indexVal = lastValue_;
+    //     if (!indexVal) {
+    //         lastValue_ = nullptr;
+    //         return;
+    //     }
+    //     if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+    //         indexVal = builder_.createConstant(
+    //             builder_.generateUniqueName(""), imm->getType(), imm);
+    //     }
+    //
+    //     // Visit the value expression
+    //     node.getValue()->accept(*this);
+    //     auto valueVal = lastValue_;
+    //     if (!valueVal) {
+    //         lastValue_ = nullptr;
+    //         return;
+    //     }
+    //
+    //     // Materialize ImmediateValue if needed
+    //     std::shared_ptr<Value> storeVal = valueVal;
+    //     if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(valueVal)) {
+    //         storeVal = builder_.createConstant(
+    //             builder_.generateUniqueName(""), imm->getType(), imm);
+    //     }
+    //
+    //     // ArrStore
+    //     builder_.createArrStore(arrayVal, indexVal, storeVal);
+    //
+    //     // Assignment expression yields the stored value
+    //     lastValue_ = storeVal;
+    // }
 
     void IRGenerator::visit(Compiler::Semantic::TypedUnaryOpNode &node) {
         node.getOperand()->accept(*this);
@@ -891,34 +976,6 @@ namespace Ryntra::IR {
             Type::getInt32Type(), "-1");
     }
 
-    void IRGenerator::visit(Compiler::Semantic::TypedPtrIsNullNode &node) {
-        auto ptrVarName = node.getPtrVarName();
-        auto it = allocaMap_.find(ptrVarName);
-        if (it == allocaMap_.end()) {
-            lastValue_ = nullptr;
-            return;
-        }
-
-        // Load the pointer value from the alloca
-        auto ptrIRType = std::make_shared<IR::PtrType>(Type::getInt32Type());
-        auto ptrVal = builder_.createLoad(
-            builder_.generateUniqueName(""), it->second, ptrIRType);
-
-        // Create the null constant (-1)
-        auto nullImm = std::make_shared<ImmediateValue>(Type::getInt32Type(), "-1");
-        auto nullConst = builder_.createConstant(
-            builder_.generateUniqueName(""), Type::getInt32Type(), nullImm);
-
-        // Build a compare instruction directly (Eq or Ne), bypassing type checks
-        auto cmpOp = node.getIsEq() ? Instruction::Opcode::Eq : Instruction::Opcode::Ne;
-        std::vector<std::shared_ptr<Value>> cmpOperands = {ptrVal, nullConst};
-        auto cmpInst = std::make_shared<Instruction>(
-            cmpOp, Type::getBoolType(), cmpOperands,
-            builder_.generateUniqueName(""));
-        builder_.addInstruction(cmpInst);
-        lastValue_ = cmpInst;
-    }
-
     void IRGenerator::visit(Compiler::Semantic::TypedPtrOffsetNode &node) {
         auto ptrVarName = node.getPtrVarName();
         auto it = allocaMap_.find(ptrVarName);
@@ -1044,6 +1101,30 @@ namespace Ryntra::IR {
         node.getBody()->accept(*this);
     }
 
+    void IRGenerator::visit(Compiler::Semantic::TypedPtrFromArrayNode &node) {
+        auto varName = node.getArrayName();
+        auto it = allocaMap_.find(varName);
+        if (it == allocaMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // node.getType() is ptr<T> — extract T for the array element type
+        auto &semPtrType = static_cast<const Sem::PointerType &>(*node.getType());
+        auto elemIRType = toIRType(semPtrType.getElementType());
+
+        // Load the array value from the alloca slot
+        auto arrAlloca = it->second;
+        auto arrIRType = std::make_shared<IR::ArrayType>(elemIRType);
+        auto arrayVal = builder_.createLoad(
+            builder_.generateUniqueName(""), arrAlloca, arrIRType);
+
+        // Create a pointer from the array (points to element 0)
+        auto ptrIRType = toIRType(node.getType());
+        lastValue_ = builder_.createPtrFromArray(
+            builder_.generateUniqueName(""), ptrIRType, arrayVal);
+    }
+
     void IRGenerator::visit(Compiler::Semantic::TypedPtrCreateNode &node) {
         auto varName = node.getVariableName();
         auto it = allocaMap_.find(varName);
@@ -1105,6 +1186,186 @@ namespace Ryntra::IR {
 
         // Store through the pointer
         builder_.createPtrStore(ptrVal, storeVal);
+        lastValue_ = storeVal;
+    }
+
+    void IRGenerator::visit(Sem::TypedNewNode &node) {
+        std::shared_ptr<Value> initVal;
+        if (node.getInitializer()) {
+            node.getInitializer()->accept(*this);
+            initVal = lastValue_;
+            if (!initVal) {
+                lastValue_ = nullptr;
+                return;
+            }
+        } else {
+            auto elemIRType = toIRType(node.getElementType());
+            if (elemIRType->isInt32()) {
+                initVal = std::make_shared<ImmediateValue>(Type::getInt32Type(), "0");
+            } else if (elemIRType->isInt64()) {
+                initVal = std::make_shared<ImmediateValue>(Type::getInt64Type(), "0");
+            } else if (elemIRType->isBool()) {
+                initVal = std::make_shared<ImmediateValue>(Type::getBoolType(), "0");
+            } else {
+                lastValue_ = nullptr;
+                return;
+            }
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> materialized = initVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(initVal)) {
+            materialized = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        auto ptrType = toIRType(node.getType());
+        lastValue_ = builder_.createNewHeap(
+            builder_.generateUniqueName(""), ptrType, materialized);
+    }
+
+    void IRGenerator::visit(Sem::TypedDeleteNode &node) {
+        node.getPtrExpr()->accept(*this);
+        auto ptrVal = lastValue_;
+        if (!ptrVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> materialized = ptrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(ptrVal)) {
+            materialized = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        builder_.createDeleteHeap(materialized);
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedFixedNode &node) {
+        // Visit init expression to get the pointer value
+        node.getInitExpr()->accept(*this);
+        auto initVal = lastValue_;
+        if (!initVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> materialized = initVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(initVal)) {
+            materialized = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Emit PinArray
+        builder_.createPinArray(materialized);
+
+        // Alloca and store the pointer in the fixed variable
+        auto ptrIRType = toIRType(node.getPtrType());
+        auto allocaInst = builder_.createAlloca(node.getVarName(), ptrIRType);
+        allocaMap_[node.getVarName()] = allocaInst;
+        builder_.createStore(materialized, allocaInst);
+
+        // Visit the body
+        node.getBody()->accept(*this);
+
+        // Emit UnpinArray
+        auto loadedPtr = builder_.createLoad(
+            builder_.generateUniqueName(""), allocaInst, ptrIRType);
+        builder_.createUnpinArray(loadedPtr);
+
+        lastValue_ = nullptr;
+    }
+
+    void IRGenerator::visit(Sem::TypedPtrIndexAccessNode &node) {
+        // Visit the pointer expression
+        node.getPtrExpr()->accept(*this);
+        auto ptrVal = lastValue_;
+        if (!ptrVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> ptrMaterialized = ptrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(ptrVal)) {
+            ptrMaterialized = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Visit the index expression
+        node.getIndex()->accept(*this);
+        auto indexVal = lastValue_;
+        if (!indexVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+            indexVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // node.getType() is the element type T
+        auto elemIRType = toIRType(node.getType());
+        auto refType = std::make_shared<IR::RefType>(elemIRType);
+
+        auto ptrIndexRef = builder_.createPtrIndexRef(
+            builder_.generateUniqueName(""), ptrMaterialized, indexVal, refType);
+
+        // Auto-dereference the ref to get the element value
+        lastValue_ = builder_.createRefLoad(
+            builder_.generateUniqueName(""), ptrIndexRef, elemIRType);
+    }
+
+    void IRGenerator::visit(Sem::TypedPtrIndexAssignmentNode &node) {
+        // Visit the pointer expression
+        node.getPtrExpr()->accept(*this);
+        auto ptrVal = lastValue_;
+        if (!ptrVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        // Materialize ImmediateValue if needed
+        std::shared_ptr<Value> ptrMaterialized = ptrVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(ptrVal)) {
+            ptrMaterialized = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Visit the index expression
+        node.getIndex()->accept(*this);
+        auto indexVal = lastValue_;
+        if (!indexVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(indexVal)) {
+            indexVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Visit the value expression
+        node.getValue()->accept(*this);
+        auto valueVal = lastValue_;
+        if (!valueVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        std::shared_ptr<Value> storeVal = valueVal;
+        if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(valueVal)) {
+            storeVal = builder_.createConstant(
+                builder_.generateUniqueName(""), imm->getType(), imm);
+        }
+
+        // Create ref to ptr + index, then store through it
+        auto refType = std::make_shared<IR::RefType>(Type::getInt32Type());
+        auto ptrIndexRef = builder_.createPtrIndexRef(
+            builder_.generateUniqueName(""), ptrMaterialized, indexVal, refType);
+
+        builder_.createRefStore(ptrIndexRef, storeVal);
         lastValue_ = storeVal;
     }
 } // namespace Ryntra::IR

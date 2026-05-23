@@ -49,9 +49,14 @@ namespace Ryntra::Compiler::Semantic {
     class TypedPtrLoadNode;
     class TypedPtrStoreNode;
     class TypedNullLiteralNode;
-    class TypedPtrIsNullNode;
     class TypedPtrOffsetNode;
     class TypedPtrDiffNode;
+    class TypedNewNode;
+    class TypedDeleteNode;
+    class TypedFixedNode;
+    class TypedPtrIndexAccessNode;
+    class TypedPtrIndexAssignmentNode;
+    class TypedPtrFromArrayNode;
 
     class ITypedVisitor {
     public:
@@ -92,9 +97,14 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedPtrLoadNode &node) = 0;
         virtual void visit(TypedPtrStoreNode &node) = 0;
         virtual void visit(TypedNullLiteralNode &node) = 0;
-        virtual void visit(TypedPtrIsNullNode &node) = 0;
         virtual void visit(TypedPtrOffsetNode &node) = 0;
         virtual void visit(TypedPtrDiffNode &node) = 0;
+        virtual void visit(TypedNewNode &node) = 0;
+        virtual void visit(TypedDeleteNode &node) = 0;
+        virtual void visit(TypedFixedNode &node) = 0;
+        virtual void visit(TypedPtrIndexAccessNode &node) = 0;
+        virtual void visit(TypedPtrIndexAssignmentNode &node) = 0;
+        virtual void visit(TypedPtrFromArrayNode &node) = 0;
     };
 
     class ITypedASTNode {
@@ -800,24 +810,170 @@ namespace Ryntra::Compiler::Semantic {
         }
     };
 
-    class TypedPtrIsNullNode : public TypedExpressionNode {
+    class TypedNewNode : public TypedExpressionNode {
     public:
-        TypedPtrIsNullNode(std::string ptrVarName, bool isEq, std::shared_ptr<Type> type)
-            : TypedExpressionNode(std::move(type)), ptrVarName(std::move(ptrVarName)), isEq(isEq) {}
+        TypedNewNode(std::shared_ptr<Type> elementType,
+                     std::shared_ptr<TypedExpressionNode> initializer,
+                     std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)),
+              elementType(std::move(elementType)),
+              initializer(std::move(initializer)) {}
 
-        const std::string &getPtrVarName() const { return ptrVarName; }
-        bool getIsEq() const { return isEq; }
+        std::shared_ptr<Type> getElementType() const { return elementType; }
+        std::shared_ptr<TypedExpressionNode> getInitializer() const { return initializer; }
 
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
-        std::string toString() const override { return "TypedPtrIsNull(" + ptrVarName + "): " + type->toString(); }
+        std::string toString() const override {
+            return "TypedNew(" + elementType->toString() + "): " + type->toString();
+        }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            if (initializer) {
+                printIndent(indent + 1);
+                std::cout << "Initializer:" << std::endl;
+                initializer->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::shared_ptr<Type> elementType;
+        std::shared_ptr<TypedExpressionNode> initializer;
+    };
+
+    class TypedDeleteNode : public TypedStatementNode {
+    public:
+        explicit TypedDeleteNode(std::shared_ptr<TypedExpressionNode> ptrExpr)
+            : ptrExpr(std::move(ptrExpr)) {}
+
+        std::shared_ptr<TypedExpressionNode> getPtrExpr() const { return ptrExpr; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedDelete"; }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Ptr:" << std::endl;
+            ptrExpr->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> ptrExpr;
+    };
+
+    class TypedFixedNode : public TypedStatementNode {
+    public:
+        TypedFixedNode(std::string varName,
+                       std::shared_ptr<Type> ptrType,
+                       std::shared_ptr<TypedExpressionNode> initExpr,
+                       std::shared_ptr<TypedBlockNode> body)
+            : varName(std::move(varName)), ptrType(std::move(ptrType)),
+              initExpr(std::move(initExpr)), body(std::move(body)) {}
+
+        const std::string &getVarName() const { return varName; }
+        std::shared_ptr<Type> getPtrType() const { return ptrType; }
+        std::shared_ptr<TypedExpressionNode> getInitExpr() const { return initExpr; }
+        std::shared_ptr<TypedBlockNode> getBody() const { return body; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFixed(" + varName + "): " + ptrType->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Init:" << std::endl;
+            initExpr->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Body:" << std::endl;
+            body->dump(indent + 2);
+        }
+
+    private:
+        std::string varName;
+        std::shared_ptr<Type> ptrType;
+        std::shared_ptr<TypedExpressionNode> initExpr;
+        std::shared_ptr<TypedBlockNode> body;
+    };
+
+    class TypedPtrIndexAccessNode : public TypedExpressionNode {
+    public:
+        TypedPtrIndexAccessNode(std::shared_ptr<TypedExpressionNode> ptrExpr,
+                                std::shared_ptr<TypedExpressionNode> index,
+                                std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrExpr(std::move(ptrExpr)), index(std::move(index)) {}
+
+        std::shared_ptr<TypedExpressionNode> getPtrExpr() const { return ptrExpr; }
+        std::shared_ptr<TypedExpressionNode> getIndex() const { return index; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrIndexAccess: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Ptr:" << std::endl;
+            ptrExpr->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Index:" << std::endl;
+            index->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> ptrExpr;
+        std::shared_ptr<TypedExpressionNode> index;
+    };
+
+    class TypedPtrIndexAssignmentNode : public TypedExpressionNode {
+    public:
+        TypedPtrIndexAssignmentNode(std::shared_ptr<TypedExpressionNode> ptrExpr,
+                                    std::shared_ptr<TypedExpressionNode> index,
+                                    std::shared_ptr<TypedExpressionNode> value,
+                                    std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), ptrExpr(std::move(ptrExpr)), index(std::move(index)), value(std::move(value)) {}
+
+        std::shared_ptr<TypedExpressionNode> getPtrExpr() const { return ptrExpr; }
+        std::shared_ptr<TypedExpressionNode> getIndex() const { return index; }
+        std::shared_ptr<TypedExpressionNode> getValue() const { return value; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrIndexAssign: ptr[index]: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Ptr:" << std::endl;
+            ptrExpr->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Index:" << std::endl;
+            index->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Value:" << std::endl;
+            value->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> ptrExpr;
+        std::shared_ptr<TypedExpressionNode> index;
+        std::shared_ptr<TypedExpressionNode> value;
+    };
+
+    class TypedPtrFromArrayNode : public TypedExpressionNode {
+    public:
+        TypedPtrFromArrayNode(std::string arrayName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), arrayName(std::move(arrayName)) {}
+
+        const std::string &getArrayName() const { return arrayName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedPtrFromArray(" + arrayName + "): " + type->toString(); }
         void dump(int indent = 0) const override {
             printIndent(indent);
             std::cout << toString() << std::endl;
         }
 
     private:
-        std::string ptrVarName;
-        bool isEq;
+        std::string arrayName;
     };
 
     class TypedPtrOffsetNode : public TypedExpressionNode {

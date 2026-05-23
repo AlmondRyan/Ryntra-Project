@@ -46,6 +46,13 @@ namespace Ryntra::VM {
             PtrCreate,      // Pop slot index (from alloca), create ptr, push ptr
             PtrLoad,        // Pop ptr, load value from pointed-to slot, push value
             PtrStore,       // Pop value, pop ptr, store value to pointed-to slot
+            New,            // Pop initializer, allocate on heap, push heap pointer
+            Delete,         // Pop ptr, free heap memory
+            ArrRef,         // Pop index, pop array, push ref to element
+            PtrIndexRef,    // Pop index, pop ptr, push ref to ptr+index
+            PinArray,       // Pop ptr, pin array (no-op currently)
+            UnpinArray,     // Pop ptr, unpin array (no-op currently)
+            PtrFromArray,   // Pop array value, create pointer to element 0
             Halt            // Stop execution
     };
     // clang-format on
