@@ -39,6 +39,8 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedBinaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedCastNode &node) override;
         void visit(Compiler::Semantic::TypedComparisonNode &node) override;
+        void visit(Compiler::Semantic::TypedConditionalAndNode &node) override;
+        void visit(Compiler::Semantic::TypedConditionalOrNode &node) override;
         void visit(Compiler::Semantic::TypedAssignmentNode &node) override;
         void visit(Compiler::Semantic::TypedPrefixOpNode &node) override;
         void visit(Compiler::Semantic::TypedPostfixOpNode &node) override;

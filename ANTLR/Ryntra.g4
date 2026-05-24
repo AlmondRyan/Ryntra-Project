@@ -52,6 +52,10 @@ MOD: '%';
 // Bitwise Operators
 BIT_AND: '&';
 BIT_OR: '|';
+
+// Conditional/Logical Operators
+COND_AND: '&&';
+COND_OR: '||';
 BIT_XOR: '^';
 BIT_NOT: '~';
 NOT: '!';
@@ -203,6 +207,8 @@ expression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression
     | left=expression op=(EQ|NE|GE|LE|GT|LT) right=expression         # ComparisonExpression
+    | left=expression op=COND_AND right=expression                   # ConditionalAndExpression
+    | left=expression op=COND_OR right=expression                    # ConditionalOrExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
     | IDENTIFIER                                                    # VariableReference
     | STRING_LITERAL                                                # StringLiteral

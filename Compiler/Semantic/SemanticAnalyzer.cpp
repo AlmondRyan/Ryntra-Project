@@ -421,7 +421,9 @@ namespace Ryntra::Compiler::Semantic {
             if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
                 !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
                 !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr)) {
+                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr)) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());
@@ -1523,6 +1525,72 @@ namespace Ryntra::Compiler::Semantic {
         auto typedCmp = std::make_shared<TypedComparisonNode>(typedLeft, node.getOp(), typedRight, boolType);
         typedCmp->setLocation(node.getLocation());
         lastNode = typedCmp;
+    }
+
+    void SemanticAnalyzer::visit(ConditionalAndNode &node) {
+        node.getLeft()->accept(*this);
+        auto typedLeft = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        node.getRight()->accept(*this);
+        auto typedRight = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (!typedLeft || !typedRight) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto boolType = TypeFactory::getPrimitive("bool");
+
+        if (!typedLeft->getType()->equals(*boolType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE064]: Left operand of '&&' must be 'bool', but got '" +
+                    typedLeft->getType()->toString() + "'.",
+                node.getLeft()->getLocation());
+        }
+
+        if (!typedRight->getType()->equals(*boolType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE065]: Right operand of '&&' must be 'bool', but got '" +
+                    typedRight->getType()->toString() + "'.",
+                node.getRight()->getLocation());
+        }
+
+        auto typedNode = std::make_shared<TypedConditionalAndNode>(typedLeft, typedRight, boolType);
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(ConditionalOrNode &node) {
+        node.getLeft()->accept(*this);
+        auto typedLeft = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        node.getRight()->accept(*this);
+        auto typedRight = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+
+        if (!typedLeft || !typedRight) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto boolType = TypeFactory::getPrimitive("bool");
+
+        if (!typedLeft->getType()->equals(*boolType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE066]: Left operand of '||' must be 'bool', but got '" +
+                    typedLeft->getType()->toString() + "'.",
+                node.getLeft()->getLocation());
+        }
+
+        if (!typedRight->getType()->equals(*boolType)) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE067]: Right operand of '||' must be 'bool', but got '" +
+                    typedRight->getType()->toString() + "'.",
+                node.getRight()->getLocation());
+        }
+
+        auto typedNode = std::make_shared<TypedConditionalOrNode>(typedLeft, typedRight, boolType);
+        typedNode->setLocation(node.getLocation());
+        lastNode = typedNode;
     }
 
     void SemanticAnalyzer::visit(PrefixOpNode &node) {

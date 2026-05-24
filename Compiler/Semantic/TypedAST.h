@@ -40,6 +40,8 @@ namespace Ryntra::Compiler::Semantic {
     class TypedUnaryOpNode;
     class TypedCastNode;
     class TypedComparisonNode;
+    class TypedConditionalAndNode;
+    class TypedConditionalOrNode;
     class TypedAssignmentNode;
     class TypedRefCreateNode;
     class TypedRefLoadNode;
@@ -88,6 +90,8 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedUnaryOpNode &node) = 0;
         virtual void visit(TypedCastNode &node) = 0;
         virtual void visit(TypedComparisonNode &node) = 0;
+        virtual void visit(TypedConditionalAndNode &node) = 0;
+        virtual void visit(TypedConditionalOrNode &node) = 0;
         virtual void visit(TypedAssignmentNode &node) = 0;
         virtual void visit(TypedRefCreateNode &node) = 0;
         virtual void visit(TypedRefLoadNode &node) = 0;
@@ -615,6 +619,58 @@ namespace Ryntra::Compiler::Semantic {
     private:
         std::shared_ptr<TypedExpressionNode> left;
         ComparisonOpType op;
+        std::shared_ptr<TypedExpressionNode> right;
+    };
+
+    class TypedConditionalAndNode : public TypedExpressionNode {
+    public:
+        TypedConditionalAndNode(std::shared_ptr<TypedExpressionNode> left, std::shared_ptr<TypedExpressionNode> right, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), left(std::move(left)), right(std::move(right)) {}
+
+        std::shared_ptr<TypedExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<TypedExpressionNode> getRight() const { return right; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedConditionalAnd(&&): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Left:" << std::endl;
+            left->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Right:" << std::endl;
+            right->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> left;
+        std::shared_ptr<TypedExpressionNode> right;
+    };
+
+    class TypedConditionalOrNode : public TypedExpressionNode {
+    public:
+        TypedConditionalOrNode(std::shared_ptr<TypedExpressionNode> left, std::shared_ptr<TypedExpressionNode> right, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), left(std::move(left)), right(std::move(right)) {}
+
+        std::shared_ptr<TypedExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<TypedExpressionNode> getRight() const { return right; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedConditionalOr(||): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Left:" << std::endl;
+            left->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Right:" << std::endl;
+            right->dump(indent + 2);
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> left;
         std::shared_ptr<TypedExpressionNode> right;
     };
 

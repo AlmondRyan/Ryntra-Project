@@ -25,6 +25,8 @@ BinaryOpNode
 UnaryOpNode
 CastNode
 ComparisonNode
+ConditionalAndNode
+ConditionalOrNode
 AssignmentNode
 ArrayIndexAccessNode
 ArrayIndexAssignmentNode

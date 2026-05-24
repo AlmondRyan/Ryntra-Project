@@ -349,6 +349,26 @@ namespace Ryntra::Compiler {
         return "(Comparison " + left->toString() + " " + opStr + " " + right->toString() + ")";
     }
 
+    void ConditionalAndNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ConditionalAndNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ConditionalAndNode::toString() const {
+        return "(ConditionalAnd " + left->toString() + " && " + right->toString() + ")";
+    }
+
+    void ConditionalOrNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ConditionalOrNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ConditionalOrNode::toString() const {
+        return "(ConditionalOr " + left->toString() + " || " + right->toString() + ")";
+    }
+
     void AssignmentNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
             v->visit(*this);

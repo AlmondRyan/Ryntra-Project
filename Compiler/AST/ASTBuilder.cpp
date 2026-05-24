@@ -184,6 +184,12 @@ namespace Ryntra::Compiler {
         if (auto *bitOrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::BitOrExpressionContext *>(ctx)) {
             return visitBitOrExpression(bitOrCtx);
         }
+        if (auto *condAndCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ConditionalAndExpressionContext *>(ctx)) {
+            return visitConditionalAndExpression(condAndCtx);
+        }
+        if (auto *condOrCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ConditionalOrExpressionContext *>(ctx)) {
+            return visitConditionalOrExpression(condOrCtx);
+        }
         if (auto *cmpCtx = dynamic_cast<Ryntra::antlr::RyntraParser::ComparisonExpressionContext *>(ctx)) {
             return visitComparisonExpression(cmpCtx);
         }
@@ -459,6 +465,18 @@ namespace Ryntra::Compiler {
     std::shared_ptr<RefExpressionNode> ASTBuilder::visitRefExpression(Ryntra::antlr::RyntraParser::RefExpressionContext *ctx) {
         auto operand = visitExpression(ctx->expression());
         return createNode<RefExpressionNode>(ctx, std::move(operand));
+    }
+
+    std::shared_ptr<ExpressionNode> ASTBuilder::visitConditionalAndExpression(Ryntra::antlr::RyntraParser::ConditionalAndExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        return createNode<ConditionalAndNode>(ctx, std::move(left), std::move(right));
+    }
+
+    std::shared_ptr<ExpressionNode> ASTBuilder::visitConditionalOrExpression(Ryntra::antlr::RyntraParser::ConditionalOrExpressionContext *ctx) {
+        auto left = visitExpression(ctx->left);
+        auto right = visitExpression(ctx->right);
+        return createNode<ConditionalOrNode>(ctx, std::move(left), std::move(right));
     }
 
     std::shared_ptr<ComparisonNode> ASTBuilder::visitComparisonExpression(Ryntra::antlr::RyntraParser::ComparisonExpressionContext *ctx) {

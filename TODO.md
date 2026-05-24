@@ -45,4 +45,6 @@ Semantic Note:
 - ✅ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
 - ✅ V0.0.7.10 Pointer comparison (`==, !=`)
 - ✅ V0.0.7.11 Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`
-- ❌ V0.0.8 Optimize Code Structure
+- ✅ V0.0.8.1 Conditional And Operator `&&`
+- ✅ V0.0.8.2 Conditional Or Operator `||`
+- ❌ V0.0.9 Optimize Code Structure

@@ -1368,4 +1368,158 @@ namespace Ryntra::IR {
         builder_.createRefStore(ptrIndexRef, storeVal);
         lastValue_ = storeVal;
     }
+    void IRGenerator::visit(Compiler::Semantic::TypedConditionalAndNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        // Allocate a temporary slot for the result
+        auto resultAlloca = builder_.createAlloca(
+            builder_.generateUniqueName("condand.result."), Type::getBoolType());
+
+        // Evaluate left operand
+        node.getLeft()->accept(*this);
+        auto leftVal = lastValue_;
+        if (!leftVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto materialize = [&](std::shared_ptr<Value> v) -> std::shared_ptr<Value> {
+            if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(v)) {
+                return builder_.createConstant(
+                    builder_.generateUniqueName(""), imm->getType(), imm);
+            }
+            return v;
+        };
+
+        auto leftMaterialized = materialize(leftVal);
+
+        // Blocks for short-circuit evaluation
+        auto evalRightBlock = builder_.createBasicBlock("condand.right." + suffix);
+        auto trueBlock = builder_.createBasicBlock("condand.true." + suffix);
+        auto falseBlock = builder_.createBasicBlock("condand.false." + suffix);
+        auto endBlock = builder_.createBasicBlock("condand.end." + suffix);
+
+        // if left is false → false_block, else → eval_right_block
+        builder_.createCondBr(leftMaterialized, evalRightBlock->getName(), falseBlock->getName());
+        currentFunc->addBasicBlock(evalRightBlock);
+        builder_.setInsertPoint(evalRightBlock);
+
+        // Evaluate right operand
+        node.getRight()->accept(*this);
+        auto rightVal = lastValue_;
+        if (!rightVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        auto rightMaterialized = materialize(rightVal);
+
+        // if right is false → false_block, else → true_block
+        builder_.createCondBr(rightMaterialized, trueBlock->getName(), falseBlock->getName());
+
+        // true block: result = 1 (true)
+        currentFunc->addBasicBlock(trueBlock);
+        builder_.setInsertPoint(trueBlock);
+        auto trueImm = std::make_shared<ImmediateValue>(Type::getBoolType(), "1");
+        auto trueConst = builder_.createConstant(
+            builder_.generateUniqueName(""), Type::getBoolType(), trueImm);
+        builder_.createStore(trueConst, resultAlloca);
+        builder_.createBr(endBlock->getName());
+
+        // false block: result = 0 (false)
+        currentFunc->addBasicBlock(falseBlock);
+        builder_.setInsertPoint(falseBlock);
+        auto falseImm = std::make_shared<ImmediateValue>(Type::getBoolType(), "0");
+        auto falseConst = builder_.createConstant(
+            builder_.generateUniqueName(""), Type::getBoolType(), falseImm);
+        builder_.createStore(falseConst, resultAlloca);
+        builder_.createBr(endBlock->getName());
+
+        // end block: load result
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = builder_.createLoad(
+            builder_.generateUniqueName(""), resultAlloca, Type::getBoolType());
+    }
+
+    void IRGenerator::visit(Compiler::Semantic::TypedConditionalOrNode &node) {
+        auto currentFunc = functionMap_[currentFunctionName_];
+        if (!currentFunc)
+            return;
+
+        std::string suffix = std::to_string(ifCounter_++);
+
+        // Allocate a temporary slot for the result
+        auto resultAlloca = builder_.createAlloca(
+            builder_.generateUniqueName("condor.result."), Type::getBoolType());
+
+        // Evaluate left operand
+        node.getLeft()->accept(*this);
+        auto leftVal = lastValue_;
+        if (!leftVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto materialize = [&](std::shared_ptr<Value> v) -> std::shared_ptr<Value> {
+            if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(v)) {
+                return builder_.createConstant(
+                    builder_.generateUniqueName(""), imm->getType(), imm);
+            }
+            return v;
+        };
+
+        auto leftMaterialized = materialize(leftVal);
+
+        // Blocks for short-circuit evaluation
+        auto evalRightBlock = builder_.createBasicBlock("condor.right." + suffix);
+        auto trueBlock = builder_.createBasicBlock("condor.true." + suffix);
+        auto falseBlock = builder_.createBasicBlock("condor.false." + suffix);
+        auto endBlock = builder_.createBasicBlock("condor.end." + suffix);
+
+        // if left is true → true_block, else → eval_right_block
+        builder_.createCondBr(leftMaterialized, trueBlock->getName(), evalRightBlock->getName());
+        currentFunc->addBasicBlock(evalRightBlock);
+        builder_.setInsertPoint(evalRightBlock);
+
+        // Evaluate right operand
+        node.getRight()->accept(*this);
+        auto rightVal = lastValue_;
+        if (!rightVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+        auto rightMaterialized = materialize(rightVal);
+
+        // if right is true → true_block, else → false_block
+        builder_.createCondBr(rightMaterialized, trueBlock->getName(), falseBlock->getName());
+
+        // true block: result = 1 (true)
+        currentFunc->addBasicBlock(trueBlock);
+        builder_.setInsertPoint(trueBlock);
+        auto trueImm = std::make_shared<ImmediateValue>(Type::getBoolType(), "1");
+        auto trueConst = builder_.createConstant(
+            builder_.generateUniqueName(""), Type::getBoolType(), trueImm);
+        builder_.createStore(trueConst, resultAlloca);
+        builder_.createBr(endBlock->getName());
+
+        // false block: result = 0 (false)
+        currentFunc->addBasicBlock(falseBlock);
+        builder_.setInsertPoint(falseBlock);
+        auto falseImm = std::make_shared<ImmediateValue>(Type::getBoolType(), "0");
+        auto falseConst = builder_.createConstant(
+            builder_.generateUniqueName(""), Type::getBoolType(), falseImm);
+        builder_.createStore(falseConst, resultAlloca);
+        builder_.createBr(endBlock->getName());
+
+        // end block: load result
+        currentFunc->addBasicBlock(endBlock);
+        builder_.setInsertPoint(endBlock);
+        lastValue_ = builder_.createLoad(
+            builder_.generateUniqueName(""), resultAlloca, Type::getBoolType());
+    }
+
 } // namespace Ryntra::IR

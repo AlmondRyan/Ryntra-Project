@@ -46,6 +46,7 @@ set(UTILITY_SOURCE
 set(SEMANTIC_SOURCE
         Compiler/Semantic/SymbolTable.cpp
         Compiler/Semantic/SemanticAnalyzer.cpp
+        Compiler/Semantic/TypedAST/TypedASTBase.h
 )
 
 set(IR_SOURCE

@@ -435,6 +435,34 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> right;
     };
 
+    class ConditionalAndNode : public ExpressionNode {
+    public:
+        ConditionalAndNode(std::shared_ptr<ExpressionNode> left, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        std::shared_ptr<ExpressionNode> right;
+    };
+
+    class ConditionalOrNode : public ExpressionNode {
+    public:
+        ConditionalOrNode(std::shared_ptr<ExpressionNode> left, std::shared_ptr<ExpressionNode> right)
+            : left(std::move(left)), right(std::move(right)) {}
+        std::shared_ptr<ExpressionNode> getLeft() const { return left; }
+        std::shared_ptr<ExpressionNode> getRight() const { return right; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> left;
+        std::shared_ptr<ExpressionNode> right;
+    };
+
     class AssignmentNode : public ExpressionNode {
     public:
         AssignmentNode(std::shared_ptr<IdentifierNode> lhs, std::shared_ptr<ExpressionNode> rhs)

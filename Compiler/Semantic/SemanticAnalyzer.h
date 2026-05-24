@@ -44,6 +44,8 @@ namespace Ryntra::Compiler::Semantic {
         void visit(UnaryOpNode &node) override;
         void visit(CastNode &node) override;
         void visit(ComparisonNode &node) override;
+        void visit(ConditionalAndNode &node) override;
+        void visit(ConditionalOrNode &node) override;
         void visit(AssignmentNode &node) override;
         void visit(PrefixOpNode &node) override;
         void visit(PostfixOpNode &node) override;
