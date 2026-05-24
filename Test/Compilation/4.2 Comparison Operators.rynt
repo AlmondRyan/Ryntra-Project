@@ -1,0 +1,18 @@
+public void main() {
+     int a = 10;
+     int b = 20;
+
+     bool c = (a == b);
+     bool d = (a != b);
+     bool e = (a > b);
+     bool f = (a < b);
+     bool g = (a >= b);
+     bool h = (a <= b);
+
+     __builtin_print(c); __builtin_print("\n");
+     __builtin_print(d); __builtin_print("\n");
+     __builtin_print(e); __builtin_print("\n");
+     __builtin_print(f); __builtin_print("\n");
+     __builtin_print(g); __builtin_print("\n");
+     __builtin_print(h); __builtin_print("\n");
+ }

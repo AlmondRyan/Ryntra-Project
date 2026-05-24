@@ -1,0 +1,14 @@
+public void main() {
+    int a = 12345;
+    long b = 12345678912l;
+
+    __builtin_print(a); __builtin_print("\n");
+    a++;
+    __builtin_print(a); __builtin_print("\n");
+    a--;
+    __builtin_print(a); __builtin_print("\n");
+    b++;
+    __builtin_print(b); __builtin_print("\n");
+    b--;
+    __builtin_print(b); __builtin_print("\n");
+}

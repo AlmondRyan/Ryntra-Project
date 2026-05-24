@@ -1,0 +1,12 @@
+public void main() {
+    int a = 10;
+    int b = 20;
+
+    if (!(a == b)) {
+        __builtin_print("yes");
+        __builtin_print("\n");
+    } else {
+        __builtin_print("yeah");
+        __builtin_print("\n");
+    }
+ }

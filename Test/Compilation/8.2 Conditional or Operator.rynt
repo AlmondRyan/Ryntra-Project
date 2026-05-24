@@ -1,0 +1,8 @@
+public void main() {
+    int a = 10; int b = 20;
+    if ((a == b) || (a != b)) {
+        __builtin_print("yes");
+    } else {
+        __builtin_print("how");
+    }
+}

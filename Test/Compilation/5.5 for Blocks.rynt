@@ -1,0 +1,6 @@
+public void main() {
+    for (int i = 0; i < 10; i++) {
+        __builtin_print(i); __builtin_print(" ");
+    }
+    __builtin_print("\n");
+}

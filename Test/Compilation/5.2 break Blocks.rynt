@@ -1,0 +1,13 @@
+public void main() {
+    int a = 10;
+    while (a >= 0) {
+        if (a == 5) {
+            break;
+        }
+
+        __builtin_print(a);
+        __builtin_print("\n");
+
+        a -= 1;
+    }
+ }
