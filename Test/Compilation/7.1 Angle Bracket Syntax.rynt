@@ -1,0 +1,4 @@
+public void main() {
+    ref<int> a;
+    ptr<long> b;
+}

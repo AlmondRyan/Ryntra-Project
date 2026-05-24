@@ -1,0 +1,28 @@
+public void main() {
+    unsafe {
+        int a = 10;
+        int b = 20;
+
+        ptr<int> pa = ptr(a);
+        ptr<int> pb = ptr(b);
+
+        pa.store(100);
+        __builtin_print(pa.load()); __builtin_print("\n");
+        __builtin_print(a); __builtin_print("\n");
+
+        ptr<int> pc = pa + 1;
+        __builtin_print(pc.load()); __builtin_print("\n");
+
+        ptr<int> pd = pc - 1;
+        __builtin_print(pd.load()); __builtin_print("\n");
+
+        int dist = pb - pa;
+        __builtin_print(dist); __builtin_print("\n");
+
+        int dist2 = pa - pb;
+        __builtin_print(dist2); __builtin_print("\n");
+
+        ptr<int> pe = 2 + pa;
+        __builtin_print(pe.load()); __builtin_print("\n");
+    }
+}

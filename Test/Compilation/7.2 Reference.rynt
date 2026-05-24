@@ -1,0 +1,8 @@
+public void main() {
+    int a = 10;
+    ref<int> ra = ref(a);
+
+    ra = 100;
+    __builtin_print(ra); __builtin_print("\n");
+    __builtin_print(a); __builtin_print("\n");
+}
