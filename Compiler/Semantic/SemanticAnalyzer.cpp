@@ -423,7 +423,8 @@ namespace Ryntra::Compiler::Semantic {
                 !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
                 !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
                 !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr)) {
+                !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr) &&
+                !std::dynamic_pointer_cast<PtrStoreNode>(rawExpr)) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());

@@ -34,7 +34,7 @@
         },
         {
             "fileName": "3.4 int and long Casting.rynt",
-            "expectOutput": ["-1395630315", "123"]
+            "expectOutput": ["[Warning]: (l: 3, c: 12) [RCW002]: Result of this casting operation will be truncated.", "-1395630315", "123"]
         },
         {
             "fileName": "3.5 Scan Function.rynt",
@@ -80,7 +80,7 @@
         },
         {
             "fileName": "5.5 for Blocks.rynt",
-            "expectOutput": ["0 1 2 3 4 5 6 7 8 9 "]
+            "expectOutput": ["0 1 2 3 4 5 6 7 8 9"]
         },
         {
             "fileName": "6.1 Array Declaration.rynt",
@@ -88,7 +88,7 @@
         },
         {
             "fileName": "6.2 Array Index Access.rynt",
-            "expectOutput": ""
+            "expectOutput": ["[Warning]: (l: 6, c: 4) [RCW001]: Result will be discarded.", "[Warning]: (l: 7, c: 4) [RCW001]: Result will be discarded.", "[Warning]: (l: 8, c: 4) [RCW001]: Result will be discarded."]
         },
         {
             "fileName": "6.3 Array Index Assignment.rynt",
