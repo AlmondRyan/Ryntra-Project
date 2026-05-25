@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "Result": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "fileName": {
+                        "type": "string",
+                        "description": "File Name"
+                    },
+                    "expectOutput": {
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        ],
+                        "description": "Expect Output"
+                    }
+                },
+                "required": ["fileName", "expectOutput"],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": ["Result"],
+    "additionalProperties": false
+}

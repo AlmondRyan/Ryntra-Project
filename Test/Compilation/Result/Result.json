@@ -1,0 +1,142 @@
+{
+    "Result": [
+        {
+            "fileName": "1.1 Hello World.rynt",
+            "expectOutput": "Hello World"
+        },
+        {
+            "fileName": "2.1 int Declaration.rynt",
+            "expectOutput": "1145"
+        },
+        {
+            "fileName": "2.2 int Arithmetic Operation.rynt",
+            "expectOutput": ["10", "20", "10", "100", "10", "0"]
+        },
+        {
+            "fileName": "2.3 int Assignment.rynt",
+            "expectOutput": ["20", "30", "20", "200", "20", "0"]
+        },
+        {
+            "fileName": "2.4 int Bitwise Operation.rynt",
+            "expectOutput": ["0", "10", "0", "-1", "-1", "-4", "8", "10", "0", "0", "0"]
+        },
+        {
+            "fileName": "3.1 long Declaration.rynt",
+            "expectOutput": ["1145141919810", "2147483649000"]
+        },
+        {
+            "fileName": "3.2 long Arithmetic Operation.rynt",
+            "expectOutput": ["3292625568810", "1145141919810", "3435425759430", "1145141919810", "0"]
+        },
+        {
+            "fileName": "3.3 long Bitwise Operation.rynt",
+            "expectOutput": ["2", "0", "2", "-3", "-1", "-4"]
+        },
+        {
+            "fileName": "3.4 int and long Casting.rynt",
+            "expectOutput": ["-1395630315", "123"]
+        },
+        {
+            "fileName": "3.5 Scan Function.rynt",
+            "input": ["1145", "123456789123456"],
+            "expectOutput": ["1145", "123456789123456"]
+        },
+        {
+            "fileName": "4.1 bool Declare Assign.rynt",
+            "input": ["true", "false"],
+            "expectOutput": ["C: true", "D: false"]
+        },
+        {
+            "fileName": "4.2 Comparison Operators.rynt",
+            "expectOutput": ["false", "true", "false", "true", "false", "true"]
+        },
+        {
+            "fileName": "4.3 if Blocks.rynt",
+            "expectOutput": "yes"
+        },
+        {
+            "fileName": "4.4 else and else if Blocks.rynt",
+            "expectOutput": ["yeah"]
+        },
+        {
+            "fileName": "4.5 Conditional Not Operator.rynt",
+            "expectOutput": ["yes"]
+        },
+        {
+            "fileName": "5.1 while Blocks.rynt",
+            "expectOutput": ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0"]
+        },
+        {
+            "fileName": "5.2 break Blocks.rynt",
+            "expectOutput": ["10", "9", "8", "7", "6"]
+        },
+        {
+            "fileName": "5.3 continue Blocks.rynt",
+            "expectOutput": ["9", "8", "7", "6", "4", "3", "2", "1", "0", "-1"]
+        },
+        {
+            "fileName": "5.4 Self Inc Dec Operators.rynt",
+            "expectOutput": ["12345", "12346", "12345", "12345678913", "12345678912"]
+        },
+        {
+            "fileName": "5.5 for Blocks.rynt",
+            "expectOutput": ["0 1 2 3 4 5 6 7 8 9 "]
+        },
+        {
+            "fileName": "6.1 Array Declaration.rynt",
+            "expectOutput": ""
+        },
+        {
+            "fileName": "6.2 Array Index Access.rynt",
+            "expectOutput": ""
+        },
+        {
+            "fileName": "6.3 Array Index Assignment.rynt",
+            "expectOutput": ["1", "2", "false"]
+        },
+        {
+            "fileName": "7.1 Angle Bracket Syntax.rynt",
+            "expectOutput": ""
+        },
+        {
+            "fileName": "7.2 Reference.rynt",
+            "expectOutput": ["100", "100"]
+        },
+        {
+            "fileName": "7.3 Unsafe Block.rynt",
+            "expectOutput": ""
+        },
+        {
+            "fileName": "7.4 to 7.6 Pointer.rynt",
+            "expectOutput": ["42", "100", "100", "0", "0", "999", "999"]
+        },
+        {
+            "fileName": "7.7 null Keyword.rynt",
+            "expectOutput": "null"
+        },
+        {
+            "fileName": "7.8 Pointer Operation.rynt",
+            "expectOutput": ["100", "100", "20", "100", "1", "-1"]
+        },
+        {
+            "fileName": "7.9 New and Delete on Heap.rynt",
+            "expectOutput": ["114", "100", "1145"]
+        },
+        {
+            "fileName": "7.10 Pointer Comparison.rynt",
+            "expectOutput": ["false", "true", "true", "true", "true"]
+        },
+        {
+            "fileName": "7.11 Array with Pointer.rynt",
+            "expectOutput": ["10", "10", "20", "40", "400", "15"]
+        },
+        {
+            "fileName": "8.1 Conditional and Operator.rynt",
+            "expectOutput": "yes"
+        },
+        {
+            "fileName": "8.2 Conditional or Operator.rynt",
+            "expectOutput": "yes"
+        }
+    ]
+}
