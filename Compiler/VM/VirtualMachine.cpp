@@ -1,11 +1,11 @@
 #include "VirtualMachine.h"
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include <algorithm>
 
 namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
-        // Builtin table — index must match BytecodeGenerator::getBuiltinIndex
+        // Builtin table - index must match BytecodeGenerator::getBuiltinIndex
         builtins_ = {
             // 0: __builtin_print (generic, handles all types at runtime)
             [](const std::vector<VMValue> &args) -> VMValue {
@@ -23,28 +23,28 @@ namespace Ryntra::VM {
                         std::cout << args[0].asInt64();
                     }
                 }
-                return VMValue();
+                return {};
             },
             // 1: __builtin_print_i32 — prints int32
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt32()) {
                     std::cout << args[0].asInt32();
                 }
-                return VMValue();
+                return {};
             },
             // 2: __builtin_print_i64 — prints int64
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt64()) {
                     std::cout << args[0].asInt64();
                 }
-                return VMValue();
+                return {};
             },
             // 3: __builtin_print_bool — prints "true" or "false"
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt32()) {
                     std::cout << (args[0].asInt32() ? "true" : "false");
                 }
-                return VMValue();
+                return {};
             },
             // 4: __builtin_print_string — prints string
             [](const std::vector<VMValue> &args) -> VMValue {
@@ -111,8 +111,8 @@ namespace Ryntra::VM {
         return executeFunction(it->second.get(), {});
     }
 
-    VMValue VirtualMachine::executeFunction(BytecodeFunction *func, const std::vector<VMValue> &args) {
-
+    VMValue VirtualMachine::executeFunction(BytecodeFunction *func,
+                                            [[maybe_unused]] const std::vector<VMValue> &args) {
         locals_.clear();
         size_t ip = 0;
         while (ip < func->instructions.size()) {
@@ -166,7 +166,7 @@ namespace Ryntra::VM {
                 if (!stack_.empty()) {
                     return pop();
                 }
-                return VMValue();
+                return {};
             }
 
             case OpCode::Add: {
@@ -729,10 +729,7 @@ namespace Ryntra::VM {
                     int32_t targetSlot = slot + idx;
                     if (targetSlot >= 0 && targetSlot < static_cast<int32_t>(heap_.size())) {
                         VMValue refVal;
-                        // Use Reference type for heap slots (RefLoad/RefStore read from locals_ by default)
-                        // For heap pointers, we need special handling
-                        // We could set a special negative or use HeapReference type
-                        // For now, just error as this is not yet implemented for heap pointers
+                        // TODO: Heap pointer isn't implement
                         throw std::runtime_error("PtrIndexRef for heap pointers not yet implemented");
                     }
                 } else if (ptrVal.isPointer()) {
@@ -755,7 +752,7 @@ namespace Ryntra::VM {
 
             case OpCode::PinArray:
             case OpCode::UnpinArray: {
-                // No-op for now (no GC yet)
+                // TODO: No GC yet
                 pop();
                 break;
             }

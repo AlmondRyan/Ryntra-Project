@@ -46,7 +46,13 @@ set(UTILITY_SOURCE
 set(SEMANTIC_SOURCE
         Compiler/Semantic/SymbolTable.cpp
         Compiler/Semantic/SemanticAnalyzer.cpp
-        Compiler/Semantic/TypedAST/TypedASTBase.h
+        Compiler/Semantic/Sema/Assignments.cpp
+        Compiler/Semantic/Sema/ControlFlow.cpp
+        Compiler/Semantic/Sema/Declarations.cpp
+        Compiler/Semantic/Sema/FunctionCall.cpp
+        Compiler/Semantic/Sema/Literals.cpp
+        Compiler/Semantic/Sema/Operators.cpp
+        Compiler/Semantic/Sema/RefAndPtr.cpp
 )
 
 set(IR_SOURCE
@@ -54,6 +60,12 @@ set(IR_SOURCE
         Compiler/IR/IRBuilder.cpp
         Compiler/IR/IRGenerator.h
         Compiler/IR/IRGenerator.cpp
+        Compiler/IR/Generator/ControlFlow.cpp
+        Compiler/IR/Generator/Expressions.cpp
+        Compiler/IR/Generator/Memory.cpp
+        Compiler/IR/Generator/Operations.cpp
+        Compiler/IR/Generator/ShortCircuit.cpp
+        Compiler/IR/Generator/Variables.cpp
         Compiler/IR/Type.h
         Compiler/IR/Value.h
         Compiler/IR/Instruction.h
