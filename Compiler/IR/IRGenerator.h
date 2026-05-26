@@ -39,9 +39,27 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedBinaryOpNode &node) override;
         void visit(Compiler::Semantic::TypedCastNode &node) override;
         void visit(Compiler::Semantic::TypedComparisonNode &node) override;
+        void visit(Compiler::Semantic::TypedConditionalAndNode &node) override;
+        void visit(Compiler::Semantic::TypedConditionalOrNode &node) override;
         void visit(Compiler::Semantic::TypedAssignmentNode &node) override;
         void visit(Compiler::Semantic::TypedPrefixOpNode &node) override;
         void visit(Compiler::Semantic::TypedPostfixOpNode &node) override;
+        void visit(Compiler::Semantic::TypedRefCreateNode &node) override;
+        void visit(Compiler::Semantic::TypedRefLoadNode &node) override;
+        void visit(Compiler::Semantic::TypedRefAssignNode &node) override;
+        void visit(Compiler::Semantic::TypedUnsafeBlockNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrCreateNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrLoadNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrStoreNode &node) override;
+        void visit(Compiler::Semantic::TypedNullLiteralNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrOffsetNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrDiffNode &node) override;
+        void visit(Compiler::Semantic::TypedNewNode &node) override;
+        void visit(Compiler::Semantic::TypedDeleteNode &node) override;
+        void visit(Compiler::Semantic::TypedFixedNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrIndexAccessNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrIndexAssignmentNode &node) override;
+        void visit(Compiler::Semantic::TypedPtrFromArrayNode &node) override;
 
     private:
         IRBuilder builder_;

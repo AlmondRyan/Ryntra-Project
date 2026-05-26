@@ -22,6 +22,26 @@ namespace Ryntra::Compiler {
         return "(ArrayType " + elementType->toString() + ")";
     }
 
+    void ReferenceTypeNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ReferenceTypeNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ReferenceTypeNode::toString() const {
+        return "(ReferenceType " + elementType->toString() + ")";
+    }
+
+    void NullLiteralNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<NullLiteralNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string NullLiteralNode::toString() const {
+        return "(NullLiteral)";
+    }
+
     void BoolLiteralNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<BoolLiteralNode> *>(&visitor)) {
             v->visit(*this);
@@ -329,6 +349,26 @@ namespace Ryntra::Compiler {
         return "(Comparison " + left->toString() + " " + opStr + " " + right->toString() + ")";
     }
 
+    void ConditionalAndNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ConditionalAndNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ConditionalAndNode::toString() const {
+        return "(ConditionalAnd " + left->toString() + " && " + right->toString() + ")";
+    }
+
+    void ConditionalOrNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ConditionalOrNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ConditionalOrNode::toString() const {
+        return "(ConditionalOr " + left->toString() + " || " + right->toString() + ")";
+    }
+
     void AssignmentNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<AssignmentNode> *>(&visitor)) {
             v->visit(*this);
@@ -339,6 +379,56 @@ namespace Ryntra::Compiler {
         return "(Assign " + lhs->toString() + " " + rhs->toString() + ")";
     }
 
+    void UnsafeBlockNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<UnsafeBlockNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string UnsafeBlockNode::toString() const {
+        return "(UnsafeBlock " + body->toString() + ")";
+    }
+
+    void PtrExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrExpressionNode::toString() const {
+        return "(Ptr " + operand->toString() + ")";
+    }
+
+    void PtrLoadNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrLoadNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrLoadNode::toString() const {
+        return "(PtrLoad " + ptrExpr->toString() + ")";
+    }
+
+    void PtrStoreNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<PtrStoreNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string PtrStoreNode::toString() const {
+        return "(PtrStore " + ptrExpr->toString() + " " + value->toString() + ")";
+    }
+
+    void RefExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<RefExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string RefExpressionNode::toString() const {
+        return "(Ref " + operand->toString() + ")";
+    }
+
     void ArrayIndexAccessNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ArrayIndexAccessNode> *>(&visitor)) {
             v->visit(*this);
@@ -346,7 +436,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string ArrayIndexAccessNode::toString() const {
-        return "(ArrayIndexAccess " + arrayName->toString() + " " + index->toString() + ")";
+        return "(ArrayIndexAccess " + arrayExpr->toString() + " " + index->toString() + ")";
     }
 
     void ArrayIndexAssignmentNode::accept(IVisitor &visitor) {
@@ -356,7 +446,7 @@ namespace Ryntra::Compiler {
     }
 
     std::string ArrayIndexAssignmentNode::toString() const {
-        return "(ArrayIndexAssign " + arrayName->toString() + " " + index->toString() + " " + value->toString() + ")";
+        return "(ArrayIndexAssign " + arrayExpr->toString() + " " + index->toString() + " " + value->toString() + ")";
     }
 
     void PrefixOpNode::accept(IVisitor &visitor) {
@@ -395,6 +485,43 @@ namespace Ryntra::Compiler {
         if (operation) ss << " " << operation->toString();
         ss << " " << body->toString();
         ss << ")";
+        return ss.str();
+    }
+
+    void NewExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<NewExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string NewExpressionNode::toString() const {
+        std::stringstream ss;
+        ss << "(New " << elementType->toString();
+        if (initializer) ss << " " << initializer->toString();
+        ss << ")";
+        return ss.str();
+    }
+
+    void DeleteStatementNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<DeleteStatementNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string DeleteStatementNode::toString() const {
+        return "(Delete " + expression->toString() + ")";
+    }
+
+    void FixedNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<FixedNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string FixedNode::toString() const {
+        std::stringstream ss;
+        ss << "(Fixed " << ptrType->toString() << " " << name->toString()
+           << " = " << init->toString() << " " << body->toString() << ")";
         return ss.str();
     }
 

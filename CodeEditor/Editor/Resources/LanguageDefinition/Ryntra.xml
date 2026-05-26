@@ -21,6 +21,12 @@
             <Keyword>bool</Keyword>
             <Keyword>true</Keyword>
             <Keyword>false</Keyword>
+            <Keyword>null</Keyword>
+            <Keyword>new</Keyword>
+            <Keyword>ref</Keyword>
+            <Keyword>ptr</Keyword>
+            <Keyword>unsafe</Keyword>
+            <Keyword>fixed</Keyword>
         </Keywords>
         <Match>
             <Number>\d+(?:\.\d+)?[a-zA-Z]*</Number>

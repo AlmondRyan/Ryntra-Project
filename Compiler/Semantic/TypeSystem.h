@@ -12,7 +12,9 @@ namespace Ryntra::Compiler::Semantic {
         FUNCTION,
         VOID,
         UNKNOWN,
-        ARRAY
+        ARRAY,
+        REFERENCE,
+        POINTER
     };
 
     class Type {
@@ -57,6 +59,50 @@ namespace Ryntra::Compiler::Semantic {
             if (other.getKind() != TypeKind::ARRAY)
                 return false;
             return elementType->equals(*static_cast<const ArrayType &>(other).elementType);
+        }
+
+        std::shared_ptr<Type> getElementType() const { return elementType; }
+
+    private:
+        std::shared_ptr<Type> elementType;
+    };
+
+    class ReferenceType : public Type {
+    public:
+        ReferenceType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+
+        TypeKind getKind() const override { return TypeKind::REFERENCE; }
+
+        std::string toString() const override {
+            return "ref<" + elementType->toString() + ">";
+        }
+
+        bool equals(const Type &other) const override {
+            if (other.getKind() != TypeKind::REFERENCE)
+                return false;
+            return elementType->equals(*static_cast<const ReferenceType &>(other).elementType);
+        }
+
+        std::shared_ptr<Type> getElementType() const { return elementType; }
+
+    private:
+        std::shared_ptr<Type> elementType;
+    };
+
+    class PointerType : public Type {
+    public:
+        PointerType(std::shared_ptr<Type> elementType) : elementType(std::move(elementType)) {}
+
+        TypeKind getKind() const override { return TypeKind::POINTER; }
+
+        std::string toString() const override {
+            return "ptr<" + elementType->toString() + ">";
+        }
+
+        bool equals(const Type &other) const override {
+            if (other.getKind() != TypeKind::POINTER)
+                return false;
+            return elementType->equals(*static_cast<const PointerType &>(other).elementType);
         }
 
         std::shared_ptr<Type> getElementType() const { return elementType; }
@@ -129,6 +175,12 @@ namespace Ryntra::Compiler::Semantic {
         }
         static std::shared_ptr<ArrayType> getArray(std::shared_ptr<Type> elementType) {
             return std::make_shared<ArrayType>(std::move(elementType));
+        }
+        static std::shared_ptr<ReferenceType> getReference(std::shared_ptr<Type> elementType) {
+            return std::make_shared<ReferenceType>(std::move(elementType));
+        }
+        static std::shared_ptr<PointerType> getPointer(std::shared_ptr<Type> elementType) {
+            return std::make_shared<PointerType>(std::move(elementType));
         }
     };
 

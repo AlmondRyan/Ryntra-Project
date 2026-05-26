@@ -1,0 +1,4 @@
+public void main() {
+    int a = 1145;
+    __builtin_print(a); // 1145
+}

@@ -1,11 +1,11 @@
 #include "VirtualMachine.h"
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include <algorithm>
 
 namespace Ryntra::VM {
     VirtualMachine::VirtualMachine() {
-        // Builtin table — index must match BytecodeGenerator::getBuiltinIndex
+        // Builtin table - index must match BytecodeGenerator::getBuiltinIndex
         builtins_ = {
             // 0: __builtin_print (generic, handles all types at runtime)
             [](const std::vector<VMValue> &args) -> VMValue {
@@ -23,28 +23,28 @@ namespace Ryntra::VM {
                         std::cout << args[0].asInt64();
                     }
                 }
-                return VMValue();
+                return {};
             },
             // 1: __builtin_print_i32 — prints int32
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt32()) {
                     std::cout << args[0].asInt32();
                 }
-                return VMValue();
+                return {};
             },
             // 2: __builtin_print_i64 — prints int64
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt64()) {
                     std::cout << args[0].asInt64();
                 }
-                return VMValue();
+                return {};
             },
             // 3: __builtin_print_bool — prints "true" or "false"
             [](const std::vector<VMValue> &args) -> VMValue {
                 if (!args.empty() && args[0].isInt32()) {
                     std::cout << (args[0].asInt32() ? "true" : "false");
                 }
-                return VMValue();
+                return {};
             },
             // 4: __builtin_print_string — prints string
             [](const std::vector<VMValue> &args) -> VMValue {
@@ -111,8 +111,8 @@ namespace Ryntra::VM {
         return executeFunction(it->second.get(), {});
     }
 
-    VMValue VirtualMachine::executeFunction(BytecodeFunction *func, const std::vector<VMValue> &args) {
-
+    VMValue VirtualMachine::executeFunction(BytecodeFunction *func,
+                                            [[maybe_unused]] const std::vector<VMValue> &args) {
         locals_.clear();
         size_t ip = 0;
         while (ip < func->instructions.size()) {
@@ -166,7 +166,7 @@ namespace Ryntra::VM {
                 if (!stack_.empty()) {
                     return pop();
                 }
-                return VMValue();
+                return {};
             }
 
             case OpCode::Add: {
@@ -176,6 +176,44 @@ namespace Ryntra::VM {
                     push(VMValue(a.asInt64() + b.asInt64()));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(a.asInt32() + b.asInt32()));
+                else if (a.isPointer() && b.isInt32()) {
+                    if (a.isArrayPointer()) {
+                        VMValue result;
+                        result.setArrayPointer(a.getPointerSlot() + b.asInt32(), a.getArrayPointerData());
+                        push(result);
+                    } else {
+                        push(VMValue(a.getPointerSlot() + b.asInt32()));
+                    }
+                } else if (a.isPointer() && b.isInt64()) {
+                    auto offset = static_cast<int32_t>(b.asInt64());
+                    if (a.isArrayPointer()) {
+                        VMValue result;
+                        result.setArrayPointer(a.getPointerSlot() + offset, a.getArrayPointerData());
+                        push(result);
+                    } else {
+                        push(VMValue(a.getPointerSlot() + offset));
+                    }
+                } else if (a.isInt32() && b.isPointer()) {
+                    if (b.isArrayPointer()) {
+                        VMValue result;
+                        result.setArrayPointer(a.asInt32() + b.getPointerSlot(), b.getArrayPointerData());
+                        push(result);
+                    } else {
+                        push(VMValue(a.asInt32() + b.getPointerSlot()));
+                    }
+                } else if (a.isHeapPointer() && b.isInt32()) {
+                    VMValue result;
+                    result.setHeapPointerSlot(a.getHeapPointerSlot() + b.asInt32());
+                    push(result);
+                } else if (a.isHeapPointer() && b.isInt64()) {
+                    VMValue result;
+                    result.setHeapPointerSlot(a.getHeapPointerSlot() + static_cast<int32_t>(b.asInt64()));
+                    push(result);
+                } else if (a.isInt32() && b.isHeapPointer()) {
+                    VMValue result;
+                    result.setHeapPointerSlot(a.asInt32() + b.getHeapPointerSlot());
+                    push(result);
+                }
                 break;
             }
             case OpCode::Sub: {
@@ -185,6 +223,22 @@ namespace Ryntra::VM {
                     push(VMValue(a.asInt64() - b.asInt64()));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(a.asInt32() - b.asInt32()));
+                else if (a.isPointer() && b.isInt32()) {
+                    if (a.isArrayPointer()) {
+                        VMValue result;
+                        result.setArrayPointer(a.getPointerSlot() - b.asInt32(), a.getArrayPointerData());
+                        push(result);
+                    } else {
+                        push(VMValue(a.getPointerSlot() - b.asInt32()));
+                    }
+                } else if (a.isPointer() && b.isPointer())
+                    push(VMValue(a.getPointerSlot() - b.getPointerSlot()));
+                else if (a.isHeapPointer() && b.isInt32()) {
+                    VMValue result;
+                    result.setHeapPointerSlot(a.getHeapPointerSlot() - b.asInt32());
+                    push(result);
+                } else if (a.isHeapPointer() && b.isHeapPointer())
+                    push(VMValue(a.getHeapPointerSlot() - b.getHeapPointerSlot()));
                 break;
             }
             case OpCode::Mul: {
@@ -304,6 +358,26 @@ namespace Ryntra::VM {
                     push(VMValue(static_cast<int32_t>(a.asInt64() == b.asInt64())));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(static_cast<int32_t>(a.asInt32() == b.asInt32())));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() == b.asInt32())));
+                else if (a.isInt32() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() == b.getPointerSlot())));
+                else if (a.isPointer() && b.isPointer()) {
+                    if (a.isArrayPointer() && b.isArrayPointer()) {
+                        bool eq = (a.getArrayPointerData() == b.getArrayPointerData()) &&
+                                  (a.getPointerSlot() == b.getPointerSlot());
+                        push(VMValue(static_cast<int32_t>(eq)));
+                    } else if (!a.isArrayPointer() && !b.isArrayPointer()) {
+                        push(VMValue(static_cast<int32_t>(a.getPointerSlot() == b.getPointerSlot())));
+                    } else {
+                        push(VMValue(static_cast<int32_t>(0)));
+                    }
+                } else if (a.isHeapPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getHeapPointerSlot() == b.asInt32())));
+                else if (a.isInt32() && b.isHeapPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() == b.getHeapPointerSlot())));
+                else if (a.isHeapPointer() && b.isHeapPointer())
+                    push(VMValue(static_cast<int32_t>(a.getHeapPointerSlot() == b.getHeapPointerSlot())));
                 break;
             }
             case OpCode::Ne: {
@@ -313,6 +387,26 @@ namespace Ryntra::VM {
                     push(VMValue(static_cast<int32_t>(a.asInt64() != b.asInt64())));
                 else if (a.isInt32() && b.isInt32())
                     push(VMValue(static_cast<int32_t>(a.asInt32() != b.asInt32())));
+                else if (a.isPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getPointerSlot() != b.asInt32())));
+                else if (a.isInt32() && b.isPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() != b.getPointerSlot())));
+                else if (a.isPointer() && b.isPointer()) {
+                    if (a.isArrayPointer() && b.isArrayPointer()) {
+                        bool ne = (a.getArrayPointerData() != b.getArrayPointerData()) ||
+                                  (a.getPointerSlot() != b.getPointerSlot());
+                        push(VMValue(static_cast<int32_t>(ne)));
+                    } else if (!a.isArrayPointer() && !b.isArrayPointer()) {
+                        push(VMValue(static_cast<int32_t>(a.getPointerSlot() != b.getPointerSlot())));
+                    } else {
+                        push(VMValue(static_cast<int32_t>(1)));
+                    }
+                } else if (a.isHeapPointer() && b.isInt32())
+                    push(VMValue(static_cast<int32_t>(a.getHeapPointerSlot() != b.asInt32())));
+                else if (a.isInt32() && b.isHeapPointer())
+                    push(VMValue(static_cast<int32_t>(a.asInt32() != b.getHeapPointerSlot())));
+                else if (a.isHeapPointer() && b.isHeapPointer())
+                    push(VMValue(static_cast<int32_t>(a.getHeapPointerSlot() != b.getHeapPointerSlot())));
                 break;
             }
             case OpCode::Lt: {
@@ -449,6 +543,232 @@ namespace Ryntra::VM {
             case OpCode::Halt:
                 return VMValue();
 
+            case OpCode::RefCreate: {
+                auto slotVal = pop();
+                if (!slotVal.isInt32()) {
+                    throw std::runtime_error("RefCreate requires an int32 slot index");
+                }
+                VMValue refVal;
+                refVal.setReferenceSlot(slotVal.asInt32());
+                push(refVal);
+                break;
+            }
+
+            case OpCode::RefLoad: {
+                auto refVal = pop();
+                if (refVal.isArrayElementRef()) {
+                    auto elemRef = refVal.asArrayElementRef();
+                    if (elemRef.index >= 0 && static_cast<size_t>(elemRef.index) < elemRef.array->elements.size()) {
+                        push(elemRef.array->elements[elemRef.index]);
+                    } else {
+                        throw std::runtime_error("RefLoad: invalid array element ref index");
+                    }
+                } else if (refVal.isReference()) {
+                    int32_t slot = refVal.getReferenceSlot();
+                    if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                        push(locals_[slot]);
+                    } else {
+                        throw std::runtime_error("RefLoad: invalid reference slot");
+                    }
+                } else {
+                    throw std::runtime_error("RefLoad on non-reference value");
+                }
+                break;
+            }
+
+            case OpCode::RefStore: {
+                auto val = pop();
+                auto refVal = pop();
+                if (refVal.isArrayElementRef()) {
+                    auto elemRef = refVal.asArrayElementRef();
+                    if (elemRef.index >= 0 && static_cast<size_t>(elemRef.index) < elemRef.array->elements.size()) {
+                        elemRef.array->elements[elemRef.index] = val;
+                    } else {
+                        throw std::runtime_error("RefStore: invalid array element ref index");
+                    }
+                } else if (refVal.isReference()) {
+                    int32_t slot = refVal.getReferenceSlot();
+                    if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                        locals_[slot] = val;
+                    } else {
+                        throw std::runtime_error("RefStore: invalid reference slot");
+                    }
+                } else {
+                    throw std::runtime_error("RefStore on non-reference value");
+                }
+                break;
+            }
+
+            case OpCode::PtrCreate: {
+                auto slotVal = pop();
+                if (!slotVal.isInt32()) {
+                    throw std::runtime_error("PtrCreate requires an int32 slot index");
+                }
+                VMValue ptrVal;
+                ptrVal.setPointerSlot(slotVal.asInt32());
+                push(ptrVal);
+                break;
+            }
+
+            case OpCode::PtrLoad: {
+                auto ptrVal = pop();
+                if (ptrVal.isHeapPointer()) {
+                    int32_t slot = ptrVal.getHeapPointerSlot();
+                    if (slot >= 0 && slot < static_cast<int32_t>(heap_.size())) {
+                        push(heap_[slot]);
+                    } else {
+                        throw std::runtime_error("PtrLoad: invalid heap pointer slot");
+                    }
+                } else if (ptrVal.isPointer()) {
+                    if (ptrVal.isArrayPointer()) {
+                        auto arrData = ptrVal.getArrayPointerData();
+                        int32_t index = ptrVal.getPointerSlot();
+                        if (index >= 0 && static_cast<size_t>(index) < arrData->elements.size()) {
+                            push(arrData->elements[index]);
+                        } else {
+                            throw std::runtime_error("PtrLoad: invalid array element index");
+                        }
+                    } else {
+                        int32_t slot = ptrVal.getPointerSlot();
+                        if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                            push(locals_[slot]);
+                        } else {
+                            throw std::runtime_error("PtrLoad: invalid pointer slot");
+                        }
+                    }
+                } else {
+                    throw std::runtime_error("PtrLoad on non-pointer value");
+                }
+                break;
+            }
+
+            case OpCode::PtrStore: {
+                auto val = pop();
+                auto ptrVal = pop();
+                if (ptrVal.isHeapPointer()) {
+                    int32_t slot = ptrVal.getHeapPointerSlot();
+                    if (slot >= 0 && slot < static_cast<int32_t>(heap_.size())) {
+                        heap_[slot] = val;
+                    } else {
+                        throw std::runtime_error("PtrStore: invalid heap pointer slot");
+                    }
+                } else if (ptrVal.isPointer()) {
+                    if (ptrVal.isArrayPointer()) {
+                        auto arrData = ptrVal.getArrayPointerData();
+                        int32_t index = ptrVal.getPointerSlot();
+                        if (index >= 0 && static_cast<size_t>(index) < arrData->elements.size()) {
+                            arrData->elements[index] = val;
+                        } else {
+                            throw std::runtime_error("PtrStore: invalid array element index");
+                        }
+                    } else {
+                        int32_t slot = ptrVal.getPointerSlot();
+                        if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
+                            locals_[slot] = val;
+                        } else {
+                            throw std::runtime_error("PtrStore: invalid pointer slot");
+                        }
+                    }
+                } else {
+                    throw std::runtime_error("PtrStore on non-pointer value");
+                }
+                break;
+            }
+
+            case OpCode::New: {
+                auto initVal = pop();
+                heap_.push_back(initVal);
+                VMValue heapPtr;
+                heapPtr.setHeapPointerSlot(static_cast<int32_t>(heap_.size() - 1));
+                push(heapPtr);
+                break;
+            }
+
+            case OpCode::Delete: {
+                auto ptrVal = pop();
+                if (ptrVal.isHeapPointer()) {
+                    int32_t slot = ptrVal.getHeapPointerSlot();
+                    if (slot >= 0 && slot < static_cast<int32_t>(heap_.size())) {
+                        heap_[slot] = VMValue(); // mark as freed
+                    }
+                }
+                break;
+            }
+
+            case OpCode::ArrRef: {
+                auto indexVal = pop();
+                auto arrVal = pop();
+                if (!arrVal.isArray()) {
+                    throw std::runtime_error("ArrRef on non-array value");
+                }
+                auto arrData = arrVal.asArray();
+                int32_t idx = 0;
+                if (indexVal.isInt32())
+                    idx = indexVal.asInt32();
+                else if (indexVal.isInt64())
+                    idx = static_cast<int32_t>(indexVal.asInt64());
+                if (idx < 0 || static_cast<size_t>(idx) >= arrData->elements.size())
+                    throw std::runtime_error("ArrRef: array index out of bounds: " + std::to_string(idx));
+                VMValue refVal;
+                refVal = VMValue(ArrayElementRef{arrData, idx});
+                push(refVal);
+                break;
+            }
+
+            case OpCode::PtrIndexRef: {
+                auto indexVal = pop();
+                auto ptrVal = pop();
+                int32_t idx = 0;
+                if (indexVal.isInt32())
+                    idx = indexVal.asInt32();
+                else if (indexVal.isInt64())
+                    idx = static_cast<int32_t>(indexVal.asInt64());
+
+                if (ptrVal.isHeapPointer()) {
+                    int32_t slot = ptrVal.getHeapPointerSlot();
+                    int32_t targetSlot = slot + idx;
+                    if (targetSlot >= 0 && targetSlot < static_cast<int32_t>(heap_.size())) {
+                        VMValue refVal;
+                        // TODO: Heap pointer isn't implement
+                        throw std::runtime_error("PtrIndexRef for heap pointers not yet implemented");
+                    }
+                } else if (ptrVal.isPointer()) {
+                    if (ptrVal.isArrayPointer()) {
+                        int32_t index = ptrVal.getPointerSlot() + idx;
+                        VMValue refVal(ArrayElementRef{ptrVal.getArrayPointerData(), index});
+                        push(refVal);
+                    } else {
+                        int32_t slot = ptrVal.getPointerSlot();
+                        int32_t targetSlot = slot + idx;
+                        VMValue refVal;
+                        refVal.setReferenceSlot(targetSlot);
+                        push(refVal);
+                    }
+                } else {
+                    throw std::runtime_error("PtrIndexRef on non-pointer value");
+                }
+                break;
+            }
+
+            case OpCode::PinArray:
+            case OpCode::UnpinArray: {
+                // TODO: No GC yet
+                pop();
+                break;
+            }
+
+            case OpCode::PtrFromArray: {
+                auto arrVal = pop();
+                if (!arrVal.isArray()) {
+                    throw std::runtime_error("PtrFromArray on non-array value");
+                }
+                auto arrData = arrVal.asArray();
+                VMValue ptrVal;
+                ptrVal.setArrayPointer(0, arrData);
+                push(ptrVal);
+                break;
+            }
+
             default:
                 break;
             }
@@ -493,6 +813,19 @@ namespace Ryntra::VM {
         "NewArray",
         "ArrGet",
         "ArrSet",
+        "RefCreate",
+        "RefLoad",
+        "RefStore",
+        "PtrCreate",
+        "PtrLoad",
+        "PtrStore",
+        "New",
+        "Delete",
+        "ArrRef",
+        "PtrIndexRef",
+        "PinArray",
+        "UnpinArray",
+        "PtrFromArray",
         "Halt",
     };
 
@@ -515,7 +848,9 @@ namespace Ryntra::VM {
                         inst.opcode == OpCode::StoreLocal ||
                         inst.opcode == OpCode::LoadLocal ||
                         inst.opcode == OpCode::Jmp ||
-                        inst.opcode == OpCode::Jz) {
+                        inst.opcode == OpCode::Jz ||
+                        inst.opcode == OpCode::RefCreate ||
+                        inst.opcode == OpCode::PtrCreate) {
                         std::cout << " " << inst.operand;
                     } else if (inst.opcode == OpCode::Call || inst.opcode == OpCode::BCall) {
                         std::cout << " " << inst.operand;

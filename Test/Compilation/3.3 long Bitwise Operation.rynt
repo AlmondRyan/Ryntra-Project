@@ -1,0 +1,16 @@
+public void main() {
+    long a = 1145141919810L;
+
+    a &= 2;
+    __builtin_print(a); __builtin_print("\n");
+    a ^= 2;
+    __builtin_print(a); __builtin_print("\n");
+    a |= 2;
+    __builtin_print(a); __builtin_print("\n");
+    a = ~a;
+    __builtin_print(a); __builtin_print("\n");
+    a >>= 2;
+    __builtin_print(a); __builtin_print("\n");
+    a <<= 2;
+    __builtin_print(a); __builtin_print("\n");
+}

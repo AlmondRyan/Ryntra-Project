@@ -1,0 +1,10 @@
+public void main() {
+    unsafe {
+        ptr<int> pa = null;
+        if (pa == null) {
+            __builtin_print("null");
+        } else {
+            __builtin_print("what");
+        }
+    }
+}

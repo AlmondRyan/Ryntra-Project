@@ -15,11 +15,20 @@ CONTINUE: 'continue';
 BOOL: 'bool';
 TRUE: 'true';
 FALSE: 'false';
+NULL: 'null';
 NEW: 'new';
+DELETE: 'delete';
+REF: 'ref';
+PTR: 'ptr';
+UNSAFE: 'unsafe';
+FIXED: 'fixed';
+LOAD: 'load';
+STORE: 'store';
 
 // Symbols & Operators
 SEMICOLON: ';';
 COMMA: ',';
+DOT: '.';
 LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
@@ -43,6 +52,10 @@ MOD: '%';
 // Bitwise Operators
 BIT_AND: '&';
 BIT_OR: '|';
+
+// Conditional/Logical Operators
+COND_AND: '&&';
+COND_OR: '||';
 BIT_XOR: '^';
 BIT_NOT: '~';
 NOT: '!';
@@ -88,6 +101,8 @@ typeSpecifier
     | LONG
     | VOID
     | BOOL
+    | REF LT typeSpecifier GT
+    | PTR LT typeSpecifier GT
     ;
 
 block
@@ -104,6 +119,17 @@ statement
     | forStatement
     | breakStatement
     | continueStatement
+    | unsafeBlock
+    | fixedStatement
+    | DELETE expression SEMICOLON
+    ;
+
+fixedStatement
+    : FIXED LPAREN PTR LT typeSpecifier GT IDENTIFIER ASSIGN expression RPAREN block
+    ;
+
+unsafeBlock
+    : UNSAFE block
     ;
 
 whileStatement
@@ -157,11 +183,17 @@ returnStatement
     ;
 
 expression
-    : LPAREN typeSpecifier RPAREN expression                        # CastExpression
+    : REF LPAREN expression RPAREN                                  # RefExpression
+    | PTR LPAREN expression RPAREN                                  # PtrExpression
+    | NEW typeSpecifier                                             # NewExpression
+    | NEW typeSpecifier LPAREN expression RPAREN                    # NewWithInitExpression
+    | LPAREN typeSpecifier RPAREN expression                        # CastExpression
     | LPAREN expression RPAREN                                      # ParenthesizedExpression
     | expression INC                                                # PostfixIncExpression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
+    | ptr=expression DOT LOAD LPAREN RPAREN                         # PtrLoadExpression
+    | ptr=expression DOT STORE LPAREN value=expression RPAREN       # PtrStoreExpression
     | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
@@ -175,12 +207,15 @@ expression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression
     | left=expression op=(EQ|NE|GE|LE|GT|LT) right=expression         # ComparisonExpression
+    | left=expression op=COND_AND right=expression                   # ConditionalAndExpression
+    | left=expression op=COND_OR right=expression                    # ConditionalOrExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
     | IDENTIFIER                                                    # VariableReference
     | STRING_LITERAL                                                # StringLiteral
     | INTEGER_LITERAL                                               # IntegerLiteral
     | TRUE                                                          # TrueLiteral
     | FALSE                                                         # FalseLiteral
+    | NULL                                                          # NullLiteral
     ;
 
 argumentList

@@ -1,0 +1,28 @@
+public void main() {
+    int a = 20;
+    int b = 10;
+
+    a = a & b;
+    __builtin_print(a); __builtin_print("\n");
+    a = a | b;
+    __builtin_print(a); __builtin_print("\n");
+    a = a ^ b;
+    __builtin_print(a); __builtin_print("\n");
+    a = ~a;
+    __builtin_print(a); __builtin_print("\n");
+    a = a >> 2;
+    __builtin_print(a); __builtin_print("\n");
+    a = a << 2;
+    __builtin_print(a); __builtin_print("\n");
+
+    a &= b;
+    __builtin_print(a); __builtin_print("\n");
+    a |= b;
+    __builtin_print(a); __builtin_print("\n");
+    a ^= b;
+    __builtin_print(a); __builtin_print("\n");
+    a >>= 2;
+    __builtin_print(a); __builtin_print("\n");
+    a <<= 2;
+    __builtin_print(a); __builtin_print("\n");
+}

@@ -30,8 +30,7 @@ namespace Ryntra::VM {
         std::unordered_map<std::string, std::shared_ptr<BytecodeFunction>> functionMap_;
 
         std::vector<VMValue> locals_;
-
-        // Indexed builtin table — index matches BytecodeGenerator::getBuiltinIndex
+        std::vector<VMValue> heap_; // Separate heap storage — index matches BytecodeGenerator::getBuiltinIndex
         std::vector<NativeFunction> builtins_;
         std::vector<int> builtinArgCounts_;
 

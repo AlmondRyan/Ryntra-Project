@@ -22,6 +22,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(IfNode &node) override;
         void visit(WhileNode &node) override;
         void visit(ForNode &node) override;
+        void visit(NullLiteralNode &node) override;
         void visit(BreakNode &node) override;
         void visit(ContinueNode &node) override;
         void visit(ExpressionStatementNode &node) override;
@@ -32,6 +33,7 @@ namespace Ryntra::Compiler::Semantic {
         void visit(IdentifierNode &node) override;
         void visit(TypeSpecifierNode &node) override;
         void visit(ArrayTypeNode &node) override;
+        void visit(ReferenceTypeNode &node) override;
         void visit(ReturnNode &node) override;
         void visit(VariableNode &node) override;
         void visit(VariableDeclarationNode &node) override;
@@ -42,9 +44,19 @@ namespace Ryntra::Compiler::Semantic {
         void visit(UnaryOpNode &node) override;
         void visit(CastNode &node) override;
         void visit(ComparisonNode &node) override;
+        void visit(ConditionalAndNode &node) override;
+        void visit(ConditionalOrNode &node) override;
         void visit(AssignmentNode &node) override;
         void visit(PrefixOpNode &node) override;
         void visit(PostfixOpNode &node) override;
+        void visit(RefExpressionNode &node) override;
+        void visit(UnsafeBlockNode &node) override;
+        void visit(PtrExpressionNode &node) override;
+        void visit(PtrLoadNode &node) override;
+        void visit(PtrStoreNode &node) override;
+        void visit(NewExpressionNode &node) override;
+        void visit(DeleteStatementNode &node) override;
+        void visit(FixedNode &node) override;
 
     private:
         SymbolTable symbolTable;
@@ -56,12 +68,17 @@ namespace Ryntra::Compiler::Semantic {
         TypePtr currentFunctionReturnType;        // STType::Type of the current function
         std::shared_ptr<Type> expectedReturnType; // Expected return type from context (for __builtin_scan)
         int loopDepth_ = 0;                       // Current loop nesting depth
+        int unsafeDepth_ = 0;                     // Current unsafe block nesting depth
 
         // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
         static std::shared_ptr<Type> toTypedType(const TypePtr &stType);
 
         // Build a TypePtr from a type-name string
         static TypePtr makeSTType(const std::string &name);
+
+        // Extract variable name from a typed expression (for pointer operations)
+        static std::string getPtrVarName(const std::shared_ptr<TypedExpressionNode> &expr,
+                                          const SourceLocation &loc);
     };
 
 } // namespace Ryntra::Compiler::Semantic

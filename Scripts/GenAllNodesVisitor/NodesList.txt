@@ -1,9 +1,16 @@
 TypeSpecifierNode
 ArrayTypeNode
+ReferenceTypeNode
+NullLiteralNode
 BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode
+RefExpressionNode
+PtrExpressionNode
+PtrLoadNode
+PtrStoreNode
+UnsafeBlockNode
 ExpressionStatementNode
 BlockNode
 FunctionDefinitionNode
@@ -18,6 +25,8 @@ BinaryOpNode
 UnaryOpNode
 CastNode
 ComparisonNode
+ConditionalAndNode
+ConditionalOrNode
 AssignmentNode
 ArrayIndexAccessNode
 ArrayIndexAssignmentNode
@@ -28,3 +37,6 @@ BreakNode
 ContinueNode
 PrefixOpNode
 PostfixOpNode
+NewExpressionNode
+DeleteStatementNode
+FixedNode

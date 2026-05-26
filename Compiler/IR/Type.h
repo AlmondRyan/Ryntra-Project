@@ -14,7 +14,9 @@ namespace Ryntra::IR {
             Bool,
             String,
             Function,
-            Array
+            Array,
+            Ref,
+            Ptr
         };
 
         Type(Kind kind) : kind_(kind) {}
@@ -32,6 +34,8 @@ namespace Ryntra::IR {
         bool isString() const { return kind_ == Kind::String; }
         bool isFunction() const { return kind_ == Kind::Function; }
         bool isArray() const { return kind_ == Kind::Array; }
+        bool isRef() const { return kind_ == Kind::Ref; }
+        bool isPtr() const { return kind_ == Kind::Ptr; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
@@ -124,6 +128,50 @@ namespace Ryntra::IR {
                 return false;
             auto *arrType = static_cast<const ArrayType *>(other);
             return elementType_->isEqual(arrType->elementType_.get());
+        }
+
+    private:
+        std::shared_ptr<Type> elementType_;
+    };
+
+    class RefType : public Type {
+    public:
+        RefType(std::shared_ptr<Type> elementType)
+            : Type(Kind::Ref), elementType_(std::move(elementType)) {}
+
+        std::shared_ptr<Type> getElementType() const { return elementType_; }
+
+        std::string toString() const override {
+            return "ref<" + elementType_->toString() + ">";
+        }
+
+        bool isEqual(const Type *other) const override {
+            if (!other->isRef())
+                return false;
+            auto *refType = static_cast<const RefType *>(other);
+            return elementType_->isEqual(refType->elementType_.get());
+        }
+
+    private:
+        std::shared_ptr<Type> elementType_;
+    };
+
+    class PtrType : public Type {
+    public:
+        PtrType(std::shared_ptr<Type> elementType)
+            : Type(Kind::Ptr), elementType_(std::move(elementType)) {}
+
+        std::shared_ptr<Type> getElementType() const { return elementType_; }
+
+        std::string toString() const override {
+            return "ptr<" + elementType_->toString() + ">";
+        }
+
+        bool isEqual(const Type *other) const override {
+            if (!other->isPtr())
+                return false;
+            auto *ptrType = static_cast<const PtrType *>(other);
+            return elementType_->isEqual(ptrType->elementType_.get());
         }
 
     private:

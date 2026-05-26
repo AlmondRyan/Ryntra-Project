@@ -1,0 +1,3 @@
+public void main() {
+    __builtin_print("Hello World");
+}

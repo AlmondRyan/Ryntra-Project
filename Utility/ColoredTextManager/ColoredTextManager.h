@@ -1,6 +1,9 @@
+// ========== ColoredTextManager.cpp ================================== *- C++ -* //
+// Copyright (c) 2026 Remimwen Studio (Ryan "NvKopres" Almond).
+// Licensed under Apache-2.0 License. See LICENSE for more info.
+// ============================================================================== //
+
 #pragma once
-#ifndef COMPILER_UTILITY_COLOREDTEXTMANAGER_H
-#define COMPILER_UTILITY_COLOREDTEXTMANAGER_H
 
 #include <iostream>
 #ifdef WIN32
@@ -8,6 +11,7 @@
 #endif // WIN32
 
 namespace Ryntra::Compiler {
+    /// \brief The color of console presents.
     enum class Colors {
         CTM_Default,
         CTM_Red,
@@ -19,11 +23,17 @@ namespace Ryntra::Compiler {
         CTM_White
     };
 
+    /// \brief The color manager itself
     class ConsoleTextManager {
     public:
+        /// \brief Constructor. Use default behavior.
         ConsoleTextManager() = default;
+        /// \brief Destructor. Use default behavior.
         ~ConsoleTextManager() = default;
 
+        /// \brief Set the color of console text.
+        /// \param os The \c std::ostream stream
+        /// \param color The color you want to present.
         static void setColor(std::ostream &os, Colors color) {
             if (&os == &std::cout || &os == &std::cerr) {
 #ifdef _WIN32
@@ -85,11 +95,13 @@ namespace Ryntra::Compiler {
             }
         }
 
+        /// \brief Reset the color.
         static void resetColor(std::ostream &os = std::cout) {
             setColor(os, Colors::CTM_Default);
         }
     };
 
+    /// \brief Operator overloading. Overload the stream operator to make our color change applies.
     inline std::ostream &operator<<(std::ostream &os, Colors color) {
         ConsoleTextManager::setColor(os, color);
         return os;
@@ -103,5 +115,3 @@ namespace Ryntra::Compiler {
 #define COLORED_TEXT_RED Ryntra::Compiler::Colors::CTM_Red
 #define COLORED_TEXT_WHITE Ryntra::Compiler::Colors::CTM_White
 #define COLORED_TEXT_YELLOW Ryntra::Compiler::Colors::CTM_Yellow
-
-#endif // COMPILER_UTILITY_COLOREDTEXTMANAGER_H

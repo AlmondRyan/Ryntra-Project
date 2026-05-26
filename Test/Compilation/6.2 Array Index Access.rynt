@@ -1,0 +1,9 @@
+public void main() {
+    int[] arr1 = new int[5];
+    long[] arr2 = new long[5];
+    bool[] arr3 = new bool[5];
+
+    arr1[1];
+    arr2[1];
+    arr3[1];
+}

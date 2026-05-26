@@ -1,0 +1,21 @@
+public void main() {
+    long a = 1145141919810L;
+    long b = 2147483649000l;
+
+    long factor = 3l;
+
+    a += b;
+    __builtin_print(a); __builtin_print("\n");
+
+    a -= b;
+    __builtin_print(a); __builtin_print("\n");
+
+    a *= factor;
+    __builtin_print(a); __builtin_print("\n");
+
+    a /= factor;
+    __builtin_print(a); __builtin_print("\n");
+
+    a %= factor;
+    __builtin_print(a); __builtin_print("\n");
+}

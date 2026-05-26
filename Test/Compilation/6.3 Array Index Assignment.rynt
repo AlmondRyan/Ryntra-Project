@@ -1,0 +1,13 @@
+public void main() {
+    int[] arr1 = new int[5];
+    long[] arr2 = new long[5];
+    bool[] arr3 = new bool[5];
+
+    arr1[1] = 1;
+    arr2[1] = 2l;
+    arr3[1] = false;
+
+    __builtin_print(arr1[1]); __builtin_print("\n");
+    __builtin_print(arr2[1]); __builtin_print("\n");
+    __builtin_print(arr3[1]); __builtin_print("\n");
+}

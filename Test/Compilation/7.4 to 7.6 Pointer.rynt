@@ -1,0 +1,22 @@
+public void main() {
+    unsafe {
+        int a = 42;
+        ptr<int> p = ptr(a);
+
+        __builtin_print(p.load()); __builtin_print("\n");
+
+        p.store(100);
+        __builtin_print(p.load()); __builtin_print("\n");
+        __builtin_print(a); __builtin_print("\n");
+
+        p.store(0);
+        __builtin_print(p.load()); __builtin_print("\n");
+        __builtin_print(a); __builtin_print("\n");
+
+        long b = 1145L;
+        ptr<long> pl = ptr(b);
+        pl.store(999L);
+        __builtin_print(pl.load()); __builtin_print("\n");
+        __builtin_print(b); __builtin_print("\n");
+    }
+}

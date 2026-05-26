@@ -4,6 +4,13 @@ Something will do afterward:
 
 ****
 
+Semantic Note:
+
+- `ref<T>` auto dereference, always valid, non-null, alias semantics, no rebinding, no ownership
+- `ptr<T>` nullable, rebinding, arithmetic operations (in unsafe block), unsafe, no automatic lifetime guarantee
+
+****
+
 - ✅ V0.0.1 Hello World
 - ✅ V0.0.2.1 `int` Variable Declaration
 - ✅ V0.0.2.2 `int` Variable Arithmetic Operation (w/ Modulation)
@@ -27,10 +34,17 @@ Something will do afterward:
 - ✅ V0.0.6.1 Array Declaration
 - ✅ V0.0.6.2 Array Index Access
 - ✅ V0.0.6.3 Array Index Assignment
-- ❌ V0.0.7.1 Angle bracket syntax for type parameters `<>`
-- ❌ V0.0.7.2 Reference `ref<T>` (automatically dereference)
-- ❌ V0.0.7.3 Unsafe Block `unsafe`
-- ❌ V0.0.7.4 Unsafe Pointer `ptr<T>`
-- ❌ V0.0.7.5 Pointer dereference `ptr<T>.load()` (manually dereference, lowering to `ptrload` instruction)
-- ❌ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)
-- ❌ V0.0.7.7 Array object assignment
+- ✅ V0.0.7.1 Angle bracket syntax for type parameters `<>`
+- ✅ V0.0.7.2 Reference `ref<T>` (automatically dereference, always safe)
+- ✅ V0.0.7.3 Unsafe Block `unsafe`
+- ✅ V0.0.7.4 Unsafe Pointer `ptr<T>`
+- ✅ V0.0.7.5 Pointer dereference `ptr<T>.load()` (manually dereference, lowering to `ptrload` instruction)
+- ✅ V0.0.7.6 `ptr<T>.store` (lowering to `ptrstore` instruction)
+- ✅ V0.0.7.7 `null` Keyword
+- ✅ V0.0.7.8 Pointer + integer (move), Pointer - integer (move), Pointer - pointer (get distance, must in same memory area)
+- ✅ V0.0.7.9 Dynamically apply for memory (`new` and `delete`) on heap
+- ✅ V0.0.7.10 Pointer comparison (`==, !=`)
+- ✅ V0.0.7.11 Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`
+- ✅ V0.0.8.1 Conditional And Operator `&&`
+- ✅ V0.0.8.2 Conditional Or Operator `||`
+- ❌ V0.0.9 Optimize Code Structure

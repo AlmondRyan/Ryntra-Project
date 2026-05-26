@@ -1,0 +1,11 @@
+public void main() {
+    long b = 123456789123456789l;
+    int a = (int)b; // RCW002
+
+    int c = 123;
+    long d = (long)c;
+
+    __builtin_print(a);
+    __builtin_print("\n");
+    __builtin_print(d);
+}

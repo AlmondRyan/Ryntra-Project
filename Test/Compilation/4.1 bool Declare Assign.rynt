@@ -1,0 +1,15 @@
+public void main() {
+    bool a = true;
+    bool b = false;
+
+    bool c = __builtin_scan();
+    bool d = __builtin_scan();
+
+    __builtin_print("C: ");
+    __builtin_print(c);
+    __builtin_print("\n");
+
+    __builtin_print("D: ");
+    __builtin_print(d);
+    __builtin_print("\n");
+}
