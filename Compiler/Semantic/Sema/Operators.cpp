@@ -78,14 +78,6 @@ namespace Ryntra::Compiler::Semantic {
         bool rightIsPtr = rightType->getKind() == TypeKind::POINTER;
 
         if ((leftIsPtr || rightIsPtr) && (node.getOp() == BinaryOpType::Add || node.getOp() == BinaryOpType::Sub)) {
-            if (unsafeDepth_ == 0) {
-                ErrorHandler::getInstance().makeError(
-                    "[RCE057]: Pointer arithmetic is only allowed inside 'unsafe' blocks.",
-                    node.getLocation());
-                lastNode = nullptr;
-                return;
-            }
-
             auto intType = TypeFactory::getPrimitive("int");
             auto longType = TypeFactory::getPrimitive("long");
             bool offsetIsInt = false;

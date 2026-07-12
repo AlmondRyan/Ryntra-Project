@@ -45,14 +45,6 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(PtrExpressionNode &node) {
-        if (unsafeDepth_ == 0) {
-            ErrorHandler::getInstance().makeError(
-                "[RCE046]: 'ptr' expression is only allowed inside 'unsafe' blocks.",
-                node.getLocation());
-            lastNode = nullptr;
-            return;
-        }
-
         node.getOperand()->accept(*this);
         auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
         if (!typedOperand) {
@@ -62,10 +54,18 @@ namespace Ryntra::Compiler::Semantic {
 
         auto operandType = typedOperand->getType();
         std::string targetVarName;
-        if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedOperand)) {
-            targetVarName = varNode->getName();
-        } else if (auto refLoadNode = std::dynamic_pointer_cast<TypedRefLoadNode>(typedOperand)) {
+
+        if (auto refLoadNode = std::dynamic_pointer_cast<TypedRefLoadNode>(typedOperand)) {
+            if (unsafeDepth_ == 0) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE046]: Converting 'ref' to 'ptr' is only allowed inside 'unsafe' blocks.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
             targetVarName = refLoadNode->getVariableName();
+        } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedOperand)) {
+            targetVarName = varNode->getName();
         } else {
             ErrorHandler::getInstance().makeError(
                 "[RCE047]: 'ptr' requires a variable operand.",

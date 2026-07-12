@@ -1,10 +1,15 @@
 import json
+import re
 import subprocess
 from pathlib import Path
 
 JSON_FILE_PATH = "../../Test/Compilation/Result/Result.json"
 TEST_DIR_PATH = "../../Test/Compilation"
 EXE_PATH = "../../cmake-build-debug/RyntraProject.exe"
+
+def strip_ansi_sequences(text):
+    ansi_escape_seq = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape_seq.sub('', text)
 
 def load_test_cases(json_path):
     try:
@@ -16,6 +21,7 @@ def load_test_cases(json_path):
         return {}
 
 def normalize_output(output_str):
+    output_str = strip_ansi_sequences(output_str)
     if not output_str.strip():
         return []
     return [line.strip() for line in output_str.strip().split('\n')]
