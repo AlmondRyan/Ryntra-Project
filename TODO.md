@@ -34,7 +34,7 @@ Semantic Note:
 - ✅ V0.0.6.1 Array Declaration
 - ✅ V0.0.6.2 Array Index Access
 - ✅ V0.0.6.3 Array Index Assignment
-- ✅ V0.0.7.1 Angle bracket syntax for type parameters `<>`
+- ✅ V0.0.7.1 Angled bracket syntax for type parameters `<>`
 - ✅ V0.0.7.2 Reference `ref<T>` (automatically dereference, always safe)
 - ✅ V0.0.7.3 Unsafe Block `unsafe`
 - ✅ V0.0.7.4 Unsafe Pointer `ptr<T>`
@@ -47,4 +47,15 @@ Semantic Note:
 - ✅ V0.0.7.11 Make array with pointer, `fixed` keyword (avoid GC move it), array access `[]` returns `ref<T>`
 - ✅ V0.0.8.1 Conditional And Operator `&&`
 - ✅ V0.0.8.2 Conditional Or Operator `||`
-- ❌ V0.0.9 Optimize Code Structure
+- ✅ V0.0.9.1 Refine Pointer Safety Model
+  - (SAFE) Pointer declaration is safe
+  - (SAFE) Pointer assignment/rebinding is safe
+  - (SAFE) `new` is safe
+  - (SAFE) Pointer comparison is safe
+  - (SAFE) Pointer arithmetic is safe (address computation only)
+  - (UNSAFE) Dereference (`.load()`) requires `unsafe` block
+  - (UNSAFE) Memory write (`.store()`) requires `unsafe` block
+  - (UNSAFE) `delete` requires `unsafe`
+  - (UNSAFE) Converting `ref<T>` to `ptr<T>` requires `unsafe`
+  - (UNSAFE) Converting arbitrary address or performing reinterpretation requires `unsafe`
+- ❌

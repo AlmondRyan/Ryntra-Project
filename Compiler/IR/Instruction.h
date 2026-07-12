@@ -8,6 +8,7 @@
 namespace Ryntra::IR {
     class Instruction : public Value {
     public:
+        // clang-format off
         enum class Opcode {
             LoadConstant,
             Constant,
@@ -18,43 +19,44 @@ namespace Ryntra::IR {
             Mul,
             Div,
             Mod,
-            BitNot,     // ~
-            LogicalNot, // !
-            BitAnd,     // &
-            BitOr,  // |
-            BitXor, // ^
-            Shl,    // <<
-            Shr,    // >>
-            SExt,   // sign extend i32 → i64
-            Trunc,  // truncate i64 → i32
-            Eq,     // ==
-            Ne,     // !=
-            Lt,     // <
-            Gt,     // >
-            Le,     // <=
-            Ge,     // >=
-            Alloca, // allocate a local variable slot
-            Load,   // load value from alloca slot
-            Store,  // store value to alloca slot
-            Br,     // unconditional branch to basic block
-            CondBr, // conditional branch to basic block
-            NewArray, // allocate array on heap
-            ArrLoad,  // load element from array by index
-            ArrStore,  // store element to array by index
-            RefCreate, // create a reference from an alloca
-            RefLoad,   // auto-dereference a ref
-            RefStore,  // store through a ref
-            PtrCreate, // create a pointer from an alloca
-            PtrLoad,   // manually dereference a pointer
-            PtrStore,  // store through a pointer
-            NewHeap,   // allocate on heap
-            DeleteHeap, // free from heap
-            ArrRef,    // create ref to array element (for arr[i] returning ref<T>)
-            PtrIndexRef, // create ref to pointer + index (for p[i] returning ref<T>)
-            PinArray,  // pin an array for fixed statement
-            UnpinArray, // unpin an array for fixed statement
-            PtrFromArray // create a pointer to array element 0 from an array value
+            BitNot,            // ~
+            LogicalNot,        // !
+            BitAnd,            // &
+            BitOr,             // |
+            BitXor,            // ^
+            Shl,               // <<
+            Shr,               // >>
+            SExt,              // sign extend i32 → i64
+            Trunc,             // truncate i64 → i32
+            Eq,                // ==
+            Ne,                // !=
+            Lt,                // <
+            Gt,                // >
+            Le,                // <=
+            Ge,                // >=
+            Alloca,            // allocate a local variable slot
+            Load,              // load value from alloca slot
+            Store,             // store value to alloca slot
+            Br,                // unconditional branch to basic block
+            CondBr,            // conditional branch to basic block
+            NewArray,          // allocate array on heap
+            ArrLoad,           // load element from array by index
+            ArrStore,          // store element to array by index
+            RefCreate,         // create a reference from an alloca
+            RefLoad,           // auto-dereference a ref
+            RefStore,          // store through a ref
+            PtrCreate,         // create a pointer from an alloca
+            PtrLoad,           // manually dereference a pointer
+            PtrStore,          // store through a pointer
+            NewHeap,           // allocate on heap
+            DeleteHeap,        // free from heap
+            ArrRef,            // create ref to array element (for arr[i] returning ref<T>)
+            PtrIndexRef,       // create ref to pointer + index (for p[i] returning ref<T>)
+            PinArray,          // pin an array for fixed statement
+            UnpinArray,        // unpin an array for fixed statement
+            PtrFromArray       // create a pointer to array element 0 from an array value
         };
+        // clang-format on
 
         Instruction(Opcode opcode, std::shared_ptr<Type> type,
                     const std::vector<std::shared_ptr<Value>> &operands = {},
@@ -187,16 +189,30 @@ namespace Ryntra::IR {
             case Opcode::Le:
             case Opcode::Ge: {
                 switch (opcode_) {
-                case Opcode::Eq: result += "eq "; break;
-                case Opcode::Ne: result += "ne "; break;
-                case Opcode::Lt: result += "lt "; break;
-                case Opcode::Gt: result += "gt "; break;
-                case Opcode::Le: result += "le "; break;
-                case Opcode::Ge: result += "ge "; break;
-                default: break;
+                case Opcode::Eq:
+                    result += "eq ";
+                    break;
+                case Opcode::Ne:
+                    result += "ne ";
+                    break;
+                case Opcode::Lt:
+                    result += "lt ";
+                    break;
+                case Opcode::Gt:
+                    result += "gt ";
+                    break;
+                case Opcode::Le:
+                    result += "le ";
+                    break;
+                case Opcode::Ge:
+                    result += "ge ";
+                    break;
+                default:
+                    break;
                 }
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -277,7 +293,8 @@ namespace Ryntra::IR {
             case Opcode::ArrLoad: {
                 result += "arrload ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -286,7 +303,8 @@ namespace Ryntra::IR {
             case Opcode::ArrStore: {
                 result += "arrstore ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -295,7 +313,8 @@ namespace Ryntra::IR {
             case Opcode::RefCreate: {
                 result += "ref.create ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -311,7 +330,8 @@ namespace Ryntra::IR {
             case Opcode::RefStore: {
                 result += "ref.store ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -320,7 +340,8 @@ namespace Ryntra::IR {
             case Opcode::PtrCreate: {
                 result += "ptr.create ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -336,7 +357,8 @@ namespace Ryntra::IR {
             case Opcode::PtrStore: {
                 result += "ptr.store ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -345,7 +367,8 @@ namespace Ryntra::IR {
             case Opcode::NewHeap: {
                 result += "newheap ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -354,7 +377,8 @@ namespace Ryntra::IR {
             case Opcode::DeleteHeap: {
                 result += "deleteheap ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -363,7 +387,8 @@ namespace Ryntra::IR {
             case Opcode::ArrRef: {
                 result += "arrref ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -372,7 +397,8 @@ namespace Ryntra::IR {
             case Opcode::PtrIndexRef: {
                 result += "ptrindexref ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
@@ -395,7 +421,8 @@ namespace Ryntra::IR {
             case Opcode::PtrFromArray: {
                 result += "ptrfromarray ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += operands_[i]->getReferenceName();
                 }
                 break;
