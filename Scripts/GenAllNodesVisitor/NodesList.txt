@@ -13,6 +13,7 @@ PtrStoreNode
 UnsafeBlockNode
 ExpressionStatementNode
 BlockNode
+ParameterNode
 FunctionDefinitionNode
 ProgramNode
 ReturnNode

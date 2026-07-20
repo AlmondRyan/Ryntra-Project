@@ -93,7 +93,15 @@ program
     ;
 
 functionDefinition
-    : PUBLIC typeSpecifier IDENTIFIER LPAREN RPAREN block
+    : PUBLIC typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
+    ;
+
+parameterList
+    : parameter (COMMA parameter)*
+    ;
+
+parameter
+    : typeSpecifier IDENTIFIER
     ;
 
 typeSpecifier
@@ -179,7 +187,7 @@ arrayDeclaration
     ;
 
 returnStatement
-    : RETURN expression SEMICOLON
+    : RETURN expression? SEMICOLON
     ;
 
 expression

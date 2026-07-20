@@ -173,6 +173,18 @@ namespace Ryntra::Compiler::Semantic {
         std::vector<std::shared_ptr<FunctionSymbol>> functions;
     };
 
+    class TypeSymbol : public Symbol {
+    public:
+        TypeSymbol(std::string name, TypePtr type)
+            : Symbol(std::move(name)), type(std::move(type)) {}
+
+        const TypePtr &getType() const { return type; }
+        SymbolKind getKind() const override { return SymbolKind::Type; }
+
+    private:
+        TypePtr type;
+    };
+
     class Scope {
     public:
         Scope *parent;
@@ -204,7 +216,7 @@ namespace Ryntra::Compiler::Semantic {
     public:
         SymbolTable();
 
-        void enterScope();
+        void enterScope(Scope::Kind kind = Scope::Kind::Global);
         void exitScope();
 
         void define(std::shared_ptr<Symbol> symbol, SourceLocation location);

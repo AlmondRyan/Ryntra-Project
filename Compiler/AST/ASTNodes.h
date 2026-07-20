@@ -272,12 +272,28 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BlockNode> body;
     };
 
+    class ParameterNode : public IASTNode {
+    public:
+        ParameterNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name)
+            : type(std::move(type)), name(std::move(name)) {}
+        std::shared_ptr<TypeSpecifierNode> getType() const { return type; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<TypeSpecifierNode> type;
+        std::shared_ptr<IdentifierNode> name;
+    };
+
     class FunctionDefinitionNode : public IASTNode {
     public:
-        FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name, std::shared_ptr<BlockNode> body)
-            : returnType(std::move(type)), name(std::move(name)), body(std::move(body)) {}
+        FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name,
+                               std::vector<std::shared_ptr<ParameterNode>> params, std::shared_ptr<BlockNode> body)
+            : returnType(std::move(type)), name(std::move(name)), parameters(std::move(params)), body(std::move(body)) {}
         std::shared_ptr<TypeSpecifierNode> getReturnType() const { return returnType; }
         std::shared_ptr<IdentifierNode> getName() const { return name; }
+        const std::vector<std::shared_ptr<ParameterNode>> &getParameters() const { return parameters; }
         std::shared_ptr<BlockNode> getBody() const { return body; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
@@ -285,6 +301,7 @@ namespace Ryntra::Compiler {
     private:
         std::shared_ptr<TypeSpecifierNode> returnType;
         std::shared_ptr<IdentifierNode> name;
+        std::vector<std::shared_ptr<ParameterNode>> parameters;
         std::shared_ptr<BlockNode> body;
     };
 

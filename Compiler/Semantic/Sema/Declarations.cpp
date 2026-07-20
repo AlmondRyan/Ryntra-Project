@@ -8,16 +8,43 @@ namespace Ryntra::Compiler::Semantic {
             auto returnTypeName = func->getReturnType()->getName();
             auto returnType = makeSTType(returnTypeName);
 
-            if (symbolTable.resolve(funcName)) {
-                ErrorHandler::getInstance().makeError(
-                    "[RCE001]: Function '" + funcName + "' is already defined.",
-                    func->getLocation());
-                continue;
+            std::vector<TypePtr> paramTypes;
+            for (const auto &param : func->getParameters()) {
+                auto paramTypeName = param->getType()->getName();
+                paramTypes.push_back(makeSTType(paramTypeName));
             }
 
-            symbolTable.define(
-                std::make_shared<FunctionSymbol>(funcName, returnType, std::vector<TypePtr>{}),
-                func->getLocation());
+            auto newFuncSym = std::make_shared<FunctionSymbol>(funcName, returnType, std::move(paramTypes));
+            auto existingSym = symbolTable.resolve(funcName);
+
+            if (!existingSym) {
+                auto overloadSet = std::make_shared<OverloadSet>(funcName);
+                overloadSet->addFunction(std::move(newFuncSym));
+                symbolTable.define(overloadSet, func->getLocation());
+            } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(existingSym)) {
+                bool isDuplicate = false;
+                for (const auto &existing : overloadSet->getFunctions()) {
+                    if (existing->getParamTypes().size() != newFuncSym->getParamTypes().size())
+                        continue;
+                    bool match = true;
+                    for (size_t i = 0; i < existing->getParamTypes().size(); ++i) {
+                        if (existing->getParamTypes()[i]->getKind() != newFuncSym->getParamTypes()[i]->getKind()) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        ErrorHandler::getInstance().makeError(
+                            "[RCE001]: Function '" + funcName + "' is already defined with the same signature.",
+                            func->getLocation());
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+                if (!isDuplicate) {
+                    overloadSet->addFunction(std::move(newFuncSym));
+                }
+            }
         }
 
         if (!symbolTable.resolve("__builtin_print")) {
@@ -100,18 +127,23 @@ namespace Ryntra::Compiler::Semantic {
         if (!mainSym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE002]: 'main' function is not defined.", node.getLocation());
-        } else {
-            auto mainFuncSym = std::dynamic_pointer_cast<FunctionSymbol>(mainSym);
-            if (!mainFuncSym) {
+        } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(mainSym)) {
+            if (overloadSet->getFunctions().empty()) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE003]: 'main' is not a function.", node.getLocation());
-            } else if (!mainFuncSym->getReturnType()) {
-                ErrorHandler::getInstance().makeError(
-                    "[RCE004]: 'main' function must have a return type.", node.getLocation());
-            } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
-                ErrorHandler::getInstance().makeError(
-                    "[RCE005]: 'main' function must return 'void'.", node.getLocation());
+            } else {
+                auto mainFuncSym = overloadSet->getFunctions()[0];
+                if (!mainFuncSym->getReturnType()) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE004]: 'main' function must have a return type.", node.getLocation());
+                } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE005]: 'main' function must return 'void'.", node.getLocation());
+                }
             }
+        } else {
+            ErrorHandler::getInstance().makeError(
+                "[RCE003]: 'main' is not a function.", node.getLocation());
         }
 
         std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> typedFunctions;
@@ -134,7 +166,19 @@ namespace Ryntra::Compiler::Semantic {
 
         auto funcName = node.getName()->getName();
 
-        symbolTable.enterScope();
+        symbolTable.enterScope(Scope::Kind::Function);
+
+        for (const auto &param : node.getParameters()) {
+            param->getType()->accept(*this);
+            auto paramType = lastType;
+            auto paramName = param->getName()->getName();
+            if (paramType) {
+                symbolTable.define(
+                    std::make_shared<VariableSymbol>(paramName, paramType),
+                    param->getLocation());
+            }
+        }
+
         node.getBody()->accept(*this);
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
         symbolTable.exitScope();

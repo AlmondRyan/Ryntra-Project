@@ -3,6 +3,7 @@
 
 namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(BlockNode &node) {
+        symbolTable.enterScope(Scope::Kind::Block);
         std::vector<std::shared_ptr<TypedStatementNode>> typedStatements;
         for (const auto &stmt : node.getStatements()) {
             stmt->accept(*this);
@@ -10,6 +11,7 @@ namespace Ryntra::Compiler::Semantic {
                 typedStatements.push_back(typedStmt);
             }
         }
+        symbolTable.exitScope();
         auto typedBlock = std::make_shared<TypedBlockNode>(std::move(typedStatements));
         typedBlock->setLocation(node.getLocation());
         lastNode = typedBlock;

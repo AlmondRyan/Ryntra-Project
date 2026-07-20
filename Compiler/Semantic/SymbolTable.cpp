@@ -9,13 +9,19 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     SymbolTable::SymbolTable() {
-        enterScope(); // Global scope
+        enterScope(Scope::Kind::Global); // Global scope
 
         auto voidType = std::make_shared<STType::VoidType>();
         auto int32Type = std::make_shared<STType::Int32Type>();
         auto int64Type = std::make_shared<STType::Int64Type>();
         auto stringType = std::make_shared<STType::StringType>();
         auto boolType = std::make_shared<STType::BoolType>();
+
+        scopes.back()->symbols["void"] = std::make_shared<TypeSymbol>("void", voidType);
+        scopes.back()->symbols["int"] = std::make_shared<TypeSymbol>("int", int32Type);
+        scopes.back()->symbols["long"] = std::make_shared<TypeSymbol>("long", int64Type);
+        scopes.back()->symbols["bool"] = std::make_shared<TypeSymbol>("bool", boolType);
+        scopes.back()->symbols["string"] = std::make_shared<TypeSymbol>("string", stringType);
 
         auto overloadSet = std::make_shared<OverloadSet>("__builtin_print");
         {
@@ -46,10 +52,10 @@ namespace Ryntra::Compiler::Semantic {
         scopes.back()->symbols["__builtin_print"] = std::move(overloadSet);
     }
 
-    void SymbolTable::enterScope() {
+    void SymbolTable::enterScope(Scope::Kind kind) {
         auto scope = std::make_unique<Scope>();
         scope->parent = scopes.empty() ? nullptr : scopes.back().get();
-        scope->kind = Scope::Kind::Global;
+        scope->kind = kind;
         scopes.emplace_back(std::move(scope));
     }
 

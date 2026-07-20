@@ -12,8 +12,26 @@ namespace Ryntra::Compiler {
     std::shared_ptr<FunctionDefinitionNode> ASTBuilder::visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *ctx) {
         auto type = visitTypeSpecifier(ctx->typeSpecifier());
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        std::vector<std::shared_ptr<ParameterNode>> params;
+        if (ctx->parameterList()) {
+            params = visitParameterList(ctx->parameterList());
+        }
         auto body = visitBlock(ctx->block());
-        return createNode<FunctionDefinitionNode>(ctx, std::move(type), std::move(nameNode), std::move(body));
+        return createNode<FunctionDefinitionNode>(ctx, std::move(type), std::move(nameNode), std::move(params), std::move(body));
+    }
+
+    std::shared_ptr<ParameterNode> ASTBuilder::visitParameter(antlr::RyntraParser::ParameterContext *ctx) {
+        auto type = visitTypeSpecifier(ctx->typeSpecifier());
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        return createNode<ParameterNode>(ctx, std::move(type), std::move(nameNode));
+    }
+
+    std::vector<std::shared_ptr<ParameterNode>> ASTBuilder::visitParameterList(antlr::RyntraParser::ParameterListContext *ctx) {
+        std::vector<std::shared_ptr<ParameterNode>> params;
+        for (auto *paramCtx : ctx->parameter()) {
+            params.push_back(visitParameter(paramCtx));
+        }
+        return params;
     }
 
     std::shared_ptr<TypeSpecifierNode> ASTBuilder::visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx) {
@@ -81,7 +99,10 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ReturnNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx) {
-        auto expr = visitExpression(ctx->expression());
+        std::shared_ptr<ExpressionNode> expr = nullptr;
+        if (ctx->expression()) {
+            expr = visitExpression(ctx->expression());
+        }
         return createNode<ReturnNode>(ctx, std::move(expr));
     }
 

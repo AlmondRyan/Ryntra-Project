@@ -58,4 +58,6 @@ Semantic Note:
   - (UNSAFE) `delete` requires `unsafe`
   - (UNSAFE) Converting `ref<T>` to `ptr<T>` requires `unsafe`
   - (UNSAFE) Converting arbitrary address or performing reinterpretation requires `unsafe`
-- ❌
+- ✅ V0.1.0.1 Function Decl Grammar and AST
+- ❌ V0.1.0.2 Function Semantic Analysis
+- ❌ V0.1.0.3 Function 
