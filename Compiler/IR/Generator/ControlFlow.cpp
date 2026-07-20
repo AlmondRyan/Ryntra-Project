@@ -6,7 +6,14 @@ namespace Ryntra::IR {
     void IRGenerator::visit(Sem::TypedProgramNode &node) {
         for (const auto &func : node.getFunctions()) {
             auto retType = toIRType(func->getReturnType());
-            auto irFunc = builder_.createFunction(func->getName(), retType, {});
+
+            std::vector<Function::Parameter> irParams;
+            for (const auto &param : func->getParameters()) {
+                auto paramIRType = toIRType(param->getType());
+                irParams.emplace_back(param->getName(), paramIRType);
+            }
+
+            auto irFunc = builder_.createFunction(func->getName(), retType, irParams);
             functionMap_[func->getName()] = irFunc;
         }
 
@@ -26,6 +33,20 @@ namespace Ryntra::IR {
         auto entry = builder_.createBasicBlock("entry");
         irFunc->addBasicBlock(entry);
         builder_.setInsertPoint(entry);
+
+        for (const auto &param : node.getParameters()) {
+            auto paramIRType = toIRType(param->getType());
+            auto allocaInst = builder_.createAlloca(
+                builder_.generateUniqueName(param->getName() + "."), paramIRType);
+            allocaMap_[param->getName()] = allocaInst;
+
+            auto paramRef = std::make_shared<Instruction>(
+                Instruction::Opcode::Constant,
+                paramIRType,
+                std::vector<std::shared_ptr<Value>>{},
+                param->getName());
+            builder_.createStore(paramRef, allocaInst);
+        }
 
         node.getBody()->accept(*this);
 
