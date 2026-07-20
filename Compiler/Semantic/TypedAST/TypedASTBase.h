@@ -13,6 +13,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedStatementNode;
     class TypedProgramNode;
     class TypedFunctionDefinitionNode;
+    class TypedParameterNode;
     class TypedBlockNode;
     class TypedIfNode;
     class TypedWhileNode;

@@ -168,6 +168,7 @@ namespace Ryntra::Compiler::Semantic {
 
         symbolTable.enterScope(Scope::Kind::Function);
 
+        std::vector<std::shared_ptr<TypedParameterNode>> typedParams;
         for (const auto &param : node.getParameters()) {
             param->getType()->accept(*this);
             auto paramType = lastType;
@@ -176,6 +177,8 @@ namespace Ryntra::Compiler::Semantic {
                 symbolTable.define(
                     std::make_shared<VariableSymbol>(paramName, paramType),
                     param->getLocation());
+                typedParams.push_back(
+                    std::make_shared<TypedParameterNode>(paramName, toTypedType(paramType)));
             }
         }
 
@@ -185,7 +188,7 @@ namespace Ryntra::Compiler::Semantic {
 
         if (typedBody) {
             auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(
-                funcName, toTypedType(returnType), typedBody);
+                funcName, toTypedType(returnType), std::move(typedParams), typedBody);
             typedFunc->setLocation(node.getLocation());
             lastNode = typedFunc;
         } else {
