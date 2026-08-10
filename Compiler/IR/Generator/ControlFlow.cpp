@@ -39,13 +39,6 @@ namespace Ryntra::IR {
             auto allocaInst = builder_.createAlloca(
                 builder_.generateUniqueName(param->getName() + "."), paramIRType);
             allocaMap_[param->getName()] = allocaInst;
-
-            auto paramRef = std::make_shared<Instruction>(
-                Instruction::Opcode::Constant,
-                paramIRType,
-                std::vector<std::shared_ptr<Value>>{},
-                param->getName());
-            builder_.createStore(paramRef, allocaInst);
         }
 
         node.getBody()->accept(*this);

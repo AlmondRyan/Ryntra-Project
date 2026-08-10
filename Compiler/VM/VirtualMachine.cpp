@@ -108,15 +108,28 @@ namespace Ryntra::VM {
         if (it == functionMap_.end()) {
             throw std::runtime_error("Entry point not found: " + entryPoint);
         }
-        return executeFunction(it->second.get(), {});
-    }
 
-    VMValue VirtualMachine::executeFunction(BytecodeFunction *func,
-                                            [[maybe_unused]] const std::vector<VMValue> &args) {
-        locals_.clear();
-        size_t ip = 0;
-        while (ip < func->instructions.size()) {
-            const auto &inst = func->instructions[ip];
+        callStack_.clear();
+        stack_.clear();
+
+        callStack_.push_back(CallFrame{
+            it->second.get(),
+            0,
+            std::vector<VMValue>(it->second->paramCount),
+            0
+        });
+
+        VMValue result;
+
+        while (!callStack_.empty()) {
+            auto &frame = callStack_.back();
+
+            if (frame.ip >= frame.func->instructions.size()) {
+                callStack_.pop_back();
+                continue;
+            }
+
+            const auto &inst = frame.func->instructions[frame.ip];
 
             switch (inst.opcode) {
             case OpCode::LoadConst: {
@@ -132,7 +145,6 @@ namespace Ryntra::VM {
                 }
                 auto *callee = functionList_[inst.operand].get();
 
-                // Collect arguments based on the callee's declared parameter count
                 size_t argCount = static_cast<size_t>(callee->paramCount);
 
                 std::vector<VMValue> callArgs(argCount);
@@ -140,11 +152,14 @@ namespace Ryntra::VM {
                     callArgs[i] = pop();
                 }
 
-                VMValue result = executeFunction(callee, callArgs);
-                if (!result.isVoid()) {
-                    push(result);
-                }
-                break;
+                ++frame.ip;
+                callStack_.push_back(CallFrame{
+                    callee,
+                    0,
+                    std::move(callArgs),
+                    stack_.size()
+                });
+                continue;
             }
 
             case OpCode::BCall: {
@@ -156,17 +171,28 @@ namespace Ryntra::VM {
                 for (int i = static_cast<int>(argCount) - 1; i >= 0; --i) {
                     callArgs[i] = pop();
                 }
-                VMValue result = builtins_[inst.operand](callArgs);
-                if (!result.isVoid())
-                    push(result);
+                VMValue builtinResult = builtins_[inst.operand](callArgs);
+                if (!builtinResult.isVoid())
+                    push(builtinResult);
                 break;
             }
 
             case OpCode::Return: {
+                VMValue retVal;
                 if (!stack_.empty()) {
-                    return pop();
+                    retVal = pop();
                 }
-                return {};
+                size_t retStackBase = frame.stackBase;
+                callStack_.pop_back();
+                if (callStack_.empty()) {
+                    result = retVal;
+                } else {
+                    stack_.resize(retStackBase);
+                    if (!retVal.isVoid()) {
+                        push(retVal);
+                    }
+                }
+                continue;
             }
 
             case OpCode::Add: {
@@ -460,31 +486,31 @@ namespace Ryntra::VM {
             case OpCode::StoreLocal: {
                 auto val = pop();
                 int32_t idx = inst.operand;
-                if (idx >= static_cast<int32_t>(locals_.size()))
-                    locals_.resize(idx + 1);
-                locals_[idx] = val;
+                if (idx >= static_cast<int32_t>(frame.locals.size()))
+                    frame.locals.resize(idx + 1);
+                frame.locals[idx] = val;
                 break;
             }
 
             case OpCode::LoadLocal: {
                 int32_t idx = inst.operand;
-                if (idx >= 0 && idx < static_cast<int32_t>(locals_.size()))
-                    push(locals_[idx]);
+                if (idx >= 0 && idx < static_cast<int32_t>(frame.locals.size()))
+                    push(frame.locals[idx]);
                 break;
             }
 
             case OpCode::Jmp:
-                ip = static_cast<size_t>(inst.operand);
+                frame.ip = static_cast<size_t>(inst.operand);
                 continue;
 
             case OpCode::Jz: {
                 auto val = pop();
                 if (val.isInt32() && val.asInt32() == 0) {
-                    ip = static_cast<size_t>(inst.operand);
+                    frame.ip = static_cast<size_t>(inst.operand);
                     continue;
                 }
                 if (val.isInt64() && val.asInt64() == 0) {
-                    ip = static_cast<size_t>(inst.operand);
+                    frame.ip = static_cast<size_t>(inst.operand);
                     continue;
                 }
                 break;
@@ -541,7 +567,8 @@ namespace Ryntra::VM {
             }
 
             case OpCode::Halt:
-                return VMValue();
+                callStack_.clear();
+                continue;
 
             case OpCode::RefCreate: {
                 auto slotVal = pop();
@@ -565,8 +592,8 @@ namespace Ryntra::VM {
                     }
                 } else if (refVal.isReference()) {
                     int32_t slot = refVal.getReferenceSlot();
-                    if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
-                        push(locals_[slot]);
+                    if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                        push(frame.locals[slot]);
                     } else {
                         throw std::runtime_error("RefLoad: invalid reference slot");
                     }
@@ -588,8 +615,8 @@ namespace Ryntra::VM {
                     }
                 } else if (refVal.isReference()) {
                     int32_t slot = refVal.getReferenceSlot();
-                    if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
-                        locals_[slot] = val;
+                    if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                        frame.locals[slot] = val;
                     } else {
                         throw std::runtime_error("RefStore: invalid reference slot");
                     }
@@ -630,8 +657,8 @@ namespace Ryntra::VM {
                         }
                     } else {
                         int32_t slot = ptrVal.getPointerSlot();
-                        if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
-                            push(locals_[slot]);
+                        if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                            push(frame.locals[slot]);
                         } else {
                             throw std::runtime_error("PtrLoad: invalid pointer slot");
                         }
@@ -663,8 +690,8 @@ namespace Ryntra::VM {
                         }
                     } else {
                         int32_t slot = ptrVal.getPointerSlot();
-                        if (slot >= 0 && slot < static_cast<int32_t>(locals_.size())) {
-                            locals_[slot] = val;
+                        if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                            frame.locals[slot] = val;
                         } else {
                             throw std::runtime_error("PtrStore: invalid pointer slot");
                         }
@@ -773,10 +800,10 @@ namespace Ryntra::VM {
                 break;
             }
 
-            ++ip;
+            ++frame.ip;
         }
 
-        return VMValue();
+        return result;
     }
 
     static const char *opcodeNames[] = {

@@ -10,6 +10,13 @@
 namespace Ryntra::VM {
     using NativeFunction = std::function<VMValue(const std::vector<VMValue> &)>;
 
+    struct CallFrame {
+        BytecodeFunction *func;
+        size_t ip;
+        std::vector<VMValue> locals;
+        size_t stackBase;
+    };
+
     class VirtualMachine {
     public:
         VirtualMachine();
@@ -22,15 +29,13 @@ namespace Ryntra::VM {
         void disassemble() const;
 
     private:
-        VMValue executeFunction(BytecodeFunction *func, const std::vector<VMValue> &args);
-
         std::vector<VMValue> stack_;
         std::vector<VMValue> constantPool_;
         std::vector<std::shared_ptr<BytecodeFunction>> functionList_;
         std::unordered_map<std::string, std::shared_ptr<BytecodeFunction>> functionMap_;
 
-        std::vector<VMValue> locals_;
-        std::vector<VMValue> heap_; // Separate heap storage — index matches BytecodeGenerator::getBuiltinIndex
+        std::vector<CallFrame> callStack_;
+        std::vector<VMValue> heap_; // Separate heap storage
         std::vector<NativeFunction> builtins_;
         std::vector<int> builtinArgCounts_;
 
