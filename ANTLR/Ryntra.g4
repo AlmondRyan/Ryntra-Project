@@ -20,6 +20,7 @@ NEW: 'new';
 DELETE: 'delete';
 REF: 'ref';
 PTR: 'ptr';
+FN: 'Fn';
 UNSAFE: 'unsafe';
 FIXED: 'fixed';
 LOAD: 'load';
@@ -60,7 +61,6 @@ BIT_XOR: '^';
 BIT_NOT: '~';
 NOT: '!';
 SHL: '<<';
-SHR: '>>';
 
 // Comparison Operators
 EQ: '==';
@@ -109,8 +109,15 @@ typeSpecifier
     | LONG
     | VOID
     | BOOL
+    | IDENTIFIER
     | REF LT typeSpecifier GT
     | PTR LT typeSpecifier GT
+    | FN LT typeSpecifier LPAREN functionTypeParamList? RPAREN GT
+    | typeSpecifier LPAREN functionTypeParamList? RPAREN
+    ;
+
+functionTypeParamList
+    : typeSpecifier (COMMA typeSpecifier)*
     ;
 
 block
@@ -210,7 +217,8 @@ expression
     | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
     | left=expression op=(PLUS|MINUS) right=expression               # PlusMinusExpression
-    | left=expression op=(SHL|SHR) right=expression                  # ShiftExpression
+    | left=expression op=SHL right=expression                        # ShiftExpression
+    | left=expression GT GT right=expression                         # ShiftExpression
     | left=expression op=BIT_AND right=expression                    # BitAndExpression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression

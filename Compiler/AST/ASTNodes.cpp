@@ -12,6 +12,22 @@ namespace Ryntra::Compiler {
         return "(TypeSpecifier " + name + ")";
     }
 
+    void FunctionTypeNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<FunctionTypeNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string FunctionTypeNode::toString() const {
+        std::stringstream ss;
+        ss << "(FunctionType " << returnType->toString();
+        for (const auto &pt : paramTypes) {
+            ss << " " << pt->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     void ArrayTypeNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ArrayTypeNode> *>(&visitor)) {
             v->visit(*this);

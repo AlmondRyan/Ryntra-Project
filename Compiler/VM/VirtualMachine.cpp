@@ -139,6 +139,16 @@ namespace Ryntra::VM {
                 break;
             }
 
+            case OpCode::LoadFunc: {
+                if (inst.operand < 0 || inst.operand >= static_cast<int32_t>(functionList_.size())) {
+                    throw std::runtime_error("Invalid function index: " + std::to_string(inst.operand));
+                }
+                VMValue funcVal;
+                funcVal.setFunctionIndex(inst.operand);
+                push(funcVal);
+                break;
+            }
+
             case OpCode::Call: {
                 if (inst.operand < 0 || inst.operand >= static_cast<int32_t>(functionList_.size())) {
                     throw std::runtime_error("Invalid function index: " + std::to_string(inst.operand));
@@ -147,6 +157,33 @@ namespace Ryntra::VM {
 
                 size_t argCount = static_cast<size_t>(callee->paramCount);
 
+                std::vector<VMValue> callArgs(argCount);
+                for (int i = static_cast<int>(argCount) - 1; i >= 0; --i) {
+                    callArgs[i] = pop();
+                }
+
+                ++frame.ip;
+                callStack_.push_back(CallFrame{
+                    callee,
+                    0,
+                    std::move(callArgs),
+                    stack_.size()
+                });
+                continue;
+            }
+
+            case OpCode::ICall: {
+                auto calleeVal = pop();
+                if (!calleeVal.isFunctionPtr()) {
+                    throw std::runtime_error("ICall: callee is not a function pointer");
+                }
+                int32_t calleeIdx = calleeVal.getFunctionIndex();
+                if (calleeIdx < 0 || calleeIdx >= static_cast<int32_t>(functionList_.size())) {
+                    throw std::runtime_error("ICall: invalid function index: " + std::to_string(calleeIdx));
+                }
+                auto *callee = functionList_[calleeIdx].get();
+
+                size_t argCount = static_cast<size_t>(callee->paramCount);
                 std::vector<VMValue> callArgs(argCount);
                 for (int i = static_cast<int>(argCount) - 1; i >= 0; --i) {
                     callArgs[i] = pop();
@@ -808,7 +845,9 @@ namespace Ryntra::VM {
 
     static const char *opcodeNames[] = {
         "LoadConst",
+        "LoadFunc",
         "Call",
+        "ICall",
         "BCall",
         "Return",
         "Add",
@@ -872,6 +911,7 @@ namespace Ryntra::VM {
                                            : "???";
                     std::cout << "  " << i << ": " << name;
                     if (inst.opcode == OpCode::LoadConst ||
+                        inst.opcode == OpCode::LoadFunc ||
                         inst.opcode == OpCode::StoreLocal ||
                         inst.opcode == OpCode::LoadLocal ||
                         inst.opcode == OpCode::Jmp ||

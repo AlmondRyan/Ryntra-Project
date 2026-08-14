@@ -339,6 +339,54 @@ namespace Ryntra::Compiler::Semantic {
         std::string arrayName;
     };
 
+    class TypedFunctionAddressNode : public TypedExpressionNode {
+    public:
+        TypedFunctionAddressNode(std::string functionName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), functionName(std::move(functionName)) {}
+
+        const std::string &getFunctionName() const { return functionName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFunctionAddress(" + functionName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string functionName;
+    };
+
+    class TypedFunctionPointerCallNode : public TypedExpressionNode {
+    public:
+        TypedFunctionPointerCallNode(std::shared_ptr<TypedExpressionNode> callee,
+                                     std::vector<std::shared_ptr<TypedExpressionNode>> args,
+                                     std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), callee(std::move(callee)), arguments(std::move(args)) {}
+
+        std::shared_ptr<TypedExpressionNode> getCallee() const { return callee; }
+        const std::vector<std::shared_ptr<TypedExpressionNode>> &getArguments() const { return arguments; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFunctionPointerCall: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Callee:" << std::endl;
+            callee->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Arguments:" << std::endl;
+            for (const auto &arg : arguments) {
+                arg->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> callee;
+        std::vector<std::shared_ptr<TypedExpressionNode>> arguments;
+    };
+
     class TypedPtrOffsetNode : public TypedExpressionNode {
     public:
         TypedPtrOffsetNode(std::string ptrVarName, std::shared_ptr<TypedExpressionNode> offset, bool isAdd, std::shared_ptr<Type> type)

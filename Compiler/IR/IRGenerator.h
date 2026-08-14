@@ -60,6 +60,8 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedPtrIndexAccessNode &node) override;
         void visit(Compiler::Semantic::TypedPtrIndexAssignmentNode &node) override;
         void visit(Compiler::Semantic::TypedPtrFromArrayNode &node) override;
+        void visit(Compiler::Semantic::TypedFunctionAddressNode &node) override;
+        void visit(Compiler::Semantic::TypedFunctionPointerCallNode &node) override;
 
     private:
         IRBuilder builder_;

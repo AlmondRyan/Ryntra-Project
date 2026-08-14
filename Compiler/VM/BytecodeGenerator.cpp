@@ -168,6 +168,28 @@ namespace Ryntra::VM {
             break;
         }
 
+        case IR::Instruction::Opcode::FuncAddr: {
+            if (!operands.empty()) {
+                auto func = std::dynamic_pointer_cast<IR::Function>(operands[0]);
+                if (func) {
+                    int32_t funcIdx = getFunctionIndex(func->getName());
+                    currentFunction_->addInstruction(OpCode::LoadFunc, funcIdx);
+                }
+            }
+            break;
+        }
+
+        case IR::Instruction::Opcode::CallIndirect: {
+            // operands[0] = callee function pointer value, rest = args
+            // Push args first, then the callee so it ends up on top of the stack
+            for (size_t i = 1; i < operands.size(); ++i) {
+                pushOperandValue(operands[i]);
+            }
+            pushOperandValue(operands[0]);
+            currentFunction_->addInstruction(OpCode::ICall, 0);
+            break;
+        }
+
         case IR::Instruction::Opcode::Return: {
             if (!operands.empty()) {
                 pushOperandValue(operands[0]);

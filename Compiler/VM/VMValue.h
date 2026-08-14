@@ -50,6 +50,12 @@ namespace Ryntra::VM {
         void *asFunctionPtr() const { return std::get<void *>(data_); }
         std::shared_ptr<ArrayData> asArray() const { return std::get<std::shared_ptr<ArrayData>>(data_); }
 
+        // Function pointer support — function pointers are stored as int32
+        // indices into the VM's function table.
+        void setFunctionIndex(int32_t index) { type_ = Type::FunctionPtr; data_ = index; }
+        int32_t getFunctionIndex() const { return std::get<int32_t>(data_); }
+        bool isFunctionPtr() const { return type_ == Type::FunctionPtr; }
+
         bool isVoid() const { return type_ == Type::Void; }
         bool isInt32() const { return type_ == Type::Int32; }
         bool isInt64() const { return type_ == Type::Int64; }

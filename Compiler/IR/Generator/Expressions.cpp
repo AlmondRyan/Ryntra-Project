@@ -111,4 +111,47 @@ namespace Ryntra::IR {
         auto callInst = builder_.createCall(callName, callee, argValues);
         lastValue_ = isVoidCall ? nullptr : callInst;
     }
+
+    void IRGenerator::visit(Sem::TypedFunctionAddressNode &node) {
+        auto it = functionMap_.find(node.getFunctionName());
+        if (it == functionMap_.end()) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        auto func = it->second;
+        auto ptrType = toIRType(node.getType());
+        auto addrInst = builder_.createFuncAddr(
+            builder_.generateUniqueName(""), func, ptrType);
+        lastValue_ = addrInst;
+    }
+
+    void IRGenerator::visit(Sem::TypedFunctionPointerCallNode &node) {
+        node.getCallee()->accept(*this);
+        auto calleeVal = lastValue_;
+        if (!calleeVal) {
+            lastValue_ = nullptr;
+            return;
+        }
+
+        std::vector<std::shared_ptr<Value>> argValues;
+        for (const auto &arg : node.getArguments()) {
+            arg->accept(*this);
+            if (lastValue_) {
+                auto v = lastValue_;
+                if (auto imm = std::dynamic_pointer_cast<ImmediateValue>(v)) {
+                    v = builder_.createConstant(
+                        builder_.generateUniqueName(""), imm->getType(), imm);
+                }
+                argValues.push_back(v);
+            }
+        }
+
+        auto resultType = toIRType(node.getType());
+        bool isVoidCall = resultType->isVoid();
+        std::string callName = isVoidCall ? "" : builder_.generateUniqueName("");
+        auto callInst = builder_.createCallIndirect(
+            callName, calleeVal, argValues, resultType);
+        lastValue_ = isVoidCall ? nullptr : callInst;
+    }
 } // namespace Ryntra::IR

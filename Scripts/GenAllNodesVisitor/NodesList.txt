@@ -1,4 +1,5 @@
 TypeSpecifierNode
+FunctionTypeNode
 ArrayTypeNode
 ReferenceTypeNode
 NullLiteralNode

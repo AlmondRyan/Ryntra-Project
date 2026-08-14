@@ -5,13 +5,14 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(ProgramNode &node) {
         for (const auto &func : node.getFunctions()) {
             auto funcName = func->getName()->getName();
-            auto returnTypeName = func->getReturnType()->getName();
-            auto returnType = makeSTType(returnTypeName);
+
+            func->getReturnType()->accept(*this);
+            auto returnType = lastType ? lastType : makeSTType("unknown");
 
             std::vector<TypePtr> paramTypes;
             for (const auto &param : func->getParameters()) {
-                auto paramTypeName = param->getType()->getName();
-                paramTypes.push_back(makeSTType(paramTypeName));
+                param->getType()->accept(*this);
+                paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
             }
 
             auto newFuncSym = std::make_shared<FunctionSymbol>(funcName, returnType, std::move(paramTypes));
@@ -223,7 +224,49 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(TypeSpecifierNode &node) {
+        if (node.getFunctionType()) {
+            node.getFunctionType()->accept(*this);
+            return;
+        }
+
+        if (!node.getWrappedBareFunctionType().empty()) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE072]: '" + node.getWrappedBareFunctionType() +
+                    "' is not a valid type that can be placed in 'ptr<T>'. Use 'Fn<...>' to declare a function type.",
+                node.getLocation());
+        }
+
+        checkKnownTypeNames(node.getName(), node.getLocation());
+
         lastType = makeSTType(node.getName());
+    }
+
+    void SemanticAnalyzer::visit(FunctionTypeNode &node) {
+        if (node.isBare()) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE073]: Function type '" + node.getText() +
+                    "' must be written as 'Fn<" + node.getText() + ">'.",
+                node.getLocation());
+        }
+
+        node.getReturnType()->accept(*this);
+        auto returnType = lastType;
+        if (!returnType) {
+            lastType = nullptr;
+            return;
+        }
+
+        std::vector<TypePtr> paramTypes;
+        for (const auto &param : node.getParamTypes()) {
+            param->accept(*this);
+            if (!lastType) {
+                lastType = nullptr;
+                return;
+            }
+            paramTypes.push_back(lastType);
+        }
+
+        lastType = std::make_shared<STType::FunctionType>(returnType, std::move(paramTypes));
     }
 
     void SemanticAnalyzer::visit(ArrayTypeNode &node) {

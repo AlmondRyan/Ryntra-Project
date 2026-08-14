@@ -233,6 +233,17 @@ namespace Ryntra::Compiler::Semantic {
             return;
         }
 
+        if (exprType->getKind() == TypeKind::POINTER) {
+            auto &ptrSemType = static_cast<const PointerType &>(*exprType);
+            if (ptrSemType.getElementType()->getKind() == TypeKind::FUNCTION) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE077]: Cannot delete a function pointer.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+        }
+
         auto typedDelete = std::make_shared<TypedDeleteNode>(typedExpr);
         typedDelete->setLocation(node.getLocation());
         lastNode = typedDelete;

@@ -63,4 +63,4 @@ Semantic Note:
 - ✅ V0.1.0.3 Function IR Generation
 - ✅ V0.1.0.4 Call Stack, Call Frame
 - ✅ V0.1.0.5 Function VM and Recursion
-- ❌ V0.1.0.6 Function Pointer
+- ✅ V0.1.0.6 Function Pointer

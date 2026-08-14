@@ -87,4 +87,14 @@ namespace Ryntra::Compiler::Semantic {
         return scopes.back()->find(name);
     }
 
+    bool SymbolTable::isAddressable(const std::shared_ptr<Symbol> &symbol) {
+        if (!symbol) {
+            return false;
+        }
+        auto kind = symbol->getKind();
+        return kind == SymbolKind::Variable ||
+               kind == SymbolKind::Function ||
+               kind == SymbolKind::OverloadSet;
+    }
+
 } // namespace Ryntra::Compiler::Semantic

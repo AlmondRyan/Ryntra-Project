@@ -13,6 +13,8 @@ namespace Ryntra::IR {
             LoadConstant,
             Constant,
             Call,
+            FuncAddr,          // take the address of a function (function pointer)
+            CallIndirect,      // call through a function pointer value
             Return,
             Add,
             Sub,
@@ -99,6 +101,27 @@ namespace Ryntra::IR {
                 result += "call ";
                 // operands[0] is the callee (Function), rest are args
                 result += operands_[0]->getReferenceName() + "(";
+                for (size_t i = 1; i < operands_.size(); ++i) {
+                    if (i > 1)
+                        result += ", ";
+                    result += operands_[i]->getReferenceName();
+                }
+                result += ")";
+                break;
+            }
+
+            case Opcode::FuncAddr: {
+                result += "funcaddr ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                break;
+            }
+
+            case Opcode::CallIndirect: {
+                result += "callindirect ";
+                if (!operands_.empty())
+                    result += operands_[0]->getReferenceName();
+                result += "(";
                 for (size_t i = 1; i < operands_.size(); ++i) {
                     if (i > 1)
                         result += ", ";

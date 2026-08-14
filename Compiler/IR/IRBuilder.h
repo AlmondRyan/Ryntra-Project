@@ -50,6 +50,15 @@ namespace Ryntra::IR {
                                                  std::shared_ptr<Function> function,
                                                  const std::vector<std::shared_ptr<Value>> &args);
 
+        std::shared_ptr<Instruction> createFuncAddr(const std::string &name,
+                                                     std::shared_ptr<Function> function,
+                                                     std::shared_ptr<Type> type);
+
+        std::shared_ptr<Instruction> createCallIndirect(const std::string &name,
+                                                        std::shared_ptr<Value> callee,
+                                                        const std::vector<std::shared_ptr<Value>> &args,
+                                                        std::shared_ptr<Type> resultType);
+
         std::shared_ptr<Instruction> createReturn(const std::string &name,
                                                   std::shared_ptr<Value> value = nullptr);
 

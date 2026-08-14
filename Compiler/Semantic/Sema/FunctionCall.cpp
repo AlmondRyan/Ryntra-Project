@@ -16,6 +16,50 @@ namespace Ryntra::Compiler::Semantic {
             typedArgs.push_back(typedArg);
         }
 
+        // Case: calling through a function pointer variable, e.g. `p_add(3, 4)`
+        if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
+            auto varSTType = varSym->getType();
+            if (varSTType->getKind() == STType::TypeKind::Pointer) {
+                auto &ptrSTType = static_cast<const STType::PointerType &>(*varSTType);
+                if (ptrSTType.getElementType()->getKind() == STType::TypeKind::Function) {
+                    auto fnTyped = toTypedType(ptrSTType.getElementType());
+                    auto &fnType = static_cast<const FunctionType &>(*fnTyped);
+                    const auto &paramTypes = fnType.getParamTypes();
+                    auto resultType = fnType.getReturnType();
+
+                    if (args.size() != paramTypes.size()) {
+                        ErrorHandler::getInstance().makeError(
+                            "[RCE070]: Function pointer '" + funcName + "' expects " +
+                                std::to_string(paramTypes.size()) + " arguments, but got " +
+                                std::to_string(args.size()) + ".",
+                            node.getLocation());
+                    }
+
+                    for (size_t i = 0; i < typedArgs.size(); ++i) {
+                        auto typedArg = typedArgs[i];
+                        if (!typedArg || i >= paramTypes.size())
+                            continue;
+                        auto actualType = typedArg->getType();
+                        if (!paramTypes[i]->equals(*actualType) && actualType->toString() != "unknown") {
+                            ErrorHandler::getInstance().makeError(
+                                "[RCE071]: Argument " + std::to_string(i + 1) +
+                                    " expects type '" + paramTypes[i]->toString() +
+                                    "', but got '" + actualType->toString() + "'.",
+                                args[i]->getLocation());
+                        }
+                    }
+
+                    auto calleeExpr = std::make_shared<TypedVariableNode>(funcName, toTypedType(varSTType));
+                    calleeExpr->setLocation(funcNameNode->getLocation());
+
+                    auto typedCall = std::make_shared<TypedFunctionPointerCallNode>(calleeExpr, typedArgs, resultType);
+                    typedCall->setLocation(node.getLocation());
+                    lastNode = typedCall;
+                    return;
+                }
+            }
+        }
+
         TypePtr stReturnType;
         std::vector<TypePtr> expectedParamTypes;
 

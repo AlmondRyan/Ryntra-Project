@@ -45,6 +45,21 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
 #endif // #ifdef SHOW_LOG
 
+        // Do not lower a partially recovered tree any further: syntax errors are fatal.
+        bool hasParseError = false;
+        for (const auto &error : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+            if (error.type == Ryntra::Compiler::kError) {
+                hasParseError = true;
+                break;
+            }
+        }
+
+        if (hasParseError) {
+            Ryntra::Compiler::ErrorHandler::getInstance().print();
+            std::cout << "Semantic Analysis Failed." << std::endl;
+            return 0;
+        }
+
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
 

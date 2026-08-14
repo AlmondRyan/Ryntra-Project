@@ -31,7 +31,8 @@ namespace Ryntra::Compiler::Semantic {
             String,
             Array,
             Reference,
-            Pointer
+            Pointer,
+            Function
         };
         // clang-format on
 
@@ -108,6 +109,18 @@ namespace Ryntra::Compiler::Semantic {
             const std::shared_ptr<Type> &getElementType() const { return elementType; }
         private:
             std::shared_ptr<Type> elementType;
+        };
+
+        class FunctionType : public Type {
+        public:
+            FunctionType(std::shared_ptr<Type> returnType, std::vector<std::shared_ptr<Type>> paramTypes)
+                : returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
+            TypeKind getKind() const override { return TypeKind::Function; }
+            const std::shared_ptr<Type> &getReturnType() const { return returnType; }
+            const std::vector<std::shared_ptr<Type>> &getParamTypes() const { return paramTypes; }
+        private:
+            std::shared_ptr<Type> returnType;
+            std::vector<std::shared_ptr<Type>> paramTypes;
         };
     } // namespace STType
 
@@ -221,6 +234,10 @@ namespace Ryntra::Compiler::Semantic {
 
         void define(std::shared_ptr<Symbol> symbol, SourceLocation location);
         std::shared_ptr<Symbol> resolve(const std::string &name);
+
+        // True if the symbol is an entity whose address can be taken
+        // (a variable or a function; `Type`/`Field` symbols are not addressable).
+        static bool isAddressable(const std::shared_ptr<Symbol> &symbol);
 
     private:
         std::vector<std::unique_ptr<Scope>> scopes;

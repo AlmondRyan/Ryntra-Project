@@ -35,7 +35,47 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<TypeSpecifierNode> ASTBuilder::visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx) {
-        return createNode<TypeSpecifierNode>(ctx, ctx->getText());
+        auto node = createNode<TypeSpecifierNode>(ctx, ctx->getText());
+        if (ctx->FN()) {
+            auto returnType = visitTypeSpecifier(ctx->typeSpecifier());
+            std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes;
+            if (ctx->functionTypeParamList()) {
+                for (auto *paramCtx : ctx->functionTypeParamList()->typeSpecifier()) {
+                    paramTypes.push_back(visitTypeSpecifier(paramCtx));
+                }
+            }
+            auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes));
+            fnType->setLocation(getLoc(ctx));
+            node->setFunctionType(fnType);
+        } else if (ctx->LPAREN()) {
+            // Bare C-style function type, e.g. `int(int, int)` (without the `Fn<...>` keyword)
+            auto returnType = visitTypeSpecifier(ctx->typeSpecifier());
+            std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes;
+            if (ctx->functionTypeParamList()) {
+                for (auto *paramCtx : ctx->functionTypeParamList()->typeSpecifier()) {
+                    paramTypes.push_back(visitTypeSpecifier(paramCtx));
+                }
+            }
+            auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes), true);
+            fnType->setLocation(getLoc(ctx));
+            node->setFunctionType(fnType);
+        } else if ((ctx->PTR() || ctx->REF()) && ctx->typeSpecifier()) {
+            auto bareText = findBareFunctionTypeText(ctx->typeSpecifier());
+            if (!bareText.empty()) {
+                node->setWrappedBareFunctionType(bareText);
+            }
+        }
+        return node;
+    }
+
+    std::string ASTBuilder::findBareFunctionTypeText(antlr::RyntraParser::TypeSpecifierContext *ctx) {
+        if (ctx->LPAREN() && !ctx->FN()) {
+            return ctx->getText();
+        }
+        if ((ctx->PTR() || ctx->REF()) && ctx->typeSpecifier()) {
+            return findBareFunctionTypeText(ctx->typeSpecifier());
+        }
+        return "";
     }
 
     std::shared_ptr<ReferenceTypeNode> ASTBuilder::visitReferenceType(antlr::RyntraParser::TypeSpecifierContext *ctx) {

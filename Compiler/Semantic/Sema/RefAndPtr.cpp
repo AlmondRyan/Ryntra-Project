@@ -45,6 +45,55 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(PtrExpressionNode &node) {
+        // `ptr(...)` is a context-sensitive expression: it accepts any addressable
+        // entity (a function or a variable), not just a variable.
+        if (auto varNode = std::dynamic_pointer_cast<VariableNode>(node.getOperand())) {
+            auto varName = varNode->getName()->getName();
+            auto sym = symbolTable.resolve(varName);
+
+            if (!sym || !SymbolTable::isAddressable(sym)) {
+                if (!sym) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE075]: Cannot take the address of '" + varName +
+                            "': no function or variable named '" + varName + "' is defined.",
+                        node.getLocation());
+                } else {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE076]: Cannot take the address of '" + varName + "': it is not an addressable entity.",
+                        node.getLocation());
+                }
+                lastNode = nullptr;
+                return;
+            }
+
+            // Function symbols -> take the function address
+            std::shared_ptr<FunctionSymbol> targetFn;
+            if (auto fnSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
+                targetFn = fnSym;
+            } else if (auto ovSet = std::dynamic_pointer_cast<OverloadSet>(sym)) {
+                targetFn = pickFunctionForAddress(ovSet, node.getLocation());
+            }
+
+            if (targetFn) {
+                auto fnType = functionTypeOf(targetFn);
+                auto ptrType = TypeFactory::getPointer(fnType);
+                auto typedAddr = std::make_shared<TypedFunctionAddressNode>(targetFn->getName(), ptrType);
+                typedAddr->setLocation(node.getLocation());
+                lastNode = typedAddr;
+                return;
+            }
+
+            bool isFunctionSym = std::dynamic_pointer_cast<FunctionSymbol>(sym) ||
+                                 std::dynamic_pointer_cast<OverloadSet>(sym);
+            if (isFunctionSym) {
+                // Overload resolution failed; the error was already reported.
+                lastNode = nullptr;
+                return;
+            }
+
+            // Variable symbol -> fall through to the regular pointer creation logic
+        }
+
         node.getOperand()->accept(*this);
         auto typedOperand = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
         if (!typedOperand) {

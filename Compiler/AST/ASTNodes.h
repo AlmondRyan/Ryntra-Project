@@ -30,6 +30,8 @@ namespace Ryntra::Compiler {
     class ExpressionNode : public IASTNode {};
     class StatementNode : public IASTNode {};
 
+    class FunctionTypeNode;
+
     class TypeSpecifierNode : public IASTNode {
     public:
         TypeSpecifierNode(const std::string &name) : name(name) {}
@@ -37,8 +39,37 @@ namespace Ryntra::Compiler {
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
 
+        std::shared_ptr<FunctionTypeNode> getFunctionType() const { return functionType; }
+        void setFunctionType(std::shared_ptr<FunctionTypeNode> fnType) { functionType = std::move(fnType); }
+
+        const std::string &getWrappedBareFunctionType() const { return wrappedBareFunctionType; }
+        void setWrappedBareFunctionType(std::string typeText) { wrappedBareFunctionType = std::move(typeText); }
+
     private:
         std::string name;
+        std::shared_ptr<FunctionTypeNode> functionType;
+        std::string wrappedBareFunctionType;
+    };
+
+    class FunctionTypeNode : public IASTNode {
+    public:
+        FunctionTypeNode(std::string text,
+                         std::shared_ptr<TypeSpecifierNode> returnType,
+                         std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes,
+                         bool bare = false)
+            : text(std::move(text)), returnType(std::move(returnType)), paramTypes(std::move(paramTypes)), bare(bare) {}
+        const std::string &getText() const { return text; }
+        std::shared_ptr<TypeSpecifierNode> getReturnType() const { return returnType; }
+        const std::vector<std::shared_ptr<TypeSpecifierNode>> &getParamTypes() const { return paramTypes; }
+        bool isBare() const { return bare; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::string text;
+        std::shared_ptr<TypeSpecifierNode> returnType;
+        std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes;
+        bool bare;
     };
 
     class ArrayTypeNode : public IASTNode {

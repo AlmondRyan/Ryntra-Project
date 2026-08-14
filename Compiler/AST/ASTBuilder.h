@@ -73,6 +73,9 @@ namespace Ryntra::Compiler {
             return SourceLocation(node->getSymbol()->getLine(), node->getSymbol()->getCharPositionInLine());
         }
 
+        // Walk into ptr/ref element types to locate a bare (non-Fn) function type
+        static std::string findBareFunctionTypeText(antlr::RyntraParser::TypeSpecifierContext *ctx);
+
         template <typename Tp, typename... Args>
         std::shared_ptr<Tp> createNode(antlr4::ParserRuleContext *ctx, Args &&...args) {
             auto node = std::make_shared<Tp>(std::forward<Args>(args)...);
