@@ -137,6 +137,24 @@
         {
             "fileName": "8.2 Conditional or Operator.rynt",
             "expectOutput": "yes"
+        },
+        {
+            "fileName": "8.3 Function Pointer.rynt",
+            "expectOutput": ["7", "6", "11", "120", "hi", "15"]
+        },
+        {
+            "fileName": "8.4 Function Pointer Generic Syntax Error.rynt",
+            "expectOutput": [
+                "[Error]: (l: 2, c: 21) no viable alternative at input 'ptr<Fn<int(int)>p'",
+                "Semantic Analysis Failed."
+            ]
+        },
+        {
+            "fileName": "8.5 Delete Function Pointer Error.rynt",
+            "expectOutput": [
+                "[Error]: (l: 8, c: 8) [RCE077]: Cannot delete a function pointer.",
+                "Semantic Analysis Failed."
+            ]
         }
     ]
 }

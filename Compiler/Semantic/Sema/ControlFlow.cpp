@@ -3,6 +3,7 @@
 
 namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(BlockNode &node) {
+        symbolTable.enterScope(Scope::Kind::Block);
         std::vector<std::shared_ptr<TypedStatementNode>> typedStatements;
         for (const auto &stmt : node.getStatements()) {
             stmt->accept(*this);
@@ -10,6 +11,7 @@ namespace Ryntra::Compiler::Semantic {
                 typedStatements.push_back(typedStmt);
             }
         }
+        symbolTable.exitScope();
         auto typedBlock = std::make_shared<TypedBlockNode>(std::move(typedStatements));
         typedBlock->setLocation(node.getLocation());
         lastNode = typedBlock;
@@ -140,13 +142,17 @@ namespace Ryntra::Compiler::Semantic {
             auto exprType = typedExpr->getType();
             if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
                 auto rawExpr = node.getExpression();
-            if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PtrStoreNode>(rawExpr)) {
+                bool isStoreMethodCall = false;
+                if (auto methodCall = std::dynamic_pointer_cast<MethodCallNode>(rawExpr)) {
+                    isStoreMethodCall = methodCall->getMethodName() == "store";
+                }
+                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr) &&
+                    !isStoreMethodCall) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());

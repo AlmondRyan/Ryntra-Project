@@ -1,4 +1,5 @@
 TypeSpecifierNode
+FunctionTypeNode
 ArrayTypeNode
 ReferenceTypeNode
 NullLiteralNode
@@ -6,13 +7,13 @@ BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode
+MethodCallNode
 RefExpressionNode
 PtrExpressionNode
-PtrLoadNode
-PtrStoreNode
 UnsafeBlockNode
 ExpressionStatementNode
 BlockNode
+ParameterNode
 FunctionDefinitionNode
 ProgramNode
 ReturnNode

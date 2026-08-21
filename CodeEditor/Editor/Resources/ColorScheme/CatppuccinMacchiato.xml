@@ -13,7 +13,7 @@
         <Color name="Surface1" hex="#494d64"/>
     </Palette>
     <Styles>
-        <Style name="Keyword" color="Mauve" bold="true"/>
+        <Style name="Keyword" color="Mauve" bold="true" italic="true"/>
         <Style name="Comment" color="Surface2" italic="true"/>
         <Style name="String" color="Green"/>
         <Style name="Number" color="Peach"/>

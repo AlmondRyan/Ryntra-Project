@@ -12,6 +12,22 @@ namespace Ryntra::Compiler {
         return "(TypeSpecifier " + name + ")";
     }
 
+    void FunctionTypeNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<FunctionTypeNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string FunctionTypeNode::toString() const {
+        std::stringstream ss;
+        ss << "(FunctionType " << returnType->toString();
+        for (const auto &pt : paramTypes) {
+            ss << " " << pt->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     void ArrayTypeNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<ArrayTypeNode> *>(&visitor)) {
             v->visit(*this);
@@ -125,7 +141,10 @@ namespace Ryntra::Compiler {
     }
 
     std::string ReturnNode::toString() const {
-        return "(Return " + value->toString() + ")";
+        if (value) {
+            return "(Return " + value->toString() + ")";
+        }
+        return "(Return)";
     }
 
     void IfNode::accept(IVisitor &visitor) {
@@ -190,6 +209,16 @@ namespace Ryntra::Compiler {
         return "(Continue)";
     }
 
+    void ParameterNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ParameterNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ParameterNode::toString() const {
+        return "(Parameter " + type->toString() + " " + name->toString() + ")";
+    }
+
     void FunctionDefinitionNode::accept(IVisitor &visitor) {
         if (auto *v = dynamic_cast<Visitor<FunctionDefinitionNode> *>(&visitor)) {
             v->visit(*this);
@@ -197,7 +226,13 @@ namespace Ryntra::Compiler {
     }
 
     std::string FunctionDefinitionNode::toString() const {
-        return "(FunctionDefinition " + returnType->toString() + " " + name->toString() + " " + body->toString() + ")";
+        std::stringstream ss;
+        ss << "(FunctionDefinition " << returnType->toString() << " " << name->toString();
+        for (const auto &param : parameters) {
+            ss << " " << param->toString();
+        }
+        ss << " " << body->toString() << ")";
+        return ss.str();
     }
 
     void ProgramNode::accept(IVisitor &visitor) {
@@ -399,24 +434,18 @@ namespace Ryntra::Compiler {
         return "(Ptr " + operand->toString() + ")";
     }
 
-    void PtrLoadNode::accept(IVisitor &visitor) {
-        if (auto *v = dynamic_cast<Visitor<PtrLoadNode> *>(&visitor)) {
+    void MethodCallNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<MethodCallNode> *>(&visitor)) {
             v->visit(*this);
         }
     }
 
-    std::string PtrLoadNode::toString() const {
-        return "(PtrLoad " + ptrExpr->toString() + ")";
-    }
-
-    void PtrStoreNode::accept(IVisitor &visitor) {
-        if (auto *v = dynamic_cast<Visitor<PtrStoreNode> *>(&visitor)) {
-            v->visit(*this);
+    std::string MethodCallNode::toString() const {
+        std::string result = "(MethodCall ." + methodName + "() " + object->toString();
+        for (const auto &arg : arguments) {
+            result += " " + arg->toString();
         }
-    }
-
-    std::string PtrStoreNode::toString() const {
-        return "(PtrStore " + ptrExpr->toString() + " " + value->toString() + ")";
+        return result + ")";
     }
 
     void RefExpressionNode::accept(IVisitor &visitor) {

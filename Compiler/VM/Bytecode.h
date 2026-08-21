@@ -8,7 +8,9 @@ namespace Ryntra::VM {
     // clang-format off
     enum class OpCode : uint8_t {
         LoadConst,      // Load constant onto stack
+        LoadFunc,       // Load function pointer by function index
         Call,           // Call user-defined function by index
+        ICall,          // Call through a function pointer value (popped from stack)
         BCall,          // Call builtin function by builtin table index (0=print, ...)
         Return,         // Return from function
         Add,            // Add two values

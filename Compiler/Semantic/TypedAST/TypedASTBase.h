@@ -13,6 +13,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedStatementNode;
     class TypedProgramNode;
     class TypedFunctionDefinitionNode;
+    class TypedParameterNode;
     class TypedBlockNode;
     class TypedIfNode;
     class TypedWhileNode;
@@ -57,6 +58,8 @@ namespace Ryntra::Compiler::Semantic {
     class TypedPtrIndexAccessNode;
     class TypedPtrIndexAssignmentNode;
     class TypedPtrFromArrayNode;
+    class TypedFunctionAddressNode;
+    class TypedFunctionPointerCallNode;
 
     class ITypedVisitor {
     public:
@@ -107,6 +110,8 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedPtrIndexAccessNode &node) = 0;
         virtual void visit(TypedPtrIndexAssignmentNode &node) = 0;
         virtual void visit(TypedPtrFromArrayNode &node) = 0;
+        virtual void visit(TypedFunctionAddressNode &node) {}
+        virtual void visit(TypedFunctionPointerCallNode &node) {}
     };
 
     class ITypedASTNode {

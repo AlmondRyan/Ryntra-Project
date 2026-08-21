@@ -20,10 +20,13 @@ NEW: 'new';
 DELETE: 'delete';
 REF: 'ref';
 PTR: 'ptr';
+FN: 'Fn';
 UNSAFE: 'unsafe';
 FIXED: 'fixed';
-LOAD: 'load';
-STORE: 'store';
+
+// this should never exists
+// LOAD: 'load';
+// STORE: 'store';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -60,7 +63,6 @@ BIT_XOR: '^';
 BIT_NOT: '~';
 NOT: '!';
 SHL: '<<';
-SHR: '>>';
 
 // Comparison Operators
 EQ: '==';
@@ -93,7 +95,15 @@ program
     ;
 
 functionDefinition
-    : PUBLIC typeSpecifier IDENTIFIER LPAREN RPAREN block
+    : PUBLIC typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
+    ;
+
+parameterList
+    : parameter (COMMA parameter)*
+    ;
+
+parameter
+    : typeSpecifier IDENTIFIER
     ;
 
 typeSpecifier
@@ -101,8 +111,15 @@ typeSpecifier
     | LONG
     | VOID
     | BOOL
+    | IDENTIFIER
     | REF LT typeSpecifier GT
     | PTR LT typeSpecifier GT
+    | FN LT typeSpecifier LPAREN functionTypeParamList? RPAREN GT
+    | typeSpecifier LPAREN functionTypeParamList? RPAREN
+    ;
+
+functionTypeParamList
+    : typeSpecifier (COMMA typeSpecifier)*
     ;
 
 block
@@ -179,7 +196,7 @@ arrayDeclaration
     ;
 
 returnStatement
-    : RETURN expression SEMICOLON
+    : RETURN expression? SEMICOLON
     ;
 
 expression
@@ -192,8 +209,7 @@ expression
     | expression INC                                                # PostfixIncExpression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
-    | ptr=expression DOT LOAD LPAREN RPAREN                         # PtrLoadExpression
-    | ptr=expression DOT STORE LPAREN value=expression RPAREN       # PtrStoreExpression
+    | object=expression DOT IDENTIFIER LPAREN argumentList? RPAREN  # MethodCallExpression
     | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
@@ -202,7 +218,8 @@ expression
     | NOT expression                                                # NotExpression
     | left=expression op=(MUL|DIV|MOD) right=expression              # MulDivModExpression
     | left=expression op=(PLUS|MINUS) right=expression               # PlusMinusExpression
-    | left=expression op=(SHL|SHR) right=expression                  # ShiftExpression
+    | left=expression op=SHL right=expression                        # ShiftExpression
+    | left=expression GT GT right=expression                         # ShiftExpression
     | left=expression op=BIT_AND right=expression                    # BitAndExpression
     | left=expression op=BIT_XOR right=expression                    # BitXorExpression
     | left=expression op=BIT_OR right=expression                     # BitOrExpression

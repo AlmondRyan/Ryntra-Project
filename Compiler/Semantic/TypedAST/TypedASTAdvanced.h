@@ -339,6 +339,54 @@ namespace Ryntra::Compiler::Semantic {
         std::string arrayName;
     };
 
+    class TypedFunctionAddressNode : public TypedExpressionNode {
+    public:
+        TypedFunctionAddressNode(std::string functionName, std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), functionName(std::move(functionName)) {}
+
+        const std::string &getFunctionName() const { return functionName; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFunctionAddress(" + functionName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+        }
+
+    private:
+        std::string functionName;
+    };
+
+    class TypedFunctionPointerCallNode : public TypedExpressionNode {
+    public:
+        TypedFunctionPointerCallNode(std::shared_ptr<TypedExpressionNode> callee,
+                                     std::vector<std::shared_ptr<TypedExpressionNode>> args,
+                                     std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), callee(std::move(callee)), arguments(std::move(args)) {}
+
+        std::shared_ptr<TypedExpressionNode> getCallee() const { return callee; }
+        const std::vector<std::shared_ptr<TypedExpressionNode>> &getArguments() const { return arguments; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedFunctionPointerCall: " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Callee:" << std::endl;
+            callee->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Arguments:" << std::endl;
+            for (const auto &arg : arguments) {
+                arg->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> callee;
+        std::vector<std::shared_ptr<TypedExpressionNode>> arguments;
+    };
+
     class TypedPtrOffsetNode : public TypedExpressionNode {
     public:
         TypedPtrOffsetNode(std::string ptrVarName, std::shared_ptr<TypedExpressionNode> offset, bool isAdd, std::shared_ptr<Type> type)
@@ -511,15 +559,34 @@ namespace Ryntra::Compiler::Semantic {
         }
     };
 
+    class TypedParameterNode {
+    public:
+        TypedParameterNode(std::string name, std::shared_ptr<Type> type)
+            : name(std::move(name)), type(std::move(type)) {}
+
+        const std::string &getName() const { return name; }
+        std::shared_ptr<Type> getType() const { return type; }
+
+        std::string toString() const {
+            return "TypedParameter(" + name + "): " + type->toString();
+        }
+
+    private:
+        std::string name;
+        std::shared_ptr<Type> type;
+    };
+
     class TypedFunctionDefinitionNode : public ITypedASTNode {
     public:
         TypedFunctionDefinitionNode(std::string name,
                                      std::shared_ptr<Type> returnType,
+                                     std::vector<std::shared_ptr<TypedParameterNode>> parameters,
                                      std::shared_ptr<TypedBlockNode> body)
-            : name(std::move(name)), returnType(std::move(returnType)), body(std::move(body)) {}
+            : name(std::move(name)), returnType(std::move(returnType)), parameters(std::move(parameters)), body(std::move(body)) {}
 
         const std::string &getName() const { return name; }
         std::shared_ptr<Type> getReturnType() const { return returnType; }
+        const std::vector<std::shared_ptr<TypedParameterNode>> &getParameters() const { return parameters; }
         std::shared_ptr<TypedBlockNode> getBody() const { return body; }
 
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
@@ -527,12 +594,17 @@ namespace Ryntra::Compiler::Semantic {
         void dump(int indent = 0) const override {
             printIndent(indent);
             std::cout << toString() << std::endl;
+            for (const auto &param : parameters) {
+                printIndent(indent + 1);
+                std::cout << param->toString() << std::endl;
+            }
             body->dump(indent + 1);
         }
 
     private:
         std::string name;
         std::shared_ptr<Type> returnType;
+        std::vector<std::shared_ptr<TypedParameterNode>> parameters;
         std::shared_ptr<TypedBlockNode> body;
     };
 

@@ -1,0 +1,28 @@
+module Function {
+    external func @__builtin_scan_i32() -> i32
+    external func @__builtin_print_i32(i32) -> void
+
+    func @add(i32 %a, i32 %b) -> i32 {
+    entry:
+        %0 = add %a, %b
+        ret i32 %0
+    }
+
+    func @main() -> void {
+    entry:
+        %a = alloca
+        %1 = call @__builtin_scan_i32()
+        store %1, %a
+
+        %b = alloca
+        %2 = call @__builtin_scan_i32()
+        store %2, %b
+
+        %c = alloca
+        %3 = call @add(%a, %b)
+        store %3, %c
+
+        call @__builtin_print(%c)
+        ret void
+    }
+}

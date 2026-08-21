@@ -56,6 +56,7 @@ namespace Ryntra::IR {
                 if (i > 0)
                     result += ", ";
                 result += parameters_[i].type->toString();
+                result += " %" + parameters_[i].name;
             }
 
             result += ") -> " + returnType_->toString();

@@ -12,12 +12,70 @@ namespace Ryntra::Compiler {
     std::shared_ptr<FunctionDefinitionNode> ASTBuilder::visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *ctx) {
         auto type = visitTypeSpecifier(ctx->typeSpecifier());
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        std::vector<std::shared_ptr<ParameterNode>> params;
+        if (ctx->parameterList()) {
+            params = visitParameterList(ctx->parameterList());
+        }
         auto body = visitBlock(ctx->block());
-        return createNode<FunctionDefinitionNode>(ctx, std::move(type), std::move(nameNode), std::move(body));
+        return createNode<FunctionDefinitionNode>(ctx, std::move(type), std::move(nameNode), std::move(params), std::move(body));
+    }
+
+    std::shared_ptr<ParameterNode> ASTBuilder::visitParameter(antlr::RyntraParser::ParameterContext *ctx) {
+        auto type = visitTypeSpecifier(ctx->typeSpecifier());
+        auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
+        return createNode<ParameterNode>(ctx, std::move(type), std::move(nameNode));
+    }
+
+    std::vector<std::shared_ptr<ParameterNode>> ASTBuilder::visitParameterList(antlr::RyntraParser::ParameterListContext *ctx) {
+        std::vector<std::shared_ptr<ParameterNode>> params;
+        for (auto *paramCtx : ctx->parameter()) {
+            params.push_back(visitParameter(paramCtx));
+        }
+        return params;
     }
 
     std::shared_ptr<TypeSpecifierNode> ASTBuilder::visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx) {
-        return createNode<TypeSpecifierNode>(ctx, ctx->getText());
+        auto node = createNode<TypeSpecifierNode>(ctx, ctx->getText());
+        if (ctx->FN()) {
+            auto returnType = visitTypeSpecifier(ctx->typeSpecifier());
+            std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes;
+            if (ctx->functionTypeParamList()) {
+                for (auto *paramCtx : ctx->functionTypeParamList()->typeSpecifier()) {
+                    paramTypes.push_back(visitTypeSpecifier(paramCtx));
+                }
+            }
+            auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes));
+            fnType->setLocation(getLoc(ctx));
+            node->setFunctionType(fnType);
+        } else if (ctx->LPAREN()) {
+            // Bare C-style function type, e.g. `int(int, int)` (without the `Fn<...>` keyword)
+            auto returnType = visitTypeSpecifier(ctx->typeSpecifier());
+            std::vector<std::shared_ptr<TypeSpecifierNode>> paramTypes;
+            if (ctx->functionTypeParamList()) {
+                for (auto *paramCtx : ctx->functionTypeParamList()->typeSpecifier()) {
+                    paramTypes.push_back(visitTypeSpecifier(paramCtx));
+                }
+            }
+            auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes), true);
+            fnType->setLocation(getLoc(ctx));
+            node->setFunctionType(fnType);
+        } else if ((ctx->PTR() || ctx->REF()) && ctx->typeSpecifier()) {
+            auto bareText = findBareFunctionTypeText(ctx->typeSpecifier());
+            if (!bareText.empty()) {
+                node->setWrappedBareFunctionType(bareText);
+            }
+        }
+        return node;
+    }
+
+    std::string ASTBuilder::findBareFunctionTypeText(antlr::RyntraParser::TypeSpecifierContext *ctx) {
+        if (ctx->LPAREN() && !ctx->FN()) {
+            return ctx->getText();
+        }
+        if ((ctx->PTR() || ctx->REF()) && ctx->typeSpecifier()) {
+            return findBareFunctionTypeText(ctx->typeSpecifier());
+        }
+        return "";
     }
 
     std::shared_ptr<ReferenceTypeNode> ASTBuilder::visitReferenceType(antlr::RyntraParser::TypeSpecifierContext *ctx) {
@@ -81,7 +139,10 @@ namespace Ryntra::Compiler {
     }
 
     std::shared_ptr<ReturnNode> ASTBuilder::visitReturnStatement(antlr::RyntraParser::ReturnStatementContext *ctx) {
-        auto expr = visitExpression(ctx->expression());
+        std::shared_ptr<ExpressionNode> expr = nullptr;
+        if (ctx->expression()) {
+            expr = visitExpression(ctx->expression());
+        }
         return createNode<ReturnNode>(ctx, std::move(expr));
     }
 
@@ -154,11 +215,8 @@ namespace Ryntra::Compiler {
         if (auto *newInitCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NewWithInitExpressionContext *>(ctx)) {
             return visitNewWithInitExpression(newInitCtx);
         }
-        if (auto *ptrLoadCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *>(ctx)) {
-            return visitPtrLoadExpression(ptrLoadCtx);
-        }
-        if (auto *ptrStoreCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *>(ctx)) {
-            return visitPtrStoreExpression(ptrStoreCtx);
+        if (auto *methodCallCtx = dynamic_cast<Ryntra::antlr::RyntraParser::MethodCallExpressionContext *>(ctx)) {
+            return visitMethodCallExpression(methodCallCtx);
         }
         if (auto *nullCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NullLiteralContext *>(ctx)) {
             return visitNullLiteral(nullCtx);
@@ -451,15 +509,13 @@ namespace Ryntra::Compiler {
         return createNode<PtrExpressionNode>(ctx, std::move(operand));
     }
 
-    std::shared_ptr<PtrLoadNode> ASTBuilder::visitPtrLoadExpression(Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *ctx) {
-        auto ptrExpr = visitExpression(ctx->ptr);
-        return createNode<PtrLoadNode>(ctx, std::move(ptrExpr));
-    }
-
-    std::shared_ptr<PtrStoreNode> ASTBuilder::visitPtrStoreExpression(Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *ctx) {
-        auto ptrExpr = visitExpression(ctx->ptr);
-        auto value = visitExpression(ctx->value);
-        return createNode<PtrStoreNode>(ctx, std::move(ptrExpr), std::move(value));
+    std::shared_ptr<MethodCallNode> ASTBuilder::visitMethodCallExpression(Ryntra::antlr::RyntraParser::MethodCallExpressionContext *ctx) {
+        auto object = visitExpression(ctx->object);
+        std::vector<std::shared_ptr<ExpressionNode>> arguments;
+        if (auto *argList = ctx->argumentList()) {
+            arguments = visitArgumentList(argList);
+        }
+        return createNode<MethodCallNode>(ctx, std::move(object), ctx->IDENTIFIER()->getText(), std::move(arguments));
     }
 
     std::shared_ptr<RefExpressionNode> ASTBuilder::visitRefExpression(Ryntra::antlr::RyntraParser::RefExpressionContext *ctx) {

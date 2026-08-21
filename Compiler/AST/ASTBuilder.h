@@ -11,6 +11,8 @@ namespace Ryntra::Compiler {
     public:
         std::shared_ptr<ProgramNode> visitProgram(antlr::RyntraParser::ProgramContext *ctx);
         std::shared_ptr<FunctionDefinitionNode> visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *ctx);
+        std::shared_ptr<ParameterNode> visitParameter(antlr::RyntraParser::ParameterContext *ctx);
+        std::vector<std::shared_ptr<ParameterNode>> visitParameterList(antlr::RyntraParser::ParameterListContext *ctx);
         std::shared_ptr<TypeSpecifierNode> visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx);
         std::shared_ptr<ReferenceTypeNode> visitReferenceType(antlr::RyntraParser::TypeSpecifierContext *ctx);
         std::shared_ptr<BlockNode> visitBlock(antlr::RyntraParser::BlockContext *ctx);
@@ -51,8 +53,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BinaryOpNode> visitBitOrExpression(antlr::RyntraParser::BitOrExpressionContext *ctx);
         std::shared_ptr<CastNode> visitCastExpression(antlr::RyntraParser::CastExpressionContext *ctx);
         std::shared_ptr<PtrExpressionNode> visitPtrExpression(antlr::RyntraParser::PtrExpressionContext *ctx);
-        std::shared_ptr<PtrLoadNode> visitPtrLoadExpression(antlr::RyntraParser::PtrLoadExpressionContext *ctx);
-        std::shared_ptr<PtrStoreNode> visitPtrStoreExpression(antlr::RyntraParser::PtrStoreExpressionContext *ctx);
+        std::shared_ptr<MethodCallNode> visitMethodCallExpression(antlr::RyntraParser::MethodCallExpressionContext *ctx);
         std::shared_ptr<RefExpressionNode> visitRefExpression(antlr::RyntraParser::RefExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewExpression(antlr::RyntraParser::NewExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewWithInitExpression(antlr::RyntraParser::NewWithInitExpressionContext *ctx);
@@ -70,6 +71,9 @@ namespace Ryntra::Compiler {
         SourceLocation getLoc(antlr4::tree::TerminalNode *node) {
             return SourceLocation(node->getSymbol()->getLine(), node->getSymbol()->getCharPositionInLine());
         }
+
+        // Walk into ptr/ref element types to locate a bare (non-Fn) function type
+        static std::string findBareFunctionTypeText(antlr::RyntraParser::TypeSpecifierContext *ctx);
 
         template <typename Tp, typename... Args>
         std::shared_ptr<Tp> createNode(antlr4::ParserRuleContext *ctx, Args &&...args) {

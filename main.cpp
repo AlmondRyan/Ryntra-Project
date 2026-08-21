@@ -11,6 +11,8 @@
 #include <fstream>
 #include <iostream>
 
+// #define SHOW_LOG
+
 int main(int argc, char **argv) {
     try {
         std::string Source;
@@ -21,10 +23,11 @@ int main(int argc, char **argv) {
                                  std::istreambuf_iterator<char>());
         }
 
-        // std::cout << "Source: " << std::endl;
-        // std::cout << Source << std::endl;
-        //
-        // std::cout << "====================================================" << std::endl;
+#ifdef SHOW_LOG
+        std::cout << "Source: " << std::endl;
+        std::cout << Source << std::endl;
+        std::cout << "====================================================" << std::endl;
+#endif // #ifdef SHOW_LOG
 
         antlr4::ANTLRInputStream input(Source);
         Ryntra::antlr::RyntraLexer lexer(&input);
@@ -37,16 +40,36 @@ int main(int argc, char **argv) {
 
         auto tree = parser.program();
 
-        // std::cout << tree->toStringTree(&parser) << std::endl;
-        // std::cout << std::endl;
+#ifdef SHOW_LOG
+        std::cout << tree->toStringTree(&parser) << std::endl;
+        std::cout << std::endl;
+#endif // #ifdef SHOW_LOG
+
+        // Do not lower a partially recovered tree any further: syntax errors are fatal.
+        bool hasParseError = false;
+        for (const auto &error : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
+            if (error.type == Ryntra::Compiler::kError) {
+                hasParseError = true;
+                break;
+            }
+        }
+
+        if (hasParseError) {
+            Ryntra::Compiler::ErrorHandler::getInstance().print();
+            std::cout << "Semantic Analysis Failed." << std::endl;
+            return 0;
+        }
 
         Ryntra::Compiler::ASTBuilder builder;
         auto ast = builder.visitProgram(tree);
-        // std::cout << std::endl;
-        // std::cout << ast->toString() << std::endl;
-        // std::cout << std::endl;
-        // std::cout << "====================================================" << std::endl;
-        // std::cout << std::endl;
+
+#ifdef SHOW_LOG
+        std::cout << std::endl;
+        std::cout << ast->toString() << std::endl;
+        std::cout << std::endl;
+        std::cout << "====================================================" << std::endl;
+        std::cout << std::endl;
+#endif // #ifdef SHOW_LOG
 
         Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
         analyzer.analyze(ast);
@@ -63,28 +86,32 @@ int main(int argc, char **argv) {
         if (hasError) {
             std::cout << "Semantic Analysis Failed." << std::endl;
         } else {
-            // std::cout << "Semantic Analysis Passed." << std::endl;
             if (auto typedAST = analyzer.getTypedAST()) {
-                // std::cout << "Typed AST:" << std::endl;
-                // typedAST->dump();
-                // std::cout << std::endl;
-                // std::cout << "====================================================" << std::endl;
+#ifdef SHOW_LOG
+                std::cout << "Typed AST:" << std::endl;
+                typedAST->dump();
+                std::cout << std::endl;
+                std::cout << "====================================================" << std::endl;
+#endif // #ifdef SHOW_LOG
 
                 Ryntra::IR::IRGenerator irGen;
                 auto module = irGen.generate(*typedAST, "HelloWorld");
-                // std::cout << module->toString() << std::endl;
-                // std::cout << "====================================================" << std::endl;
 
-                // Generate bytecode and execute
+#ifdef SHOW_LOG
+                std::cout << module->toString() << std::endl;
+                std::cout << "====================================================" << std::endl;
+#endif // #ifdef SHOW_LOG
+
                 Ryntra::VM::BytecodeGenerator bcGen;
                 auto bytecode = bcGen.generate(module);
 
-                // std::cout << "Executing VM..." << std::endl;
                 Ryntra::VM::VirtualMachine vm;
                 vm.load(bytecode, bcGen.getConstantPool());
                 auto result = vm.execute("main");
 
-                // vm.disassemble();
+#ifdef SHOW_LOG
+                vm.disassemble();
+#endif // #ifdef SHOW_LOG
 
                 // std::cout << "\nProgram exited with code: ";
                 // if (result.isInt32()) {

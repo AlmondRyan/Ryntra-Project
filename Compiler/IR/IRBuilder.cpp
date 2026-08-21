@@ -173,6 +173,53 @@ namespace Ryntra::IR {
         return instruction;
     }
 
+    std::shared_ptr<Instruction> IRBuilder::createFuncAddr(const std::string &name,
+                                                           std::shared_ptr<Function> function,
+                                                           std::shared_ptr<Type> type) {
+        if (!function) {
+            return nullptr;
+        }
+
+        std::vector<std::shared_ptr<Value>> operands = {function};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::FuncAddr,
+            type ? type : Type::getVoidType(),
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createCallIndirect(const std::string &name,
+                                                               std::shared_ptr<Value> callee,
+                                                               const std::vector<std::shared_ptr<Value>> &args,
+                                                               std::shared_ptr<Type> resultType) {
+        if (!callee) {
+            return nullptr;
+        }
+
+        std::vector<std::shared_ptr<Value>> operands;
+        operands.push_back(callee);
+        operands.insert(operands.end(), args.begin(), args.end());
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::CallIndirect,
+            resultType ? resultType : Type::getVoidType(),
+            operands,
+            name);
+
+        if (currentBlock_) {
+            currentBlock_->addInstruction(instruction);
+        }
+
+        return instruction;
+    }
+
     std::shared_ptr<Instruction> IRBuilder::createReturn(const std::string &name,
                                                          std::shared_ptr<Value> value) {
         std::shared_ptr<Type> returnType;
