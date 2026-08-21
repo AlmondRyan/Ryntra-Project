@@ -547,29 +547,21 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> operand;
     };
 
-    class PtrLoadNode : public ExpressionNode {
+    class MethodCallNode : public ExpressionNode {
     public:
-        PtrLoadNode(std::shared_ptr<ExpressionNode> ptrExpr) : ptrExpr(std::move(ptrExpr)) {}
-        std::shared_ptr<ExpressionNode> getPtrExpression() const { return ptrExpr; }
+        MethodCallNode(std::shared_ptr<ExpressionNode> object, std::string methodName,
+                       std::vector<std::shared_ptr<ExpressionNode>> arguments)
+            : object(std::move(object)), methodName(std::move(methodName)), arguments(std::move(arguments)) {}
+        std::shared_ptr<ExpressionNode> getObject() const { return object; }
+        const std::string &getMethodName() const { return methodName; }
+        const std::vector<std::shared_ptr<ExpressionNode>> &getArguments() const { return arguments; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
 
     private:
-        std::shared_ptr<ExpressionNode> ptrExpr;
-    };
-
-    class PtrStoreNode : public ExpressionNode {
-    public:
-        PtrStoreNode(std::shared_ptr<ExpressionNode> ptrExpr, std::shared_ptr<ExpressionNode> value)
-            : ptrExpr(std::move(ptrExpr)), value(std::move(value)) {}
-        std::shared_ptr<ExpressionNode> getPtrExpression() const { return ptrExpr; }
-        std::shared_ptr<ExpressionNode> getValue() const { return value; }
-        void accept(IVisitor &visitor) override;
-        std::string toString() const override;
-
-    private:
-        std::shared_ptr<ExpressionNode> ptrExpr;
-        std::shared_ptr<ExpressionNode> value;
+        std::shared_ptr<ExpressionNode> object;
+        std::string methodName;
+        std::vector<std::shared_ptr<ExpressionNode>> arguments;
     };
 
     class RefExpressionNode : public ExpressionNode {

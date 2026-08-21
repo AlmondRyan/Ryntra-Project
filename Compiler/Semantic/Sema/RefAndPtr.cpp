@@ -200,111 +200,125 @@ namespace Ryntra::Compiler::Semantic {
         lastNode = typedFixed;
     }
 
-    void SemanticAnalyzer::visit(PtrLoadNode &node) {
-        if (unsafeDepth_ == 0) {
+    void SemanticAnalyzer::visit(MethodCallNode &node) {
+        const auto &methodName = node.getMethodName();
+
+        node.getObject()->accept(*this);
+        auto typedObject = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedObject) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto objectType = typedObject->getType();
+
+        // Only pointer method calls ('.load()' / '.store()') are supported for now.
+        if (objectType->getKind() != TypeKind::POINTER && objectType->toString() != "unknown") {
             ErrorHandler::getInstance().makeError(
-                "[RCE048]: '.load()' is only allowed inside 'unsafe' blocks.",
+                "[RCE080]: Method call '." + methodName + "()' requires a pointer expression, but got '" +
+                    objectType->toString() + "'.",
                 node.getLocation());
             lastNode = nullptr;
             return;
         }
 
-        node.getPtrExpression()->accept(*this);
-        auto typedPtrExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
-        if (!typedPtrExpr) {
-            lastNode = nullptr;
+        if (methodName == "load") {
+            if (!node.getArguments().empty()) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE081]: '.load()' does not take any arguments.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            if (unsafeDepth_ == 0) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE048]: '.load()' is only allowed inside 'unsafe' blocks.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            std::string ptrVarName;
+            if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedObject)) {
+                ptrVarName = ptrCreateNode->getVariableName();
+            } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedObject)) {
+                ptrVarName = varNode->getName();
+            } else {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE050]: '.load()' requires a pointer variable.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto elemType = std::dynamic_pointer_cast<PointerType>(objectType)->getElementType();
+            auto typedPtrLoad = std::make_shared<TypedPtrLoadNode>(ptrVarName, elemType);
+            typedPtrLoad->setLocation(node.getLocation());
+            lastNode = typedPtrLoad;
             return;
         }
 
-        auto ptrExprType = typedPtrExpr->getType();
-        if (ptrExprType->getKind() != TypeKind::POINTER && ptrExprType->toString() != "unknown") {
-            ErrorHandler::getInstance().makeError(
-                "[RCE049]: '.load()' requires a pointer expression, but got '" +
-                    ptrExprType->toString() + "'.",
-                node.getLocation());
-            lastNode = nullptr;
+        if (methodName == "store") {
+            if (node.getArguments().size() != 1) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE082]: '.store()' expects exactly one argument.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            if (unsafeDepth_ == 0) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE051]: '.store()' is only allowed inside 'unsafe' blocks.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            std::string ptrVarName;
+            if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedObject)) {
+                ptrVarName = ptrCreateNode->getVariableName();
+            } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedObject)) {
+                ptrVarName = varNode->getName();
+            } else {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE053]: '.store()' requires a pointer variable.",
+                    node.getLocation());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto elemType = std::dynamic_pointer_cast<PointerType>(objectType)->getElementType();
+
+            auto &argExpr = node.getArguments()[0];
+            argExpr->accept(*this);
+            auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+            if (!typedValue) {
+                lastNode = nullptr;
+                return;
+            }
+
+            bool isAssignable = elemType->equals(*typedValue->getType()) ||
+                                (typedValue->getType()->toString() == "int" && elemType->toString() == "long");
+            if (!isAssignable && typedValue->getType()->toString() != "unknown") {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE054]: Cannot store value of type '" + typedValue->getType()->toString() +
+                        "' to pointer of type '" + elemType->toString() + "'.",
+                    argExpr->getLocation());
+            }
+
+            auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
+            auto typedPtrStore = std::make_shared<TypedPtrStoreNode>(ptrVarName, typedValue, resultType);
+            typedPtrStore->setLocation(node.getLocation());
+            lastNode = typedPtrStore;
             return;
         }
 
-        std::string ptrVarName;
-        if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedPtrExpr)) {
-            ptrVarName = ptrCreateNode->getVariableName();
-        } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedPtrExpr)) {
-            ptrVarName = varNode->getName();
-        } else {
-            ErrorHandler::getInstance().makeError(
-                "[RCE050]: '.load()' requires a pointer variable.",
-                node.getLocation());
-            lastNode = nullptr;
-            return;
-        }
-
-        auto elemType = std::dynamic_pointer_cast<PointerType>(ptrExprType)->getElementType();
-        auto typedPtrLoad = std::make_shared<TypedPtrLoadNode>(ptrVarName, elemType);
-        typedPtrLoad->setLocation(node.getLocation());
-        lastNode = typedPtrLoad;
-    }
-
-    void SemanticAnalyzer::visit(PtrStoreNode &node) {
-        if (unsafeDepth_ == 0) {
-            ErrorHandler::getInstance().makeError(
-                "[RCE051]: '.store()' is only allowed inside 'unsafe' blocks.",
-                node.getLocation());
-            lastNode = nullptr;
-            return;
-        }
-
-        node.getPtrExpression()->accept(*this);
-        auto typedPtrExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
-        if (!typedPtrExpr) {
-            lastNode = nullptr;
-            return;
-        }
-
-        auto ptrExprType = typedPtrExpr->getType();
-        if (ptrExprType->getKind() != TypeKind::POINTER && ptrExprType->toString() != "unknown") {
-            ErrorHandler::getInstance().makeError(
-                "[RCE052]: '.store()' requires a pointer expression, but got '" +
-                    ptrExprType->toString() + "'.",
-                node.getLocation());
-            lastNode = nullptr;
-            return;
-        }
-
-        std::string ptrVarName;
-        if (auto ptrCreateNode = std::dynamic_pointer_cast<TypedPtrCreateNode>(typedPtrExpr)) {
-            ptrVarName = ptrCreateNode->getVariableName();
-        } else if (auto varNode = std::dynamic_pointer_cast<TypedVariableNode>(typedPtrExpr)) {
-            ptrVarName = varNode->getName();
-        } else {
-            ErrorHandler::getInstance().makeError(
-                "[RCE053]: '.store()' requires a pointer variable.",
-                node.getLocation());
-            lastNode = nullptr;
-            return;
-        }
-
-        auto elemType = std::dynamic_pointer_cast<PointerType>(ptrExprType)->getElementType();
-
-        node.getValue()->accept(*this);
-        auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
-        if (!typedValue) {
-            lastNode = nullptr;
-            return;
-        }
-
-        bool isAssignable = elemType->equals(*typedValue->getType()) ||
-                            (typedValue->getType()->toString() == "int" && elemType->toString() == "long");
-        if (!isAssignable && typedValue->getType()->toString() != "unknown") {
-            ErrorHandler::getInstance().makeError(
-                "[RCE054]: Cannot store value of type '" + typedValue->getType()->toString() +
-                    "' to pointer of type '" + elemType->toString() + "'.",
-                node.getValue()->getLocation());
-        }
-
-        auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
-        auto typedPtrStore = std::make_shared<TypedPtrStoreNode>(ptrVarName, typedValue, resultType);
-        typedPtrStore->setLocation(node.getLocation());
-        lastNode = typedPtrStore;
+        ErrorHandler::getInstance().makeError(
+            "[RCE078]: '." + methodName + "()' is not a pointer operation. " +
+                "Only '.load()' (dereference) and '.store()' (store value) are allowed on pointers.",
+            node.getLocation());
+        lastNode = nullptr;
     }
 } // namespace Ryntra::Compiler::Semantic

@@ -434,24 +434,18 @@ namespace Ryntra::Compiler {
         return "(Ptr " + operand->toString() + ")";
     }
 
-    void PtrLoadNode::accept(IVisitor &visitor) {
-        if (auto *v = dynamic_cast<Visitor<PtrLoadNode> *>(&visitor)) {
+    void MethodCallNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<MethodCallNode> *>(&visitor)) {
             v->visit(*this);
         }
     }
 
-    std::string PtrLoadNode::toString() const {
-        return "(PtrLoad " + ptrExpr->toString() + ")";
-    }
-
-    void PtrStoreNode::accept(IVisitor &visitor) {
-        if (auto *v = dynamic_cast<Visitor<PtrStoreNode> *>(&visitor)) {
-            v->visit(*this);
+    std::string MethodCallNode::toString() const {
+        std::string result = "(MethodCall ." + methodName + "() " + object->toString();
+        for (const auto &arg : arguments) {
+            result += " " + arg->toString();
         }
-    }
-
-    std::string PtrStoreNode::toString() const {
-        return "(PtrStore " + ptrExpr->toString() + " " + value->toString() + ")";
+        return result + ")";
     }
 
     void RefExpressionNode::accept(IVisitor &visitor) {

@@ -53,8 +53,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<BinaryOpNode> visitBitOrExpression(antlr::RyntraParser::BitOrExpressionContext *ctx);
         std::shared_ptr<CastNode> visitCastExpression(antlr::RyntraParser::CastExpressionContext *ctx);
         std::shared_ptr<PtrExpressionNode> visitPtrExpression(antlr::RyntraParser::PtrExpressionContext *ctx);
-        std::shared_ptr<PtrLoadNode> visitPtrLoadExpression(antlr::RyntraParser::PtrLoadExpressionContext *ctx);
-        std::shared_ptr<PtrStoreNode> visitPtrStoreExpression(antlr::RyntraParser::PtrStoreExpressionContext *ctx);
+        std::shared_ptr<MethodCallNode> visitMethodCallExpression(antlr::RyntraParser::MethodCallExpressionContext *ctx);
         std::shared_ptr<RefExpressionNode> visitRefExpression(antlr::RyntraParser::RefExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewExpression(antlr::RyntraParser::NewExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewWithInitExpression(antlr::RyntraParser::NewWithInitExpressionContext *ctx);

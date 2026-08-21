@@ -142,13 +142,17 @@ namespace Ryntra::Compiler::Semantic {
             auto exprType = typedExpr->getType();
             if (exprType && exprType->getKind() != TypeKind::VOID && exprType->toString() != "unknown") {
                 auto rawExpr = node.getExpression();
-            if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr) &&
-                !std::dynamic_pointer_cast<PtrStoreNode>(rawExpr)) {
+                bool isStoreMethodCall = false;
+                if (auto methodCall = std::dynamic_pointer_cast<MethodCallNode>(rawExpr)) {
+                    isStoreMethodCall = methodCall->getMethodName() == "store";
+                }
+                if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<ConditionalOrNode>(rawExpr) &&
+                    !isStoreMethodCall) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
                         node.getLocation());

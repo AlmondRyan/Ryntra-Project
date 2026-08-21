@@ -7,10 +7,9 @@ BoolLiteralNode
 StringLiteralNode
 IdentifierNode
 FunctionCallNode
+MethodCallNode
 RefExpressionNode
 PtrExpressionNode
-PtrLoadNode
-PtrStoreNode
 UnsafeBlockNode
 ExpressionStatementNode
 BlockNode

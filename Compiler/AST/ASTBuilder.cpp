@@ -215,11 +215,8 @@ namespace Ryntra::Compiler {
         if (auto *newInitCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NewWithInitExpressionContext *>(ctx)) {
             return visitNewWithInitExpression(newInitCtx);
         }
-        if (auto *ptrLoadCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *>(ctx)) {
-            return visitPtrLoadExpression(ptrLoadCtx);
-        }
-        if (auto *ptrStoreCtx = dynamic_cast<Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *>(ctx)) {
-            return visitPtrStoreExpression(ptrStoreCtx);
+        if (auto *methodCallCtx = dynamic_cast<Ryntra::antlr::RyntraParser::MethodCallExpressionContext *>(ctx)) {
+            return visitMethodCallExpression(methodCallCtx);
         }
         if (auto *nullCtx = dynamic_cast<Ryntra::antlr::RyntraParser::NullLiteralContext *>(ctx)) {
             return visitNullLiteral(nullCtx);
@@ -512,15 +509,13 @@ namespace Ryntra::Compiler {
         return createNode<PtrExpressionNode>(ctx, std::move(operand));
     }
 
-    std::shared_ptr<PtrLoadNode> ASTBuilder::visitPtrLoadExpression(Ryntra::antlr::RyntraParser::PtrLoadExpressionContext *ctx) {
-        auto ptrExpr = visitExpression(ctx->ptr);
-        return createNode<PtrLoadNode>(ctx, std::move(ptrExpr));
-    }
-
-    std::shared_ptr<PtrStoreNode> ASTBuilder::visitPtrStoreExpression(Ryntra::antlr::RyntraParser::PtrStoreExpressionContext *ctx) {
-        auto ptrExpr = visitExpression(ctx->ptr);
-        auto value = visitExpression(ctx->value);
-        return createNode<PtrStoreNode>(ctx, std::move(ptrExpr), std::move(value));
+    std::shared_ptr<MethodCallNode> ASTBuilder::visitMethodCallExpression(Ryntra::antlr::RyntraParser::MethodCallExpressionContext *ctx) {
+        auto object = visitExpression(ctx->object);
+        std::vector<std::shared_ptr<ExpressionNode>> arguments;
+        if (auto *argList = ctx->argumentList()) {
+            arguments = visitArgumentList(argList);
+        }
+        return createNode<MethodCallNode>(ctx, std::move(object), ctx->IDENTIFIER()->getText(), std::move(arguments));
     }
 
     std::shared_ptr<RefExpressionNode> ASTBuilder::visitRefExpression(Ryntra::antlr::RyntraParser::RefExpressionContext *ctx) {

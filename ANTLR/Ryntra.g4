@@ -23,8 +23,10 @@ PTR: 'ptr';
 FN: 'Fn';
 UNSAFE: 'unsafe';
 FIXED: 'fixed';
-LOAD: 'load';
-STORE: 'store';
+
+// this should never exists
+// LOAD: 'load';
+// STORE: 'store';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -207,8 +209,7 @@ expression
     | expression INC                                                # PostfixIncExpression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
-    | ptr=expression DOT LOAD LPAREN RPAREN                         # PtrLoadExpression
-    | ptr=expression DOT STORE LPAREN value=expression RPAREN       # PtrStoreExpression
+    | object=expression DOT IDENTIFIER LPAREN argumentList? RPAREN  # MethodCallExpression
     | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
