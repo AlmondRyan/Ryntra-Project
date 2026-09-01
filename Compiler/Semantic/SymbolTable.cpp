@@ -61,7 +61,7 @@ namespace Ryntra::Compiler::Semantic {
 
     void SymbolTable::exitScope() {
         if (scopes.empty()) {
-            ErrorHandler::getInstance().makeError("[RCE015]: No scope to exit", SourceLocation(0, 0));
+            ErrorHandler::getInstance().makeError("[RCE015]: No scope to exit", SourceLocation(0, 0, 0));
             return;
         }
         scopes.pop_back();

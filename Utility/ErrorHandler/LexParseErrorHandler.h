@@ -9,14 +9,24 @@
 namespace Ryntra::Compiler {
     class LexParseErrorHandler : public antlr4::ANTLRErrorListener {
     public:
+        enum class ErrorCode : int {
+            SYNTAX_ERROR = 83,
+            MISSING_TOKEN = 84,
+            UNEXPECTED_TOKEN = 85,
+            EXTRA_TOKEN = 86,
+            UNRECOGNIZED_TOKEN = 87,
+            AMBIGUOUS_GRAMMAR = 88,
+            LEXER_ERROR = 89,
+            NO_VIABLE_ALT = 90,
+            INPUT_MISMATCH = 91,
+            FAILED_PREDICATE = 92
+        };
+
         /// \brief Override the \c syntaxError() function in ANTLR runtime.
         /// Use our error handler to make sure the format consistency.
         void syntaxError(antlr4::Recognizer *recognizer,
                          antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
-                         const std::string &msg, std::exception_ptr e) override {
-            ErrorHandler::getInstance().makeError(msg, SourceLocation(static_cast<int>(line),
-                static_cast<int>(charPositionInLine)));
-        }
+                         const std::string &msg, std::exception_ptr e) override;
 
         /// \brief Override the \c reportAmbiguity() function in ANTLR runtime.
         /// Now it's an empty implementation.
@@ -35,5 +45,7 @@ namespace Ryntra::Compiler {
         void reportContextSensitivity(antlr4::Parser *recognizer, const antlr4::dfa::DFA &dfa,
             size_t startIndex, size_t stopIndex, size_t prediction,
             antlr4::atn::ATNConfigSet *configs) override {}
+
+        ErrorCode determineErrorCode(antlr4::RecognitionException *e, const std::string &msg);
     };
 }

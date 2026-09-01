@@ -35,6 +35,7 @@
             <xs:element name="Comments" type="CommentsType" />
             <xs:element name="Characters" type="xs:string" />
             <xs:element name="String" type="xs:string" />
+            <xs:element name="Function" type="xs:string" />
         </xs:sequence>
     </xs:complexType>
 

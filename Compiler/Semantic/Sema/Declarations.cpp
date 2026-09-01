@@ -72,7 +72,7 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::VoidType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0});
+            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
         }
 
         if (!symbolTable.resolve("__builtin_scan")) {
@@ -94,7 +94,7 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::BoolType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0});
+            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
         }
 
         if (!symbolTable.resolve("print")) {
@@ -121,7 +121,7 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::VoidType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0});
+            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
         }
 
         auto mainSym = symbolTable.resolve("main");

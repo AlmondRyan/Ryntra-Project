@@ -30,13 +30,13 @@ namespace Ryntra::Compiler {
         for (const auto &i : errorObjects) {
             if (i.type == kError) {
                 std::cout << "[" << COLORED_TEXT_RED << "Error" << COLORED_TEXT_DEFAULT << "]: "
-                          << "(l: " << i.location.line << ", c: " << i.location.column << ") " << i.description << std::endl;
+                          << "(" << i.location.line << ":" << i.location.column << ") " << i.description << std::endl;
             } else if (i.type == kWarning) {
                 std::cout << "[" << COLORED_TEXT_YELLOW << "Warning" << COLORED_TEXT_DEFAULT << "]: "
-                          << "(l: " << i.location.line << ", c: " << i.location.column << ") " << i.description << std::endl;
+                          << "(" << i.location.line << ":" << i.location.column << ") " << i.description << std::endl;
             } else if (i.type == kHint) {
                 std::cout << "[" << COLORED_TEXT_CYAN << "Hint" << COLORED_TEXT_DEFAULT << "]: "
-                          << "(l: " << i.location.line << ", c: " << i.location.column << ") " << i.description << std::endl;
+                          << "(" << i.location.line << ":" << i.location.column << ") " << i.description << std::endl;
             }
         }
     }

@@ -65,11 +65,15 @@ namespace Ryntra::Compiler {
 
     private:
         SourceLocation getLoc(antlr4::ParserRuleContext *context) {
-            return SourceLocation(context->getStart()->getLine(), context->getStart()->getCharPositionInLine());
+            return SourceLocation(context->getStart()->getLine(),
+                context->getStart()->getCharPositionInLine(),
+                context->getStart()->getStartIndex());
         }
 
         SourceLocation getLoc(antlr4::tree::TerminalNode *node) {
-            return SourceLocation(node->getSymbol()->getLine(), node->getSymbol()->getCharPositionInLine());
+            return SourceLocation(node->getSymbol()->getLine(),
+                node->getSymbol()->getCharPositionInLine(),
+                node->getSymbol()->getStartIndex());
         }
 
         // Walk into ptr/ref element types to locate a bare (non-Fn) function type

@@ -15,12 +15,41 @@
 
 int main(int argc, char **argv) {
     try {
+        bool emitIR = false;
+        bool emitBytecode = false;
+        bool emitAST = false;
+        std::string sourcePath;
+
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--emit-ir") {
+                emitIR = true;
+            } else if (arg == "--emit-bytecode") {
+                emitBytecode = true;
+            } else if (arg == "--emit-ast") {
+                emitAST = true;
+            } else if (arg.empty() || arg[0] == '-') {
+                // Ignore unknown options.
+            } else {
+                sourcePath = arg;
+            }
+        }
+
+        if (sourcePath.empty()) {
+            std::print(std::cerr, "Usage: {} <source-file> [--emit-ast] [--emit-ir] [--emit-bytecode]\n",
+                       argv[0]);
+            return 1;
+        }
+
         std::string Source;
 
-        std::ifstream sourceFile(argv[1]);
+        std::ifstream sourceFile(sourcePath);
         if (sourceFile.is_open()) {
             Source = std::string((std::istreambuf_iterator<char>(sourceFile)),
                                  std::istreambuf_iterator<char>());
+        } else {
+            std::print(std::cerr, "Error: cannot open source file '{}'\n", sourcePath);
+            return 1;
         }
 
 #ifdef SHOW_LOG
@@ -45,7 +74,6 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
 #endif // #ifdef SHOW_LOG
 
-        // Do not lower a partially recovered tree any further: syntax errors are fatal.
         bool hasParseError = false;
         for (const auto &error : Ryntra::Compiler::ErrorHandler::getInstance().getErrorObjects()) {
             if (error.type == Ryntra::Compiler::kError) {
@@ -56,7 +84,7 @@ int main(int argc, char **argv) {
 
         if (hasParseError) {
             Ryntra::Compiler::ErrorHandler::getInstance().print();
-            std::cout << "Semantic Analysis Failed." << std::endl;
+            // std::cout << "Semantic Analysis Failed." << std::endl;
             return 0;
         }
 
@@ -70,6 +98,11 @@ int main(int argc, char **argv) {
         std::cout << "====================================================" << std::endl;
         std::cout << std::endl;
 #endif // #ifdef SHOW_LOG
+
+        if (emitAST) {
+            std::cout << ast->toString() << std::endl;
+            return 0;
+        }
 
         Ryntra::Compiler::Semantic::SemanticAnalyzer analyzer;
         analyzer.analyze(ast);
@@ -102,8 +135,20 @@ int main(int argc, char **argv) {
                 std::cout << "====================================================" << std::endl;
 #endif // #ifdef SHOW_LOG
 
+                if (emitIR) {
+                    std::cout << module->toString() << std::endl;
+                    return 0;
+                }
+
                 Ryntra::VM::BytecodeGenerator bcGen;
                 auto bytecode = bcGen.generate(module);
+
+                if (emitBytecode) {
+                    Ryntra::VM::VirtualMachine dumpVM;
+                    dumpVM.load(bytecode, bcGen.getConstantPool());
+                    dumpVM.disassemble();
+                    return 0;
+                }
 
                 Ryntra::VM::VirtualMachine vm;
                 vm.load(bytecode, bcGen.getConstantPool());
@@ -112,20 +157,11 @@ int main(int argc, char **argv) {
 #ifdef SHOW_LOG
                 vm.disassemble();
 #endif // #ifdef SHOW_LOG
-
-                // std::cout << "\nProgram exited with code: ";
-                // if (result.isInt32()) {
-                //     std::cout << result.asInt32() << std::endl;
-                // } else {
-                //     std::cout << "0" << std::endl;
-                // }
             }
         }
 
-        // std::cout << std::endl;
         return 0;
     } catch (const std::exception &e) {
-        // std::cerr << "Error: " << e.what() << std::endl;
         std::print(std::cerr, "Error: {}\n", e.what());
         return 1;
     }

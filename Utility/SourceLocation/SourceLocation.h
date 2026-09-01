@@ -4,12 +4,14 @@
 // ============================================================================== //
 
 #pragma once
+#include <cstdint>
 
 namespace Ryntra::Compiler {
     /// \brief A simple structure represents the location in the source file.
     struct SourceLocation {
-        int line;
-        int column;
+        uint32_t line;
+        uint32_t column;
+        uint32_t offset;
 
         /// \brief Constructor. Use default behavior.
         SourceLocation() = default;
@@ -17,6 +19,6 @@ namespace Ryntra::Compiler {
         /// \brief Constructor. Accepts the \c line and \c column .
         /// \param _line Current line
         /// \param _column Current column
-        SourceLocation(const int _line, const int _column) : line(_line), column(_column) {}
+        SourceLocation(const uint32_t _line, const uint32_t _column, const uint32_t offs) : line(_line), column(_column), offset(offs) {}
     };
 } // namespace Ryntra::Compiler
