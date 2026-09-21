@@ -21,13 +21,13 @@ namespace Ryntra::Compiler::Semantic {
         } else {
             ErrorHandler::getInstance().makeError(
                 "[RCE044]: 'ref' requires a variable operand.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
 
         auto typedRef = std::make_shared<TypedRefCreateNode>(targetVarName, refType);
-        typedRef->setLocation(node.getLocation());
+        typedRef->setRange(node.getRange());
         lastNode = typedRef;
     }
 
@@ -37,7 +37,7 @@ namespace Ryntra::Compiler::Semantic {
         --unsafeDepth_;
         if (auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode)) {
             auto typedUnsafe = std::make_shared<TypedUnsafeBlockNode>(typedBody);
-            typedUnsafe->setLocation(node.getLocation());
+            typedUnsafe->setRange(node.getRange());
             lastNode = typedUnsafe;
         } else {
             lastNode = nullptr;
@@ -56,11 +56,11 @@ namespace Ryntra::Compiler::Semantic {
                     ErrorHandler::getInstance().makeError(
                         "[RCE075]: Cannot take the address of '" + varName +
                             "': no function or variable named '" + varName + "' is defined.",
-                        node.getLocation());
+                        node.getRange());
                 } else {
                     ErrorHandler::getInstance().makeError(
                         "[RCE076]: Cannot take the address of '" + varName + "': it is not an addressable entity.",
-                        node.getLocation());
+                        node.getRange());
                 }
                 lastNode = nullptr;
                 return;
@@ -71,14 +71,14 @@ namespace Ryntra::Compiler::Semantic {
             if (auto fnSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
                 targetFn = fnSym;
             } else if (auto ovSet = std::dynamic_pointer_cast<OverloadSet>(sym)) {
-                targetFn = pickFunctionForAddress(ovSet, node.getLocation());
+                targetFn = pickFunctionForAddress(ovSet, node.getRange());
             }
 
             if (targetFn) {
                 auto fnType = functionTypeOf(targetFn);
                 auto ptrType = TypeFactory::getPointer(fnType);
                 auto typedAddr = std::make_shared<TypedFunctionAddressNode>(targetFn->getName(), ptrType);
-                typedAddr->setLocation(node.getLocation());
+                typedAddr->setRange(node.getRange());
                 lastNode = typedAddr;
                 return;
             }
@@ -108,7 +108,7 @@ namespace Ryntra::Compiler::Semantic {
             if (unsafeDepth_ == 0) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE046]: Converting 'ref' to 'ptr' is only allowed inside 'unsafe' blocks.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -118,7 +118,7 @@ namespace Ryntra::Compiler::Semantic {
         } else {
             ErrorHandler::getInstance().makeError(
                 "[RCE047]: 'ptr' requires a variable operand.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -128,14 +128,14 @@ namespace Ryntra::Compiler::Semantic {
             auto elemType = arrType.getElementType();
             auto ptrType = TypeFactory::getPointer(elemType);
             auto typedPtr = std::make_shared<TypedPtrFromArrayNode>(targetVarName, ptrType);
-            typedPtr->setLocation(node.getLocation());
+            typedPtr->setRange(node.getRange());
             lastNode = typedPtr;
             return;
         }
 
         auto ptrType = TypeFactory::getPointer(operandType);
         auto typedPtr = std::make_shared<TypedPtrCreateNode>(targetVarName, ptrType);
-        typedPtr->setLocation(node.getLocation());
+        typedPtr->setRange(node.getRange());
         lastNode = typedPtr;
     }
 
@@ -143,7 +143,7 @@ namespace Ryntra::Compiler::Semantic {
         if (unsafeDepth_ == 0) {
             ErrorHandler::getInstance().makeError(
                 "[RCE061]: 'fixed' is only allowed inside 'unsafe' blocks.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -168,7 +168,7 @@ namespace Ryntra::Compiler::Semantic {
         if (initType->getKind() != TypeKind::POINTER) {
             ErrorHandler::getInstance().makeError(
                 "[RCE062]: 'fixed' initializer must be a pointer expression.",
-                node.getInit()->getLocation());
+                node.getInit()->getRange());
             lastNode = nullptr;
             return;
         }
@@ -176,7 +176,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!elemType->equals(*std::dynamic_pointer_cast<PointerType>(initType)->getElementType())) {
             ErrorHandler::getInstance().makeError(
                 "[RCE063]: Pointer type mismatch in 'fixed' initializer.",
-                node.getInit()->getLocation());
+                node.getInit()->getRange());
             lastNode = nullptr;
             return;
         }
@@ -184,7 +184,7 @@ namespace Ryntra::Compiler::Semantic {
         auto varName = node.getName()->getName();
         auto ptrSTType = std::make_shared<STType::PointerType>(elemSTType);
         symbolTable.enterScope();
-        symbolTable.define(std::make_shared<VariableSymbol>(varName, ptrSTType), node.getLocation());
+        symbolTable.define(std::make_shared<VariableSymbol>(varName, ptrSTType), node.getRange());
 
         node.getBody()->accept(*this);
 
@@ -196,7 +196,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto typedFixed = std::make_shared<TypedFixedNode>(varName, ptrType, typedInit, typedBody);
-        typedFixed->setLocation(node.getLocation());
+        typedFixed->setRange(node.getRange());
         lastNode = typedFixed;
     }
 
@@ -217,7 +217,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE080]: Method call '." + methodName + "()' requires a pointer expression, but got '" +
                     objectType->toString() + "'.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -226,7 +226,7 @@ namespace Ryntra::Compiler::Semantic {
             if (!node.getArguments().empty()) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE081]: '.load()' does not take any arguments.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -234,7 +234,7 @@ namespace Ryntra::Compiler::Semantic {
             if (unsafeDepth_ == 0) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE048]: '.load()' is only allowed inside 'unsafe' blocks.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -247,14 +247,14 @@ namespace Ryntra::Compiler::Semantic {
             } else {
                 ErrorHandler::getInstance().makeError(
                     "[RCE050]: '.load()' requires a pointer variable.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
 
             auto elemType = std::dynamic_pointer_cast<PointerType>(objectType)->getElementType();
             auto typedPtrLoad = std::make_shared<TypedPtrLoadNode>(ptrVarName, elemType);
-            typedPtrLoad->setLocation(node.getLocation());
+            typedPtrLoad->setRange(node.getRange());
             lastNode = typedPtrLoad;
             return;
         }
@@ -263,7 +263,7 @@ namespace Ryntra::Compiler::Semantic {
             if (node.getArguments().size() != 1) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE082]: '.store()' expects exactly one argument.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -271,7 +271,7 @@ namespace Ryntra::Compiler::Semantic {
             if (unsafeDepth_ == 0) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE051]: '.store()' is only allowed inside 'unsafe' blocks.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -284,7 +284,7 @@ namespace Ryntra::Compiler::Semantic {
             } else {
                 ErrorHandler::getInstance().makeError(
                     "[RCE053]: '.store()' requires a pointer variable.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -305,12 +305,12 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE054]: Cannot store value of type '" + typedValue->getType()->toString() +
                         "' to pointer of type '" + elemType->toString() + "'.",
-                    argExpr->getLocation());
+                    argExpr->getRange());
             }
 
             auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
             auto typedPtrStore = std::make_shared<TypedPtrStoreNode>(ptrVarName, typedValue, resultType);
-            typedPtrStore->setLocation(node.getLocation());
+            typedPtrStore->setRange(node.getRange());
             lastNode = typedPtrStore;
             return;
         }
@@ -318,7 +318,7 @@ namespace Ryntra::Compiler::Semantic {
         ErrorHandler::getInstance().makeError(
             "[RCE078]: '." + methodName + "()' is not a pointer operation. " +
                 "Only '.load()' (dereference) and '.store()' (store value) are allowed on pointers.",
-            node.getLocation());
+            node.getRange());
         lastNode = nullptr;
     }
 } // namespace Ryntra::Compiler::Semantic

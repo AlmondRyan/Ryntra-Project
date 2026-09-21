@@ -13,7 +13,7 @@ namespace Ryntra::Compiler::Semantic {
         }
         symbolTable.exitScope();
         auto typedBlock = std::make_shared<TypedBlockNode>(std::move(typedStatements));
-        typedBlock->setLocation(node.getLocation());
+        typedBlock->setRange(node.getRange());
         lastNode = typedBlock;
     }
 
@@ -27,7 +27,7 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE023]: If condition must be 'bool', but got '" +
                         typedCond->getType()->toString() + "'.",
-                    node.getCondition()->getLocation());
+                    node.getCondition()->getRange());
             }
         }
 
@@ -41,7 +41,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto typedIf = std::make_shared<TypedIfNode>(typedCond, typedThen, typedElse);
-        typedIf->setLocation(node.getLocation());
+        typedIf->setRange(node.getRange());
         lastNode = typedIf;
     }
 
@@ -55,7 +55,7 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE024]: While condition must be 'bool', but got '" +
                         typedCond->getType()->toString() + "'.",
-                    node.getCondition()->getLocation());
+                    node.getCondition()->getRange());
             }
         }
 
@@ -65,7 +65,7 @@ namespace Ryntra::Compiler::Semantic {
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
 
         auto typedWhile = std::make_shared<TypedWhileNode>(typedCond, typedBody);
-        typedWhile->setLocation(node.getLocation());
+        typedWhile->setRange(node.getRange());
         lastNode = typedWhile;
     }
 
@@ -89,7 +89,7 @@ namespace Ryntra::Compiler::Semantic {
                     ErrorHandler::getInstance().makeError(
                         "[RCE031]: For-loop condition must be 'bool', but got '" +
                             typedCond->getType()->toString() + "'.",
-                        node.getCondition()->getLocation());
+                        node.getCondition()->getRange());
                 }
             }
         }
@@ -108,31 +108,31 @@ namespace Ryntra::Compiler::Semantic {
         symbolTable.exitScope();
 
         auto typedFor = std::make_shared<TypedForNode>(typedInit, typedCond, typedOp, typedBody);
-        typedFor->setLocation(node.getLocation());
+        typedFor->setRange(node.getRange());
         lastNode = typedFor;
     }
 
     void SemanticAnalyzer::visit(BreakNode &node) {
         if (loopDepth_ == 0) {
             ErrorHandler::getInstance().makeError(
-                "[RCE025]: 'break' outside of loop.", node.getLocation());
+                "[RCE025]: 'break' outside of loop.", node.getRange());
             lastNode = nullptr;
             return;
         }
         auto typedBreak = std::make_shared<TypedBreakNode>();
-        typedBreak->setLocation(node.getLocation());
+        typedBreak->setRange(node.getRange());
         lastNode = typedBreak;
     }
 
     void SemanticAnalyzer::visit(ContinueNode &node) {
         if (loopDepth_ == 0) {
             ErrorHandler::getInstance().makeError(
-                "[RCE026]: 'continue' outside of loop.", node.getLocation());
+                "[RCE026]: 'continue' outside of loop.", node.getRange());
             lastNode = nullptr;
             return;
         }
         auto typedContinue = std::make_shared<TypedContinueNode>();
-        typedContinue->setLocation(node.getLocation());
+        typedContinue->setRange(node.getRange());
         lastNode = typedContinue;
     }
 
@@ -155,12 +155,12 @@ namespace Ryntra::Compiler::Semantic {
                     !isStoreMethodCall) {
                     ErrorHandler::getInstance().makeWarning(
                         "[RCW001]: Result will be discarded.",
-                        node.getLocation());
+                        node.getRange());
                 }
             }
 
             auto typedStmt = std::make_shared<TypedExpressionStatementNode>(typedExpr);
-            typedStmt->setLocation(node.getLocation());
+            typedStmt->setRange(node.getRange());
             lastNode = typedStmt;
         } else {
             lastNode = nullptr;

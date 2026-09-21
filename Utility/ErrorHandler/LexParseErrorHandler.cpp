@@ -1,4 +1,5 @@
 #include "LexParseErrorHandler.h"
+#include "SourceLocation/SourceRangeBuilder.h"
 #include "antlr4-runtime.h"
 
 namespace Ryntra::Compiler {
@@ -89,7 +90,9 @@ namespace Ryntra::Compiler {
         }
 
         std::string description = "[RCE0" + std::to_string(static_cast<int>(errorCode)) + "]: " + errorMsg;
-        ErrorHandler::getInstance().makeError(description, {static_cast<uint32_t>(line),
-        static_cast<uint32_t>(charPositionInLine), static_cast<uint32_t>(offendingSymbol->getStartIndex())});
+        const SourceRange range = offendingSymbol
+            ? makeSourceRange(offendingSymbol, offendingSymbol)
+            : SourceRange(SourceLocation(static_cast<uint32_t>(line), static_cast<uint32_t>(charPositionInLine), 0));
+        ErrorHandler::getInstance().makeError(description, range);
     }
 } // namespace Ryntra::Compiler

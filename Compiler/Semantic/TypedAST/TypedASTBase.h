@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../TypeSystem.h"
-#include "SourceLocation/SourceLocation.h"
+#include "SourceLocation/SourceRange.h"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -121,8 +121,11 @@ namespace Ryntra::Compiler::Semantic {
         virtual std::string toString() const = 0;
         virtual void dump(int indent = 0) const = 0;
 
-        SourceLocation getLocation() const { return location; }
-        void setLocation(SourceLocation loc) { location = loc; }
+        SourceRange getRange() const { return range; }
+        void setRange(const SourceRange &r) { range = r; }
+
+        RYNTRA_DEPRECATED_LOCATION SourceLocation getLocation() const { return range.begin; }
+        RYNTRA_DEPRECATED_LOCATION void setLocation(const SourceLocation &loc) { range = SourceRange(loc); }
 
     protected:
         void printIndent(int indent) const {
@@ -131,7 +134,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
     private:
-        SourceLocation location;
+        SourceRange range;
     };
 
     class TypedExpressionNode : public ITypedASTNode {

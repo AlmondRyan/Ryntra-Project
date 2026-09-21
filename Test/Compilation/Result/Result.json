@@ -34,7 +34,7 @@
         },
         {
             "fileName": "3.4 int and long Casting.rynt",
-            "expectOutput": ["[Warning]: (l: 3, c: 12) [RCW002]: Result of this casting operation will be truncated.", "-1395630315", "123"]
+            "expectOutput": ["[Warning]: (3:12-3:18) [RCW002]: Result of this casting operation will be truncated.", "-1395630315", "123"]
         },
         {
             "fileName": "3.5 Scan Function.rynt",
@@ -88,7 +88,7 @@
         },
         {
             "fileName": "6.2 Array Index Access.rynt",
-            "expectOutput": ["[Warning]: (l: 6, c: 4) [RCW001]: Result will be discarded.", "[Warning]: (l: 7, c: 4) [RCW001]: Result will be discarded.", "[Warning]: (l: 8, c: 4) [RCW001]: Result will be discarded."]
+            "expectOutput": ["[Warning]: (6:4-6:12) [RCW001]: Result will be discarded.", "[Warning]: (7:4-7:12) [RCW001]: Result will be discarded.", "[Warning]: (8:4-8:12) [RCW001]: Result will be discarded."]
         },
         {
             "fileName": "6.3 Array Index Assignment.rynt",
@@ -145,15 +145,13 @@
         {
             "fileName": "8.4 Function Pointer Generic Syntax Error.rynt",
             "expectOutput": [
-                "[Error]: (l: 2, c: 21) no viable alternative at input 'ptr<Fn<int(int)>p'",
-                "Semantic Analysis Failed."
+                "[Error]: (2:21-2:22) [RCE090]: No matching grammar branch"
             ]
         },
         {
             "fileName": "8.5 Delete Function Pointer Error.rynt",
             "expectOutput": [
-                "[Error]: (l: 8, c: 8) [RCE077]: Cannot delete a function pointer.",
-                "Semantic Analysis Failed."
+                "[Error]: (8:8-8:17) [RCE077]: Cannot delete a function pointer."
             ]
         }
     ]

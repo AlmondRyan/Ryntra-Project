@@ -6,6 +6,19 @@
 #pragma once
 #include <cstdint>
 
+/// \brief Opt-in deprecation annotations for the point-based \c SourceLocation API.
+/// Disabled by default so the build stays warning-clean while call sites migrate to
+/// \c SourceRange . Define \c RYNTRA_ENABLE_LOCATION_DEPRECATION to turn them on.
+#if defined(RYNTRA_ENABLE_LOCATION_DEPRECATION)
+#  define RYNTRA_DEPRECATED_LOCATION \
+       [[deprecated("SourceRange is the source of truth; use getRange()/setRange()")]]
+#  define RYNTRA_DEPRECATED_LOCATION_OVERLOAD \
+       [[deprecated("SourceRange is the source of truth; use the SourceRange overload")]]
+#else
+#  define RYNTRA_DEPRECATED_LOCATION
+#  define RYNTRA_DEPRECATED_LOCATION_OVERLOAD
+#endif
+
 namespace Ryntra::Compiler {
     /// \brief A simple structure represents the location in the source file.
     struct SourceLocation {

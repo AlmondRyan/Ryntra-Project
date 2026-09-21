@@ -23,10 +23,7 @@ PTR: 'ptr';
 FN: 'Fn';
 UNSAFE: 'unsafe';
 FIXED: 'fixed';
-
-// this should never exists
-// LOAD: 'load';
-// STORE: 'store';
+STRUCT: 'struct';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -91,11 +88,27 @@ WS: [ \t\r\n]+ -> skip;
 // Parser Rules
 
 program
-    : functionDefinition+ EOF
+    : (functionDefinition | structDefinition)+ EOF
     ;
 
 functionDefinition
     : PUBLIC typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
+    ;
+
+structDefinition
+    : annotation* PUBLIC STRUCT IDENTIFIER LBRACE structMember* RBRACE
+    ;
+
+structMember
+    : visibilityModifier typeSpecifier IDENTIFIER SEMICOLON
+    ;
+
+visibilityModifier
+    : PUBLIC
+    ;
+
+annotation
+    : LBRACK IDENTIFIER (LPAREN argumentList RPAREN)? RBRACK
     ;
 
 parameterList

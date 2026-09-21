@@ -45,7 +45,7 @@ namespace Ryntra::Compiler {
                 }
             }
             auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes));
-            fnType->setLocation(getLoc(ctx));
+            fnType->setRange(makeSourceRange(ctx));
             node->setFunctionType(fnType);
         } else if (ctx->LPAREN()) {
             // Bare C-style function type, e.g. `int(int, int)` (without the `Fn<...>` keyword)
@@ -57,7 +57,7 @@ namespace Ryntra::Compiler {
                 }
             }
             auto fnType = std::make_shared<FunctionTypeNode>(ctx->getText(), std::move(returnType), std::move(paramTypes), true);
-            fnType->setLocation(getLoc(ctx));
+            fnType->setRange(makeSourceRange(ctx));
             node->setFunctionType(fnType);
         } else if ((ctx->PTR() || ctx->REF()) && ctx->typeSpecifier()) {
             auto bareText = findBareFunctionTypeText(ctx->typeSpecifier());
@@ -408,7 +408,7 @@ namespace Ryntra::Compiler {
     std::shared_ptr<ArrayDeclarationNode> ASTBuilder::visitArrayDeclaration(Ryntra::antlr::RyntraParser::ArrayDeclarationContext *ctx) {
         auto elementType = visitTypeSpecifier(ctx->typeSpecifier(0));
         auto arrayType = std::make_shared<ArrayTypeNode>(elementType);
-        arrayType->setLocation(getLoc(ctx));
+        arrayType->setRange(makeSourceRange(ctx));
         auto nameNode = createNode<IdentifierNode>(ctx->IDENTIFIER(), ctx->IDENTIFIER()->getText());
         auto newElementType = visitTypeSpecifier(ctx->typeSpecifier(1));
         auto size = visitExpression(ctx->expression());
@@ -588,9 +588,9 @@ namespace Ryntra::Compiler {
                 return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(rhs));
 
             auto varRef = std::make_shared<VariableNode>(std::make_shared<IdentifierNode>(lhsName->getName()));
-            varRef->setLocation(lhsName->getLocation());
+            varRef->setRange(lhsName->getRange());
             auto binExpr = std::make_shared<BinaryOpNode>(std::move(varRef), binOp, std::move(rhs));
-            binExpr->setLocation(lhsName->getLocation());
+            binExpr->setRange(lhsName->getRange());
             return createNode<AssignmentNode>(ctx, std::move(lhsName), std::move(binExpr));
         }
 
@@ -623,9 +623,9 @@ namespace Ryntra::Compiler {
             auto readIndex = visitExpression(arrIdxCtx->index);
             auto lhsForRead = std::make_shared<ArrayIndexAccessNode>(
                 readArrayExpr, readIndex);
-            lhsForRead->setLocation(getLoc(arrIdxCtx));
+            lhsForRead->setRange(makeSourceRange(arrIdxCtx));
             auto binExpr = std::make_shared<BinaryOpNode>(std::move(lhsForRead), binOp, std::move(rhs));
-            binExpr->setLocation(getLoc(arrIdxCtx));
+            binExpr->setRange(makeSourceRange(arrIdxCtx));
 
             // Write side: arr[i] = (arr[i] + v)
             auto writeArrayExpr = visitExpression(arrIdxCtx->array);

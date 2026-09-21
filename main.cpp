@@ -68,10 +68,10 @@ int main(int argc, char **argv) {
         parser.addErrorListener(new Ryntra::Compiler::LexParseErrorHandler());
 
         auto tree = parser.program();
+        std::cout << std::endl;
 
 #ifdef SHOW_LOG
         std::cout << tree->toStringTree(&parser) << std::endl;
-        std::cout << std::endl;
 #endif // #ifdef SHOW_LOG
 
         bool hasParseError = false;
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
         }
 
         if (hasError) {
-            std::cout << "Semantic Analysis Failed." << std::endl;
+            // std::cout << "Semantic Analysis Failed." << std::endl;
         } else {
             if (auto typedAST = analyzer.getTypedAST()) {
 #ifdef SHOW_LOG

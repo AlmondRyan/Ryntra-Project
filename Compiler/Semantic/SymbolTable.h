@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SourceLocation/SourceLocation.h"
+#include "SourceLocation/SourceRange.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -232,7 +232,7 @@ namespace Ryntra::Compiler::Semantic {
         void enterScope(Scope::Kind kind = Scope::Kind::Global);
         void exitScope();
 
-        void define(std::shared_ptr<Symbol> symbol, SourceLocation location);
+        void define(std::shared_ptr<Symbol> symbol, const SourceRange &range);
         std::shared_ptr<Symbol> resolve(const std::string &name);
 
         // True if the symbol is an entity whose address can be taken

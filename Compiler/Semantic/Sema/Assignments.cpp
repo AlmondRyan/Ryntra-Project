@@ -8,7 +8,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!varNode) {
             ErrorHandler::getInstance().makeError(
                 "[RCE027]: Prefix '++'/'--' requires a variable operand.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -19,7 +19,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!sym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE014]: Variable '" + varName + "' is not defined.",
-                varNode->getLocation());
+                varNode->getRange());
             lastNode = nullptr;
             return;
         }
@@ -28,7 +28,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!varSym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE015]: '" + varName + "' is not a variable.",
-                varNode->getLocation());
+                varNode->getRange());
             lastNode = nullptr;
             return;
         }
@@ -41,13 +41,13 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE028]: Prefix '++'/'--' requires 'int' or 'long' variable, but got '" +
                     varType->toString() + "'.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
 
         auto typedPrefix = std::make_shared<TypedPrefixOpNode>(varName, node.getOp(), varType);
-        typedPrefix->setLocation(node.getLocation());
+        typedPrefix->setRange(node.getRange());
         lastNode = typedPrefix;
     }
 
@@ -57,7 +57,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!varNode) {
             ErrorHandler::getInstance().makeError(
                 "[RCE029]: Postfix '++'/'--' requires a variable operand.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -68,7 +68,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!sym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE014]: Variable '" + varName + "' is not defined.",
-                varNode->getLocation());
+                varNode->getRange());
             lastNode = nullptr;
             return;
         }
@@ -77,7 +77,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!varSym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE015]: '" + varName + "' is not a variable.",
-                varNode->getLocation());
+                varNode->getRange());
             lastNode = nullptr;
             return;
         }
@@ -90,13 +90,13 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE030]: Postfix '++'/'--' requires 'int' or 'long' variable, but got '" +
                     varType->toString() + "'.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
 
         auto typedPostfix = std::make_shared<TypedPostfixOpNode>(varName, node.getOp(), varType);
-        typedPostfix->setLocation(node.getLocation());
+        typedPostfix->setRange(node.getRange());
         lastNode = typedPostfix;
     }
 
@@ -107,7 +107,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!sym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE014]: Variable '" + varName + "' is not defined.",
-                node.getLHS()->getLocation());
+                node.getLHS()->getRange());
             lastNode = nullptr;
             return;
         }
@@ -116,7 +116,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!varSym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE015]: '" + varName + "' is not a variable.",
-                node.getLHS()->getLocation());
+                node.getLHS()->getRange());
             lastNode = nullptr;
             return;
         }
@@ -142,12 +142,12 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE045]: Cannot assign value of type '" + rhsType->toString() +
                         "' to ref<" + elemTyped->toString() + "> variable '" + varName + "'.",
-                    node.getRHS()->getLocation());
+                    node.getRHS()->getRange());
             }
 
             auto resultType = isAssignable ? elemTyped : TypeFactory::getPrimitive("unknown");
             auto typedRefAssign = std::make_shared<TypedRefAssignNode>(varName, typedRHS, resultType);
-            typedRefAssign->setLocation(node.getLocation());
+            typedRefAssign->setRange(node.getRange());
             lastNode = typedRefAssign;
             return;
         }
@@ -164,12 +164,12 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE018]: Cannot assign value of type '" + rhsType->toString() +
                     "' to variable '" + varName + "' of type '" + varType->toString() + "'.",
-                node.getRHS()->getLocation());
+                node.getRHS()->getRange());
         }
 
         auto resultType = isAssignable ? varType : TypeFactory::getPrimitive("unknown");
         auto typedAssign = std::make_shared<TypedAssignmentNode>(varName, typedRHS, resultType);
-        typedAssign->setLocation(node.getLocation());
+        typedAssign->setRange(node.getRange());
         lastNode = typedAssign;
     }
 
@@ -195,7 +195,7 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE056]: Initializer type '" + typedInit->getType()->toString() +
                         "' does not match element type '" + elemType->toString() + "'.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -203,7 +203,7 @@ namespace Ryntra::Compiler::Semantic {
 
         auto ptrType = TypeFactory::getPointer(elemType);
         auto typedNew = std::make_shared<TypedNewNode>(elemType, typedInit, ptrType);
-        typedNew->setLocation(node.getLocation());
+        typedNew->setRange(node.getRange());
         lastNode = typedNew;
     }
 
@@ -211,7 +211,7 @@ namespace Ryntra::Compiler::Semantic {
         if (unsafeDepth_ == 0) {
             ErrorHandler::getInstance().makeError(
                 "[RCE057]: 'delete' is only allowed inside 'unsafe' blocks.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -228,7 +228,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE058]: 'delete' requires a pointer expression, but got '" +
                     exprType->toString() + "'.",
-                node.getLocation());
+                node.getRange());
             lastNode = nullptr;
             return;
         }
@@ -238,14 +238,14 @@ namespace Ryntra::Compiler::Semantic {
             if (ptrSemType.getElementType()->getKind() == TypeKind::FUNCTION) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE077]: Cannot delete a function pointer.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
         }
 
         auto typedDelete = std::make_shared<TypedDeleteNode>(typedExpr);
-        typedDelete->setLocation(node.getLocation());
+        typedDelete->setRange(node.getRange());
         lastNode = typedDelete;
     }
 
@@ -272,7 +272,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE038]: Index must be 'int' or 'long', but got '" +
                     typedIndex->getType()->toString() + "'.",
-                node.getIndex()->getLocation());
+                node.getIndex()->getRange());
         }
 
         if (exprType->getKind() == TypeKind::ARRAY) {
@@ -282,7 +282,7 @@ namespace Ryntra::Compiler::Semantic {
             } else {
                 ErrorHandler::getInstance().makeError(
                     "[RCE035]: Array expression is not a variable.",
-                    node.getArrayExpr()->getLocation());
+                    node.getArrayExpr()->getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -291,7 +291,7 @@ namespace Ryntra::Compiler::Semantic {
             auto elemType = arrType.getElementType();
 
             auto typedAccess = std::make_shared<TypedArrayIndexAccessNode>(arrayName, typedIndex, elemType);
-            typedAccess->setLocation(node.getLocation());
+            typedAccess->setRange(node.getRange());
             lastNode = typedAccess;
             return;
         }
@@ -301,7 +301,7 @@ namespace Ryntra::Compiler::Semantic {
             auto elemType = ptrType.getElementType();
 
             auto typedPtrAccess = std::make_shared<TypedPtrIndexAccessNode>(typedExpr, typedIndex, elemType);
-            typedPtrAccess->setLocation(node.getLocation());
+            typedPtrAccess->setRange(node.getRange());
             lastNode = typedPtrAccess;
             return;
         }
@@ -309,7 +309,7 @@ namespace Ryntra::Compiler::Semantic {
         ErrorHandler::getInstance().makeError(
             "[RCE037]: Subscript operator '[]' requires an array or pointer expression, but got '" +
                 exprType->toString() + "'.",
-            node.getArrayExpr()->getLocation());
+            node.getArrayExpr()->getRange());
         lastNode = nullptr;
     }
 
@@ -336,7 +336,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE042]: Index must be 'int' or 'long', but got '" +
                     typedIndex->getType()->toString() + "'.",
-                node.getIndex()->getLocation());
+                node.getIndex()->getRange());
         }
 
         node.getValue()->accept(*this);
@@ -353,7 +353,7 @@ namespace Ryntra::Compiler::Semantic {
             } else {
                 ErrorHandler::getInstance().makeError(
                     "[RCE039]: Array expression is not a variable.",
-                    node.getArrayExpr()->getLocation());
+                    node.getArrayExpr()->getRange());
                 lastNode = nullptr;
                 return;
             }
@@ -367,12 +367,12 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE043]: Cannot assign value of type '" + typedValue->getType()->toString() +
                         "' to array element of type '" + elemType->toString() + "'.",
-                    node.getValue()->getLocation());
+                    node.getValue()->getRange());
             }
 
             auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
             auto typedAssign = std::make_shared<TypedArrayIndexAssignmentNode>(arrayName, typedIndex, typedValue, resultType);
-            typedAssign->setLocation(node.getLocation());
+            typedAssign->setRange(node.getRange());
             lastNode = typedAssign;
             return;
         }
@@ -387,12 +387,12 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE060]: Cannot assign value of type '" + typedValue->getType()->toString() +
                         "' to pointer element of type '" + elemType->toString() + "'.",
-                    node.getValue()->getLocation());
+                    node.getValue()->getRange());
             }
 
             auto resultType = isAssignable ? elemType : TypeFactory::getPrimitive("unknown");
             auto typedAssign = std::make_shared<TypedPtrIndexAssignmentNode>(typedExpr, typedIndex, typedValue, resultType);
-            typedAssign->setLocation(node.getLocation());
+            typedAssign->setRange(node.getRange());
             lastNode = typedAssign;
             return;
         }
@@ -400,7 +400,7 @@ namespace Ryntra::Compiler::Semantic {
         ErrorHandler::getInstance().makeError(
             "[RCE041]: Subscript assignment '[]=' requires an array or pointer expression, but got '" +
                 exprType->toString() + "'.",
-            node.getArrayExpr()->getLocation());
+            node.getArrayExpr()->getRange());
         lastNode = nullptr;
     }
 } // namespace Ryntra::Compiler::Semantic

@@ -19,11 +19,11 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE020]: Unary operator '!' requires 'bool' operand, but got '" +
                         typedOperand->getType()->toString() + "'.",
-                    node.getOperand()->getLocation());
+                    node.getOperand()->getRange());
             }
             auto typedUnary = std::make_shared<TypedUnaryOpNode>(
                 node.getOp(), typedOperand, boolType);
-            typedUnary->setLocation(node.getLocation());
+            typedUnary->setRange(node.getRange());
             lastNode = typedUnary;
             return;
         }
@@ -36,12 +36,12 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE032]: Unary operator '-' requires 'int' or 'long' operand, but got '" +
                         typedOperand->getType()->toString() + "'.",
-                    node.getOperand()->getLocation());
+                    node.getOperand()->getRange());
             }
             auto resultType = isLong ? longType : intType;
             auto typedUnary = std::make_shared<TypedUnaryOpNode>(
                 node.getOp(), typedOperand, resultType);
-            typedUnary->setLocation(node.getLocation());
+            typedUnary->setRange(node.getRange());
             lastNode = typedUnary;
             return;
         }
@@ -50,13 +50,13 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE019]: Unary operator '~' requires 'int' or 'long' operand, but got '" +
                     typedOperand->getType()->toString() + "'.",
-                node.getOperand()->getLocation());
+                node.getOperand()->getRange());
         }
 
         auto resultType = isLong ? longType : intType;
         auto typedUnary = std::make_shared<TypedUnaryOpNode>(
             node.getOp(), typedOperand, resultType);
-        typedUnary->setLocation(node.getLocation());
+        typedUnary->setRange(node.getRange());
         lastNode = typedUnary;
     }
 
@@ -87,19 +87,19 @@ namespace Ryntra::Compiler::Semantic {
                 if (leftIsPtr && (typedRight->getType()->equals(*intType) || typedRight->getType()->equals(*longType))) {
                     offsetIsInt = typedRight->getType()->equals(*intType);
                     offsetIsLong = typedRight->getType()->equals(*longType);
-                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
+                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getRange());
                     if (ptrVarName.empty()) { lastNode = nullptr; return; }
                     auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedRight, true, leftType);
-                    typedOffset->setLocation(node.getLocation());
+                    typedOffset->setRange(node.getRange());
                     lastNode = typedOffset;
                     return;
                 } else if (rightIsPtr && (typedLeft->getType()->equals(*intType) || typedLeft->getType()->equals(*longType))) {
                     offsetIsInt = typedLeft->getType()->equals(*intType);
                     offsetIsLong = typedLeft->getType()->equals(*longType);
-                    std::string ptrVarName = getPtrVarName(typedRight, node.getRight()->getLocation());
+                    std::string ptrVarName = getPtrVarName(typedRight, node.getRight()->getRange());
                     if (ptrVarName.empty()) { lastNode = nullptr; return; }
                     auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedLeft, true, rightType);
-                    typedOffset->setLocation(node.getLocation());
+                    typedOffset->setRange(node.getRange());
                     lastNode = typedOffset;
                     return;
                 }
@@ -107,10 +107,10 @@ namespace Ryntra::Compiler::Semantic {
 
             if (node.getOp() == BinaryOpType::Sub && leftIsPtr && !rightIsPtr) {
                 if (typedRight->getType()->equals(*intType) || typedRight->getType()->equals(*longType)) {
-                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
+                    std::string ptrVarName = getPtrVarName(typedLeft, node.getLeft()->getRange());
                     if (ptrVarName.empty()) { lastNode = nullptr; return; }
                     auto typedOffset = std::make_shared<TypedPtrOffsetNode>(ptrVarName, typedRight, false, leftType);
-                    typedOffset->setLocation(node.getLocation());
+                    typedOffset->setRange(node.getRange());
                     lastNode = typedOffset;
                     return;
                 }
@@ -118,18 +118,18 @@ namespace Ryntra::Compiler::Semantic {
 
             if (node.getOp() == BinaryOpType::Sub && leftIsPtr && rightIsPtr) {
                 if (leftType->equals(*rightType)) {
-                    std::string leftPtrName = getPtrVarName(typedLeft, node.getLeft()->getLocation());
-                    std::string rightPtrName = getPtrVarName(typedRight, node.getRight()->getLocation());
+                    std::string leftPtrName = getPtrVarName(typedLeft, node.getLeft()->getRange());
+                    std::string rightPtrName = getPtrVarName(typedRight, node.getRight()->getRange());
                     if (leftPtrName.empty() || rightPtrName.empty()) { lastNode = nullptr; return; }
                     auto typedDiff = std::make_shared<TypedPtrDiffNode>(leftPtrName, rightPtrName, intType);
-                    typedDiff->setLocation(node.getLocation());
+                    typedDiff->setRange(node.getRange());
                     lastNode = typedDiff;
                     return;
                 } else {
                     ErrorHandler::getInstance().makeError(
                         "[RCE058]: Cannot subtract pointers of different types '" +
                             leftType->toString() + "' and '" + rightType->toString() + "'.",
-                        node.getLocation());
+                        node.getRange());
                     lastNode = nullptr;
                     return;
                 }
@@ -147,13 +147,13 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE016]: Left operand of binary expression must be 'int' or 'long', but got '" +
                     typedLeft->getType()->toString() + "'.",
-                node.getLeft()->getLocation());
+                node.getLeft()->getRange());
         }
         if (!rightIsInt && !rightIsLong) {
             ErrorHandler::getInstance().makeError(
                 "[RCE017]: Right operand of binary expression must be 'int' or 'long', but got '" +
                     typedRight->getType()->toString() + "'.",
-                node.getRight()->getLocation());
+                node.getRight()->getRange());
         }
 
         std::shared_ptr<Type> resultType;
@@ -166,7 +166,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto typedBinOp = std::make_shared<TypedBinaryOpNode>(typedLeft, node.getOp(), typedRight, resultType);
-        typedBinOp->setLocation(node.getLocation());
+        typedBinOp->setRange(node.getRange());
         lastNode = typedBinOp;
     }
 
@@ -203,17 +203,17 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE020]: Cannot cast from '" + operandType->toString() +
                     "' to '" + targetTyped->toString() + "'.",
-                node.getLocation());
+                node.getRange());
         }
 
         if (operandType->equals(*longType) && targetTyped->equals(*intType)) {
             ErrorHandler::getInstance().makeWarning(
                 "[RCW002]: Result of this casting operation will be truncated.",
-                node.getLocation());
+                node.getRange());
         }
 
         auto typedCast = std::make_shared<TypedCastNode>(typedOperand, targetTyped);
-        typedCast->setLocation(node.getLocation());
+        typedCast->setRange(node.getRange());
         lastNode = typedCast;
     }
 
@@ -240,20 +240,20 @@ namespace Ryntra::Compiler::Semantic {
             if (leftIsNull && rightIsNull) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE055]: Cannot compare 'null' with 'null'.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
             if (node.getOp() != ComparisonOpType::Eq && node.getOp() != ComparisonOpType::Ne) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE055]: Only '==' and '!=' are allowed for pointer comparison.",
-                    node.getLocation());
+                    node.getRange());
                 lastNode = nullptr;
                 return;
             }
             auto boolType = TypeFactory::getPrimitive("bool");
             auto typedCmp = std::make_shared<TypedComparisonNode>(typedLeft, node.getOp(), typedRight, boolType);
-            typedCmp->setLocation(node.getLocation());
+            typedCmp->setRange(node.getRange());
             lastNode = typedCmp;
             return;
         }
@@ -269,18 +269,18 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE021]: Left operand of comparison must be 'int' or 'long', but got '" +
                     typedLeft->getType()->toString() + "'.",
-                node.getLeft()->getLocation());
+                node.getLeft()->getRange());
         }
         if (!rightIsInt && !rightIsLong) {
             ErrorHandler::getInstance().makeError(
                 "[RCE022]: Right operand of comparison must be 'int' or 'long', but got '" +
                     typedRight->getType()->toString() + "'.",
-                node.getRight()->getLocation());
+                node.getRight()->getRange());
         }
 
         auto boolType = TypeFactory::getPrimitive("bool");
         auto typedCmp = std::make_shared<TypedComparisonNode>(typedLeft, node.getOp(), typedRight, boolType);
-        typedCmp->setLocation(node.getLocation());
+        typedCmp->setRange(node.getRange());
         lastNode = typedCmp;
     }
 
@@ -302,18 +302,18 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE064]: Left operand of '&&' must be 'bool', but got '" +
                     typedLeft->getType()->toString() + "'.",
-                node.getLeft()->getLocation());
+                node.getLeft()->getRange());
         }
 
         if (!typedRight->getType()->equals(*boolType)) {
             ErrorHandler::getInstance().makeError(
                 "[RCE065]: Right operand of '&&' must be 'bool', but got '" +
                     typedRight->getType()->toString() + "'.",
-                node.getRight()->getLocation());
+                node.getRight()->getRange());
         }
 
         auto typedNode = std::make_shared<TypedConditionalAndNode>(typedLeft, typedRight, boolType);
-        typedNode->setLocation(node.getLocation());
+        typedNode->setRange(node.getRange());
         lastNode = typedNode;
     }
 
@@ -335,18 +335,18 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE066]: Left operand of '||' must be 'bool', but got '" +
                     typedLeft->getType()->toString() + "'.",
-                node.getLeft()->getLocation());
+                node.getLeft()->getRange());
         }
 
         if (!typedRight->getType()->equals(*boolType)) {
             ErrorHandler::getInstance().makeError(
                 "[RCE067]: Right operand of '||' must be 'bool', but got '" +
                     typedRight->getType()->toString() + "'.",
-                node.getRight()->getLocation());
+                node.getRight()->getRange());
         }
 
         auto typedNode = std::make_shared<TypedConditionalOrNode>(typedLeft, typedRight, boolType);
-        typedNode->setLocation(node.getLocation());
+        typedNode->setRange(node.getRange());
         lastNode = typedNode;
     }
 } // namespace Ryntra::Compiler::Semantic

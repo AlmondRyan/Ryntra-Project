@@ -43,6 +43,8 @@ set(UTILITY_SOURCE
         Utility/ErrorHandler/LexParseErrorHandler.h
         Utility/ErrorHandler/LexParseErrorHandler.cpp
         Utility/SourceLocation/SourceRange.h
+        Utility/SourceLocation/SourceRangeBuilder.h
+        Utility/ErrorHandler/InternalCompilerError.h
 )
 
 set(SEMANTIC_SOURCE
@@ -85,6 +87,7 @@ set(VM_SOURCE
         Compiler/VM/BytecodeGenerator.cpp
         Compiler/VM/VirtualMachine.h
         Compiler/VM/VirtualMachine.cpp
+        Utility/ErrorHandler/InternalCompilerError.h
 )
 
 find_package(antlr4-runtime REQUIRED)
@@ -104,6 +107,13 @@ add_subdirectory(CodeEditor)
 add_dependencies(RyntraProject GenerateAllNodesVisitor)
 
 target_link_libraries(RyntraProject PRIVATE antlr4_shared)
+
+# Phase 6: mark IASTNode/ITypedASTNode getLocation()/setLocation() as [[deprecated]].
+# All call sites have been migrated to getRange()/setRange(); use `getRange().begin`
+# where a point is still required (e.g. SymbolTable::define). Remove this line to
+# silence the warnings again.
+target_compile_definitions(RyntraProject PRIVATE RYNTRA_ENABLE_LOCATION_DEPRECATION)
+
 target_include_directories(RyntraProject PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/ANTLR/antlr-generated
         ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/

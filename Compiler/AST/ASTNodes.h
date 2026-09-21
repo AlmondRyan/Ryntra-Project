@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "SourceLocation/SourceLocation.h"
+#include "SourceLocation/SourceRange.h"
 
 #include <cstdint>
 #include <memory>
@@ -15,16 +15,24 @@ namespace Ryntra::Compiler {
         virtual void accept(IVisitor &visitor) = 0;
         virtual std::string toString() const = 0;
 
-        SourceLocation getLocation() const {
-            return location;
+        SourceRange getRange() const {
+            return range;
         }
 
-        void setLocation(const SourceLocation newLocation) {
-            location = newLocation;
+        void setRange(const SourceRange &newRange) {
+            range = newRange;
+        }
+
+        RYNTRA_DEPRECATED_LOCATION SourceLocation getLocation() const {
+            return range.begin;
+        }
+
+        RYNTRA_DEPRECATED_LOCATION void setLocation(const SourceLocation &newLocation) {
+            range = SourceRange(newLocation);
         }
 
     private:
-        SourceLocation location;
+        SourceRange range;
     };
 
     class ExpressionNode : public IASTNode {};

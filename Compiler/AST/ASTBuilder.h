@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ASTNodes.h"
-#include "SourceLocation/SourceLocation.h"
+#include "SourceLocation/SourceRangeBuilder.h"
 #include "antlr/RyntraParser.h"
 #include <memory>
 #include <vector>
@@ -64,32 +64,20 @@ namespace Ryntra::Compiler {
         std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:
-        SourceLocation getLoc(antlr4::ParserRuleContext *context) {
-            return SourceLocation(context->getStart()->getLine(),
-                context->getStart()->getCharPositionInLine(),
-                context->getStart()->getStartIndex());
-        }
-
-        SourceLocation getLoc(antlr4::tree::TerminalNode *node) {
-            return SourceLocation(node->getSymbol()->getLine(),
-                node->getSymbol()->getCharPositionInLine(),
-                node->getSymbol()->getStartIndex());
-        }
-
         // Walk into ptr/ref element types to locate a bare (non-Fn) function type
         static std::string findBareFunctionTypeText(antlr::RyntraParser::TypeSpecifierContext *ctx);
 
         template <typename Tp, typename... Args>
         std::shared_ptr<Tp> createNode(antlr4::ParserRuleContext *ctx, Args &&...args) {
             auto node = std::make_shared<Tp>(std::forward<Args>(args)...);
-            node->setLocation(getLoc(ctx));
+            node->setRange(makeSourceRange(ctx));
             return node;
         }
 
         template <typename Tp, typename... Args>
         std::shared_ptr<Tp> createNode(antlr4::tree::TerminalNode *node, Args &&...args) {
             auto astNode = std::make_shared<Tp>(std::forward<Args>(args)...);
-            astNode->setLocation(getLoc(node));
+            astNode->setRange(makeSourceRange(node));
             return astNode;
         }
     };

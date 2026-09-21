@@ -21,7 +21,7 @@ namespace Ryntra::Compiler::Semantic {
             if (!existingSym) {
                 auto overloadSet = std::make_shared<OverloadSet>(funcName);
                 overloadSet->addFunction(std::move(newFuncSym));
-                symbolTable.define(overloadSet, func->getLocation());
+                symbolTable.define(overloadSet, func->getRange());
             } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(existingSym)) {
                 bool isDuplicate = false;
                 for (const auto &existing : overloadSet->getFunctions()) {
@@ -37,7 +37,7 @@ namespace Ryntra::Compiler::Semantic {
                     if (match) {
                         ErrorHandler::getInstance().makeError(
                             "[RCE001]: Function '" + funcName + "' is already defined with the same signature.",
-                            func->getLocation());
+                            func->getRange());
                         isDuplicate = true;
                         break;
                     }
@@ -72,7 +72,7 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::VoidType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
+            symbolTable.define(overloadSet, SourceRange(SourceLocation{0, 0, 0}));
         }
 
         if (!symbolTable.resolve("__builtin_scan")) {
@@ -94,7 +94,7 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::BoolType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
+            symbolTable.define(overloadSet, SourceRange(SourceLocation{0, 0, 0}));
         }
 
         if (!symbolTable.resolve("print")) {
@@ -121,30 +121,30 @@ namespace Ryntra::Compiler::Semantic {
                                                                            std::make_shared<STType::VoidType>(), std::move(params)));
             }
 
-            symbolTable.define(overloadSet, SourceLocation{0, 0, 0});
+            symbolTable.define(overloadSet, SourceRange(SourceLocation{0, 0, 0}));
         }
 
         auto mainSym = symbolTable.resolve("main");
         if (!mainSym) {
             ErrorHandler::getInstance().makeError(
-                "[RCE002]: 'main' function is not defined.", node.getLocation());
+                "[RCE002]: 'main' function is not defined.", node.getRange());
         } else if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(mainSym)) {
             if (overloadSet->getFunctions().empty()) {
                 ErrorHandler::getInstance().makeError(
-                    "[RCE003]: 'main' is not a function.", node.getLocation());
+                    "[RCE003]: 'main' is not a function.", node.getRange());
             } else {
                 auto mainFuncSym = overloadSet->getFunctions()[0];
                 if (!mainFuncSym->getReturnType()) {
                     ErrorHandler::getInstance().makeError(
-                        "[RCE004]: 'main' function must have a return type.", node.getLocation());
+                        "[RCE004]: 'main' function must have a return type.", node.getRange());
                 } else if (mainFuncSym->getReturnType()->getKind() != STType::TypeKind::Void) {
                     ErrorHandler::getInstance().makeError(
-                        "[RCE005]: 'main' function must return 'void'.", node.getLocation());
+                        "[RCE005]: 'main' function must return 'void'.", node.getRange());
                 }
             }
         } else {
             ErrorHandler::getInstance().makeError(
-                "[RCE003]: 'main' is not a function.", node.getLocation());
+                "[RCE003]: 'main' is not a function.", node.getRange());
         }
 
         std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> typedFunctions;
@@ -156,7 +156,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         typedProgram = std::make_shared<TypedProgramNode>(std::move(typedFunctions));
-        typedProgram->setLocation(node.getLocation());
+        typedProgram->setRange(node.getRange());
         lastNode = typedProgram;
     }
 
@@ -177,7 +177,7 @@ namespace Ryntra::Compiler::Semantic {
             if (paramType) {
                 symbolTable.define(
                     std::make_shared<VariableSymbol>(paramName, paramType),
-                    param->getLocation());
+                    param->getRange());
                 typedParams.push_back(
                     std::make_shared<TypedParameterNode>(paramName, toTypedType(paramType)));
             }
@@ -190,7 +190,7 @@ namespace Ryntra::Compiler::Semantic {
         if (typedBody) {
             auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(
                 funcName, toTypedType(returnType), std::move(typedParams), typedBody);
-            typedFunc->setLocation(node.getLocation());
+            typedFunc->setRange(node.getRange());
             lastNode = typedFunc;
         } else {
             lastNode = nullptr;
@@ -212,11 +212,11 @@ namespace Ryntra::Compiler::Semantic {
                         "[RCE006]: Return type mismatch. Expected '" +
                             expectedTyped->toString() + "', but got '" +
                             actualType->toString() + "'.",
-                        node.getLocation());
+                        node.getRange());
                 }
             }
             auto typedReturn = std::make_shared<TypedReturnNode>(typedExpr);
-            typedReturn->setLocation(node.getLocation());
+            typedReturn->setRange(node.getRange());
             lastNode = typedReturn;
         } else {
             lastNode = nullptr;
@@ -233,10 +233,10 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE072]: '" + node.getWrappedBareFunctionType() +
                     "' is not a valid type that can be placed in 'ptr<T>'. Use 'Fn<...>' to declare a function type.",
-                node.getLocation());
+                node.getRange());
         }
 
-        checkKnownTypeNames(node.getName(), node.getLocation());
+        checkKnownTypeNames(node.getName(), node.getRange());
 
         lastType = makeSTType(node.getName());
     }
@@ -246,7 +246,7 @@ namespace Ryntra::Compiler::Semantic {
             ErrorHandler::getInstance().makeError(
                 "[RCE073]: Function type '" + node.getText() +
                     "' must be written as 'Fn<" + node.getText() + ">'.",
-                node.getLocation());
+                node.getRange());
         }
 
         node.getReturnType()->accept(*this);
@@ -315,16 +315,16 @@ namespace Ryntra::Compiler::Semantic {
                         "[RCE013]: Variable '" + varName + "' expects type '" +
                             expectedTyped->toString() + "', but initializer has type '" +
                             actualType->toString() + "'.",
-                        node.getLocation());
+                        node.getRange());
                 }
             }
         }
 
         auto varSym = std::make_shared<VariableSymbol>(varName, varType);
-        symbolTable.define(varSym, node.getLocation());
+        symbolTable.define(varSym, node.getRange());
 
         auto typedDecl = std::make_shared<TypedVariableDeclarationNode>(varName, toTypedType(varType), typedInit);
-        typedDecl->setLocation(node.getLocation());
+        typedDecl->setRange(node.getRange());
         lastNode = typedDecl;
     }
 
@@ -351,7 +351,7 @@ namespace Ryntra::Compiler::Semantic {
                 "[RCE033]: Array element type mismatch. Declaration has '" +
                     toTypedType(declElemType)->toString() + "', but 'new' has '" +
                     toTypedType(newElemType)->toString() + "'.",
-                node.getLocation());
+                node.getRange());
         }
 
         expectedReturnType = TypeFactory::getPrimitive("int");
@@ -367,15 +367,15 @@ namespace Ryntra::Compiler::Semantic {
                 ErrorHandler::getInstance().makeError(
                     "[RCE034]: Array size must be 'int' or 'long', but got '" +
                         sizeType->toString() + "'.",
-                    node.getSize()->getLocation());
+                    node.getSize()->getRange());
             }
         }
 
         auto varSym = std::make_shared<VariableSymbol>(varName, arrayType);
-        symbolTable.define(varSym, node.getLocation());
+        symbolTable.define(varSym, node.getRange());
 
         auto typedDecl = std::make_shared<TypedArrayDeclarationNode>(varName, toTypedType(declElemType), typedSize);
-        typedDecl->setLocation(node.getLocation());
+        typedDecl->setRange(node.getRange());
         lastNode = typedDecl;
     }
 
@@ -387,7 +387,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!sym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE014]: Variable '" + varName + "' is not defined.",
-                node.getLocation());
+                node.getRange());
             type = TypeFactory::getPrimitive("unknown");
         } else if (auto varSym = std::dynamic_pointer_cast<VariableSymbol>(sym)) {
             auto varSTType = varSym->getType();
@@ -395,7 +395,7 @@ namespace Ryntra::Compiler::Semantic {
                 auto &refSTType = static_cast<const STType::ReferenceType &>(*varSTType);
                 auto derefType = toTypedType(refSTType.getElementType());
                 auto typedRefLoad = std::make_shared<TypedRefLoadNode>(varName, derefType);
-                typedRefLoad->setLocation(node.getLocation());
+                typedRefLoad->setRange(node.getRange());
                 lastNode = typedRefLoad;
                 return;
             }
@@ -403,12 +403,12 @@ namespace Ryntra::Compiler::Semantic {
         } else {
             ErrorHandler::getInstance().makeError(
                 "[RCE015]: '" + varName + "' is not a variable.",
-                node.getLocation());
+                node.getRange());
             type = TypeFactory::getPrimitive("unknown");
         }
 
         auto typedVar = std::make_shared<TypedVariableNode>(varName, type);
-        typedVar->setLocation(node.getLocation());
+        typedVar->setRange(node.getRange());
         lastNode = typedVar;
     }
 
@@ -420,7 +420,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!sym) {
             ErrorHandler::getInstance().makeError(
                 "[RCE007]: Identifier '" + name + "' is not defined.",
-                node.getLocation());
+                node.getRange());
             type = TypeFactory::getPrimitive("unknown");
         } else if (auto funcSym = std::dynamic_pointer_cast<FunctionSymbol>(sym)) {
             std::vector<std::shared_ptr<Type>> paramTypes;
@@ -440,7 +440,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         auto typedNode = std::make_shared<TypedIdentifierNode>(name, type);
-        typedNode->setLocation(node.getLocation());
+        typedNode->setRange(node.getRange());
         lastNode = typedNode;
     }
 } // namespace Ryntra::Compiler::Semantic

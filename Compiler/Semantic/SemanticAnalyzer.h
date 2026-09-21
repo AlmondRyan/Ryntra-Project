@@ -77,18 +77,18 @@ namespace Ryntra::Compiler::Semantic {
         static TypePtr makeSTType(const std::string &name);
 
         // Recursively check that every named type inside a type-name string is known
-        void checkKnownTypeNames(const std::string &name, const SourceLocation &loc);
+        void checkKnownTypeNames(const std::string &name, const SourceRange &range);
 
         // Extract variable name from a typed expression (for pointer operations)
         static std::string getPtrVarName(const std::shared_ptr<TypedExpressionNode> &expr,
-                                          const SourceLocation &loc);
+                                          const SourceRange &range);
 
         // Build a TypedAST FunctionType from a FunctionSymbol
         static std::shared_ptr<FunctionType> functionTypeOf(const std::shared_ptr<FunctionSymbol> &fn);
 
         // Select the overload to take the address of, matching the expected type if available
         std::shared_ptr<FunctionSymbol> pickFunctionForAddress(const std::shared_ptr<OverloadSet> &ovSet,
-                                                               const SourceLocation &loc);
+                                                               const SourceRange &range);
     };
 
 } // namespace Ryntra::Compiler::Semantic

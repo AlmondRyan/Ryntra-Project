@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "SourceLocation/SourceLocation.h"
+#include "SourceLocation/SourceRange.h"
 
 namespace Ryntra::Compiler {
     /// \brief An enumeration that contains three error types: Hint, Warning, Error.
@@ -23,14 +23,14 @@ namespace Ryntra::Compiler {
     struct ErrorObject {
         ErrorType type;
         std::string description;
-        SourceLocation location;
+        SourceRange range;
 
-        /// \brief Constructor. Accepts the error type, the source location and the description
+        /// \brief Constructor. Accepts the error type, the source range and the description
         /// \param type The error type
-        /// \param loc The source location
+        /// \param range The source range the diagnostic refers to
         /// \param desc The description
-        ErrorObject(const ErrorType type, const SourceLocation loc, std::string desc)
-            : type(type), description(std::move(desc)), location(loc) {
+        ErrorObject(const ErrorType type, const SourceRange &range, std::string desc)
+            : type(type), description(std::move(desc)), range(range) {
         }
     };
 
@@ -43,21 +43,40 @@ namespace Ryntra::Compiler {
 
         /// \brief Make a warning object then push into the error object list.
         /// \param desc The description
-        /// \param location The source location
-        void makeWarning(const std::string &desc, SourceLocation location);
+        /// \param range The source range
+        void makeWarning(const std::string &desc, const SourceRange &range);
 
         /// \brief Make a hint object then push into the error object list.
         /// \param desc The description
-        /// \param location The source location
-        void makeHint(const std::string &desc, SourceLocation location);
+        /// \param range The source range
+        void makeHint(const std::string &desc, const SourceRange &range);
 
         /// \brief Make an error object then push into the error object list.
         /// \param desc The description
+        /// \param range The source range
+        void makeError(const std::string &desc, const SourceRange &range);
+
+        /// \brief Deprecated compatibility overload. Forwards to the range version as an
+        /// empty half-open range at \c location . Use the \c SourceRange overload instead.
+        /// \param desc The description
         /// \param location The source location
-        void makeError(const std::string &desc, SourceLocation location);
+        RYNTRA_DEPRECATED_LOCATION_OVERLOAD void makeWarning(const std::string &desc, const SourceLocation &location);
+
+        /// \brief Deprecated compatibility overload. Forwards to the range version as an
+        /// empty half-open range at \c location . Use the \c SourceRange overload instead.
+        /// \param desc The description
+        /// \param location The source location
+        RYNTRA_DEPRECATED_LOCATION_OVERLOAD void makeHint(const std::string &desc, const SourceLocation &location);
+
+        /// \brief Deprecated compatibility overload. Forwards to the range version as an
+        /// empty half-open range at \c location . Use the \c SourceRange overload instead.
+        /// \param desc The description
+        /// \param location The source location
+        RYNTRA_DEPRECATED_LOCATION_OVERLOAD void makeError(const std::string &desc, const SourceLocation &location);
 
         /// \brief Print ALL the error object in the list in the format of
-        /// \code [TYPE] (l: LINE, c: COL) DESC \endcode
+        /// \code [TYPE] (line:column) DESC \endcode for an empty range, or
+        /// \code [TYPE] (line:column-end.line:end.column) DESC \endcode for a span.
         void print() const;
 
         ErrorHandler(const ErrorHandler &) = delete;
@@ -72,6 +91,13 @@ namespace Ryntra::Compiler {
 
     private:
         ErrorHandler() = default;
+
+        /// \brief Format a range as \c (line:column) when empty, otherwise as
+        /// \c (line:column-end.line:end.column) .
+        /// \param range The range to format
+        /// \return The formatted location string
+        static std::string formatRange(const SourceRange &range);
+
         std::vector<ErrorObject> errorObjects;
     };
 } // namespace Ryntra::Compiler

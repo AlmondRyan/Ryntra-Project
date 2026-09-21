@@ -7,3 +7,5 @@ if ($LASTEXITCODE -ne 0) {
 } else {
     Write-Output "Test done."
 }
+
+Set-Location ../../

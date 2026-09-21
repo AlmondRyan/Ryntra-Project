@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 
 #include "ErrorHandler/ErrorHandler.h"
+#include "ErrorHandler/InternalCompilerError.h"
 
 namespace Ryntra::Compiler::Semantic {
 
@@ -60,21 +61,23 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SymbolTable::exitScope() {
-        if (scopes.empty()) {
-            ErrorHandler::getInstance().makeError("[RCE015]: No scope to exit", SourceLocation(0, 0, 0));
-            return;
-        }
+        // if (scopes.empty()) {
+        //     // ErrorHandler::getInstance().makeError("[RCE015]: No scope to exit", SourceLocation(0, 0, 0));
+        //     return;
+        // }
+        RYNTRA_ASSERT(!scopes.empty());
+
         scopes.pop_back();
     }
 
-    void SymbolTable::define(std::shared_ptr<Symbol> symbol, SourceLocation location) {
+    void SymbolTable::define(std::shared_ptr<Symbol> symbol, const SourceRange &range) {
         if (scopes.empty()) {
-            ErrorHandler::getInstance().makeError("[RCE016]: No scope to define symbol", location);
+            ErrorHandler::getInstance().makeError("[RCE016]: No scope to define symbol", range);
             return;
         }
         auto &currentScope = scopes.back();
         if (currentScope->find(symbol->getName()) != nullptr) {
-            ErrorHandler::getInstance().makeError("[RCE017]: Symbol '" + symbol->getName() + "' is already defined in the current scope.", location);
+            ErrorHandler::getInstance().makeError("[RCE017]: Symbol '" + symbol->getName() + "' is already defined in the current scope.", range);
             return;
         }
         currentScope->symbols[symbol->getName()] = std::move(symbol);

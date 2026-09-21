@@ -33,29 +33,29 @@ namespace Ryntra::VM {
         Gt,             // >
         Le,             // <=
         Ge,             // >=
-            Dup,            // Duplicate top of stack
-            Pop,            // Pop value from stack
-            StoreLocal,     // Store value from stack into local variable slot
-            LoadLocal,      // Load value from local variable slot onto stack
-            Jmp,            // Unconditional jump to instruction offset
-            Jz,             // Pop value, jump if zero to instruction offset
-            NewArray,       // Pop size, create array, push reference
-            ArrGet,         // Pop index, pop array, push element
-            ArrSet,         // Pop value, pop index, pop array, set element
-            RefCreate,      // Pop slot index (from alloca), create ref, push ref
-            RefLoad,        // Pop ref, load value from referenced slot, push value
-            RefStore,       // Pop value, pop ref, store value to referenced slot
-            PtrCreate,      // Pop slot index (from alloca), create ptr, push ptr
-            PtrLoad,        // Pop ptr, load value from pointed-to slot, push value
-            PtrStore,       // Pop value, pop ptr, store value to pointed-to slot
-            New,            // Pop initializer, allocate on heap, push heap pointer
-            Delete,         // Pop ptr, free heap memory
-            ArrRef,         // Pop index, pop array, push ref to element
-            PtrIndexRef,    // Pop index, pop ptr, push ref to ptr+index
-            PinArray,       // Pop ptr, pin array (no-op currently)
-            UnpinArray,     // Pop ptr, unpin array (no-op currently)
-            PtrFromArray,   // Pop array value, create pointer to element 0
-            Halt            // Stop execution
+        Dup,            // Duplicate top of stack
+        Pop,            // Pop value from stack
+        StoreLocal,     // Store value from stack into local variable slot
+        LoadLocal,      // Load value from local variable slot onto stack
+        Jmp,            // Unconditional jump to instruction offset
+        Jz,             // Pop value, jump if zero to instruction offset
+        NewArray,       // Pop size, create array, push reference
+        ArrGet,         // Pop index, pop array, push element
+        ArrSet,         // Pop value, pop index, pop array, set element
+        RefCreate,      // Pop slot index (from alloca), create ref, push ref
+        RefLoad,        // Pop ref, load value from referenced slot, push value
+        RefStore,       // Pop value, pop ref, store value to referenced slot
+        PtrCreate,      // Pop slot index (from alloca), create ptr, push ptr
+        PtrLoad,        // Pop ptr, load value from pointed-to slot, push value
+        PtrStore,       // Pop value, pop ptr, store value to pointed-to slot
+        New,            // Pop initializer, allocate on heap, push heap pointer
+        Delete,         // Pop ptr, free heap memory
+        ArrRef,         // Pop index, pop array, push ref to element
+        PtrIndexRef,    // Pop index, pop ptr, push ref to ptr+index
+        PinArray,       // Pop ptr, pin array (no-op currently)
+        UnpinArray,     // Pop ptr, unpin array (no-op currently)
+        PtrFromArray,   // Pop array value, create pointer to element 0
+        Halt            // Stop execution
     };
     // clang-format on
 
