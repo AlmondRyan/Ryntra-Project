@@ -24,6 +24,7 @@ FN: 'Fn';
 UNSAFE: 'unsafe';
 FIXED: 'fixed';
 STRUCT: 'struct';
+SELF: 'self';
 
 // Symbols & Operators
 SEMICOLON: ';';
@@ -95,12 +96,18 @@ functionDefinition
     : PUBLIC typeSpecifier IDENTIFIER LPAREN parameterList? RPAREN block
     ;
 
+constructor
+    : visibilityModifier IDENTIFIER LPAREN parameterList? RPAREN block
+    ;
+
 structDefinition
     : annotation* PUBLIC STRUCT IDENTIFIER LBRACE structMember* RBRACE
     ;
 
 structMember
     : visibilityModifier typeSpecifier IDENTIFIER SEMICOLON
+    | functionDefinition
+    | constructor
     ;
 
 visibilityModifier
@@ -223,6 +230,7 @@ expression
     | expression DEC                                                # PostfixDecExpression
     | IDENTIFIER LPAREN argumentList? RPAREN                        # FunctionCall
     | object=expression DOT IDENTIFIER LPAREN argumentList? RPAREN  # MethodCallExpression
+    | object=expression DOT IDENTIFIER                              # MemberAccessExpression
     | array=expression LBRACK index=expression RBRACK               # ArrayIndexAccess
     | INC expression                                                # PrefixIncExpression
     | DEC expression                                                # PrefixDecExpression
@@ -241,6 +249,7 @@ expression
     | left=expression op=COND_OR right=expression                    # ConditionalOrExpression
     | <assoc=right> left=expression op=(ASSIGN|ADD_ASSIGN|SUB_ASSIGN|MUL_ASSIGN|DIV_ASSIGN|MOD_ASSIGN|AND_ASSIGN|OR_ASSIGN|XOR_ASSIGN|SHL_ASSIGN|SHR_ASSIGN) right=expression  # AssignmentExpression
     | IDENTIFIER                                                    # VariableReference
+    | SELF                                                          # SelfReference
     | STRING_LITERAL                                                # StringLiteral
     | INTEGER_LITERAL                                               # IntegerLiteral
     | TRUE                                                          # TrueLiteral
