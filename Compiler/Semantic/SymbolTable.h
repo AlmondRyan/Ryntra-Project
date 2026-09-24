@@ -32,7 +32,8 @@ namespace Ryntra::Compiler::Semantic {
             Array,
             Reference,
             Pointer,
-            Function
+            Function,
+            Struct
         };
         // clang-format on
 
@@ -121,6 +122,24 @@ namespace Ryntra::Compiler::Semantic {
         private:
             std::shared_ptr<Type> returnType;
             std::vector<std::shared_ptr<Type>> paramTypes;
+        };
+
+        class StructType : public Type {
+        public:
+            explicit StructType(std::string name) : name(std::move(name)) {}
+            TypeKind getKind() const override { return TypeKind::Struct; }
+            const std::string &getName() const { return name; }
+            void addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
+                fields[fieldName] = std::move(fieldType);
+            }
+            std::shared_ptr<Type> getField(const std::string &fieldName) const {
+                auto it = fields.find(fieldName);
+                return it == fields.end() ? nullptr : it->second;
+            }
+            const std::unordered_map<std::string, std::shared_ptr<Type>> &getFields() const { return fields; }
+        private:
+            std::string name;
+            std::unordered_map<std::string, std::shared_ptr<Type>> fields;
         };
     } // namespace STType
 

@@ -8,9 +8,11 @@ namespace Ryntra::IR {
             auto retType = toIRType(func->getReturnType());
 
             std::vector<Function::Parameter> irParams;
-            for (const auto &param : func->getParameters()) {
-                auto paramIRType = toIRType(param->getType());
-                irParams.emplace_back(param->getName(), paramIRType);
+            if (func->getParameterList()) {
+                for (const auto &param : func->getParameterList()->getParameters()) {
+                    auto paramIRType = toIRType(param->getType());
+                    irParams.emplace_back(param->getName(), paramIRType);
+                }
             }
 
             auto irFunc = builder_.createFunction(func->getName(), retType, irParams);
@@ -34,11 +36,13 @@ namespace Ryntra::IR {
         irFunc->addBasicBlock(entry);
         builder_.setInsertPoint(entry);
 
-        for (const auto &param : node.getParameters()) {
-            auto paramIRType = toIRType(param->getType());
-            auto allocaInst = builder_.createAlloca(
-                builder_.generateUniqueName(param->getName() + "."), paramIRType);
-            allocaMap_[param->getName()] = allocaInst;
+        if (node.getParameterList()) {
+            for (const auto &param : node.getParameterList()->getParameters()) {
+                auto paramIRType = toIRType(param->getType());
+                auto allocaInst = builder_.createAlloca(
+                    builder_.generateUniqueName(param->getName() + "."), paramIRType);
+                allocaMap_[param->getName()] = allocaInst;
+            }
         }
 
         node.getBody()->accept(*this);

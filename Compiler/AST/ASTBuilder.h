@@ -11,8 +11,13 @@ namespace Ryntra::Compiler {
     public:
         std::shared_ptr<ProgramNode> visitProgram(antlr::RyntraParser::ProgramContext *ctx);
         std::shared_ptr<FunctionDefinitionNode> visitFunctionDefinition(antlr::RyntraParser::FunctionDefinitionContext *ctx);
+        std::shared_ptr<ConstructorDeclarationNode> visitConstructor(antlr::RyntraParser::ConstructorContext *ctx);
+        std::shared_ptr<StructDeclarationNode> visitStructDefinition(antlr::RyntraParser::StructDefinitionContext *ctx);
+        std::shared_ptr<IASTNode> visitStructMember(antlr::RyntraParser::StructMemberContext *ctx);
+        std::shared_ptr<ModifierNode> visitVisibilityModifier(antlr::RyntraParser::VisibilityModifierContext *ctx);
+        std::shared_ptr<AnnotationNode> visitAnnotation(antlr::RyntraParser::AnnotationContext *ctx);
         std::shared_ptr<ParameterNode> visitParameter(antlr::RyntraParser::ParameterContext *ctx);
-        std::vector<std::shared_ptr<ParameterNode>> visitParameterList(antlr::RyntraParser::ParameterListContext *ctx);
+        std::shared_ptr<ParameterListNode> visitParameterList(antlr::RyntraParser::ParameterListContext *ctx);
         std::shared_ptr<TypeSpecifierNode> visitTypeSpecifier(antlr::RyntraParser::TypeSpecifierContext *ctx);
         std::shared_ptr<ReferenceTypeNode> visitReferenceType(antlr::RyntraParser::TypeSpecifierContext *ctx);
         std::shared_ptr<BlockNode> visitBlock(antlr::RyntraParser::BlockContext *ctx);
@@ -54,6 +59,8 @@ namespace Ryntra::Compiler {
         std::shared_ptr<CastNode> visitCastExpression(antlr::RyntraParser::CastExpressionContext *ctx);
         std::shared_ptr<PtrExpressionNode> visitPtrExpression(antlr::RyntraParser::PtrExpressionContext *ctx);
         std::shared_ptr<MethodCallNode> visitMethodCallExpression(antlr::RyntraParser::MethodCallExpressionContext *ctx);
+        std::shared_ptr<MemberAccessNode> visitMemberAccessExpression(antlr::RyntraParser::MemberAccessExpressionContext *ctx);
+        std::shared_ptr<SelfExpressionNode> visitSelfReference(antlr::RyntraParser::SelfReferenceContext *ctx);
         std::shared_ptr<RefExpressionNode> visitRefExpression(antlr::RyntraParser::RefExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewExpression(antlr::RyntraParser::NewExpressionContext *ctx);
         std::shared_ptr<NewExpressionNode> visitNewWithInitExpression(antlr::RyntraParser::NewWithInitExpressionContext *ctx);
@@ -61,7 +68,7 @@ namespace Ryntra::Compiler {
         std::shared_ptr<ExpressionNode> visitConditionalOrExpression(antlr::RyntraParser::ConditionalOrExpressionContext *ctx);
         std::shared_ptr<ComparisonNode> visitComparisonExpression(antlr::RyntraParser::ComparisonExpressionContext *ctx);
         std::shared_ptr<ExpressionNode> visitAssignmentExpression(antlr::RyntraParser::AssignmentExpressionContext *ctx);
-        std::vector<std::shared_ptr<ExpressionNode>> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
+        std::shared_ptr<ArgumentListNode> visitArgumentList(antlr::RyntraParser::ArgumentListContext *ctx);
 
     private:
         // Walk into ptr/ref element types to locate a bare (non-Fn) function type

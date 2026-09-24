@@ -203,6 +203,11 @@ namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(MethodCallNode &node) {
         const auto &methodName = node.getMethodName();
 
+        std::vector<std::shared_ptr<ExpressionNode>> args;
+        if (node.getArgumentList()) {
+            args = node.getArgumentList()->getArguments();
+        }
+
         node.getObject()->accept(*this);
         auto typedObject = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
         if (!typedObject) {
@@ -223,7 +228,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         if (methodName == "load") {
-            if (!node.getArguments().empty()) {
+            if (!args.empty()) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE081]: '.load()' does not take any arguments.",
                     node.getRange());
@@ -260,7 +265,7 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         if (methodName == "store") {
-            if (node.getArguments().size() != 1) {
+            if (args.size() != 1) {
                 ErrorHandler::getInstance().makeError(
                     "[RCE082]: '.store()' expects exactly one argument.",
                     node.getRange());
@@ -291,7 +296,7 @@ namespace Ryntra::Compiler::Semantic {
 
             auto elemType = std::dynamic_pointer_cast<PointerType>(objectType)->getElementType();
 
-            auto &argExpr = node.getArguments()[0];
+            auto &argExpr = args[0];
             argExpr->accept(*this);
             auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
             if (!typedValue) {

@@ -41,3 +41,14 @@ PostfixOpNode
 NewExpressionNode
 DeleteStatementNode
 FixedNode
+ModifierNode
+ArgumentListNode
+ParameterListNode
+MemberListNode
+FieldDeclarationNode
+ConstructorDeclarationNode
+AnnotationNode
+StructDeclarationNode
+SelfExpressionNode
+MemberAccessNode
+MemberAssignmentNode

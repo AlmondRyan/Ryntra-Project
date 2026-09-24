@@ -8,7 +8,10 @@ namespace Ryntra::Compiler::Semantic {
 
         auto sym = symbolTable.resolve(funcName);
 
-        const auto &args = node.getArguments();
+        std::vector<std::shared_ptr<ExpressionNode>> args;
+        if (node.getArgumentList()) {
+            args = node.getArgumentList()->getArguments();
+        }
         std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
         for (size_t i = 0; i < args.size(); ++i) {
             args[i]->accept(*this);

@@ -117,8 +117,10 @@ namespace Ryntra::Compiler {
     std::string FunctionCallNode::toString() const {
         std::stringstream ss;
         ss << "(FunctionCall " << functionName->toString();
-        for (const auto &arg : arguments) {
-            ss << " " << arg->toString();
+        if (argumentList) {
+            for (const auto &arg : argumentList->getArguments()) {
+                ss << " " << arg->toString();
+            }
         }
         ss << ")";
         return ss.str();
@@ -228,8 +230,12 @@ namespace Ryntra::Compiler {
     std::string FunctionDefinitionNode::toString() const {
         std::stringstream ss;
         ss << "(FunctionDefinition " << returnType->toString() << " " << name->toString();
-        for (const auto &param : parameters) {
-            ss << " " << param->toString();
+        if (parameterList) {
+            ss << " (ParameterList";
+            for (const auto &param : parameterList->getParameters()) {
+                ss << " " << param->toString();
+            }
+            ss << ")";
         }
         ss << " " << body->toString() << ")";
         return ss.str();
@@ -246,6 +252,9 @@ namespace Ryntra::Compiler {
         ss << "(Program";
         for (const auto &func : functions) {
             ss << " " << func->toString();
+        }
+        for (const auto &strct : structs) {
+            ss << " " << strct->toString();
         }
         ss << ")";
         return ss.str();
@@ -442,8 +451,10 @@ namespace Ryntra::Compiler {
 
     std::string MethodCallNode::toString() const {
         std::string result = "(MethodCall ." + methodName + "() " + object->toString();
-        for (const auto &arg : arguments) {
-            result += " " + arg->toString();
+        if (argumentList) {
+            for (const auto &arg : argumentList->getArguments()) {
+                result += " " + arg->toString();
+            }
         }
         return result + ")";
     }
@@ -552,6 +563,173 @@ namespace Ryntra::Compiler {
         ss << "(Fixed " << ptrType->toString() << " " << name->toString()
            << " = " << init->toString() << " " << body->toString() << ")";
         return ss.str();
+    }
+
+    void ModifierNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ModifierNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ModifierNode::toString() const {
+        switch (kind) {
+        case Kind::Public:
+            return "(Modifier public)";
+        }
+        return "(Modifier)";
+    }
+
+    void ArgumentListNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ArgumentListNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ArgumentListNode::toString() const {
+        std::stringstream ss;
+        ss << "(ArgumentList";
+        for (const auto &arg : arguments) {
+            ss << " " << arg->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void ParameterListNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ParameterListNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ParameterListNode::toString() const {
+        std::stringstream ss;
+        ss << "(ParameterList";
+        for (const auto &param : parameters) {
+            ss << " " << param->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void MemberListNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<MemberListNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string MemberListNode::toString() const {
+        std::stringstream ss;
+        ss << "(MemberList";
+        for (const auto &member : members) {
+            ss << " " << member->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void FieldDeclarationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<FieldDeclarationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string FieldDeclarationNode::toString() const {
+        std::stringstream ss;
+        ss << "(FieldDeclaration";
+        if (modifier) {
+            ss << " " << modifier->toString();
+        }
+        ss << " " << type->toString() << " " << name->toString() << ")";
+        return ss.str();
+    }
+
+    void ConstructorDeclarationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<ConstructorDeclarationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string ConstructorDeclarationNode::toString() const {
+        std::stringstream ss;
+        ss << "(ConstructorDeclaration";
+        if (modifier) {
+            ss << " " << modifier->toString();
+        }
+        ss << " " << name->toString();
+        if (parameterList) {
+            ss << " " << parameterList->toString();
+        }
+        ss << " " << body->toString() << ")";
+        return ss.str();
+    }
+
+    void AnnotationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<AnnotationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string AnnotationNode::toString() const {
+        std::stringstream ss;
+        ss << "(Annotation " << name->toString();
+        if (arguments) {
+            ss << " " << arguments->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void StructDeclarationNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<StructDeclarationNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string StructDeclarationNode::toString() const {
+        std::stringstream ss;
+        ss << "(StructDeclaration";
+        for (const auto &annotation : annotations) {
+            ss << " " << annotation->toString();
+        }
+        if (modifier) {
+            ss << " " << modifier->toString();
+        }
+        ss << " " << name->toString();
+        if (memberList) {
+            ss << " " << memberList->toString();
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    void SelfExpressionNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<SelfExpressionNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string SelfExpressionNode::toString() const {
+        return "(Self)";
+    }
+
+    void MemberAccessNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<MemberAccessNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string MemberAccessNode::toString() const {
+        return "(MemberAccess " + object->toString() + " " + member->toString() + ")";
+    }
+
+    void MemberAssignmentNode::accept(IVisitor &visitor) {
+        if (auto *v = dynamic_cast<Visitor<MemberAssignmentNode> *>(&visitor)) {
+            v->visit(*this);
+        }
+    }
+
+    std::string MemberAssignmentNode::toString() const {
+        return "(MemberAssign " + target->toString() + " " + value->toString() + ")";
     }
 
 } // namespace Ryntra::Compiler

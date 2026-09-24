@@ -3,6 +3,27 @@
 
 namespace Ryntra::Compiler::Semantic {
     void SemanticAnalyzer::visit(ProgramNode &node) {
+        // Pre-register struct types so function/method signatures can name them.
+        // The bodies are analyzed later, once builtins are available.
+        for (const auto &strct : node.getStructs()) {
+            auto structName = strct->getName()->getName();
+            if (std::dynamic_pointer_cast<TypeSymbol>(symbolTable.resolve(structName))) {
+                continue;
+            }
+
+            auto structSTType = std::make_shared<STType::StructType>(structName);
+            if (auto memberList = strct->getMemberList()) {
+                for (const auto &member : memberList->getMembers()) {
+                    if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
+                        field->getType()->accept(*this);
+                        structSTType->addField(field->getName()->getName(),
+                                               lastType ? lastType : makeSTType("unknown"));
+                    }
+                }
+            }
+            symbolTable.define(std::make_shared<TypeSymbol>(structName, structSTType), strct->getRange());
+        }
+
         for (const auto &func : node.getFunctions()) {
             auto funcName = func->getName()->getName();
 
@@ -10,9 +31,11 @@ namespace Ryntra::Compiler::Semantic {
             auto returnType = lastType ? lastType : makeSTType("unknown");
 
             std::vector<TypePtr> paramTypes;
-            for (const auto &param : func->getParameters()) {
-                param->getType()->accept(*this);
-                paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+            if (func->getParameterList()) {
+                for (const auto &param : func->getParameterList()->getParameters()) {
+                    param->getType()->accept(*this);
+                    paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+                }
             }
 
             auto newFuncSym = std::make_shared<FunctionSymbol>(funcName, returnType, std::move(paramTypes));
@@ -155,7 +178,15 @@ namespace Ryntra::Compiler::Semantic {
             }
         }
 
-        typedProgram = std::make_shared<TypedProgramNode>(std::move(typedFunctions));
+        std::vector<std::shared_ptr<TypedStructDeclarationNode>> typedStructs;
+        for (const auto &strct : node.getStructs()) {
+            strct->accept(*this);
+            if (auto typedStruct = std::dynamic_pointer_cast<TypedStructDeclarationNode>(lastNode)) {
+                typedStructs.push_back(typedStruct);
+            }
+        }
+
+        typedProgram = std::make_shared<TypedProgramNode>(std::move(typedFunctions), std::move(typedStructs));
         typedProgram->setRange(node.getRange());
         lastNode = typedProgram;
     }
@@ -170,16 +201,18 @@ namespace Ryntra::Compiler::Semantic {
         symbolTable.enterScope(Scope::Kind::Function);
 
         std::vector<std::shared_ptr<TypedParameterNode>> typedParams;
-        for (const auto &param : node.getParameters()) {
-            param->getType()->accept(*this);
-            auto paramType = lastType;
-            auto paramName = param->getName()->getName();
-            if (paramType) {
-                symbolTable.define(
-                    std::make_shared<VariableSymbol>(paramName, paramType),
-                    param->getRange());
-                typedParams.push_back(
-                    std::make_shared<TypedParameterNode>(paramName, toTypedType(paramType)));
+        if (node.getParameterList()) {
+            for (const auto &param : node.getParameterList()->getParameters()) {
+                param->getType()->accept(*this);
+                auto paramType = lastType;
+                auto paramName = param->getName()->getName();
+                if (paramType) {
+                    symbolTable.define(
+                        std::make_shared<VariableSymbol>(paramName, paramType),
+                        param->getRange());
+                    typedParams.push_back(
+                        std::make_shared<TypedParameterNode>(paramName, toTypedType(paramType)));
+                }
             }
         }
 
@@ -187,9 +220,12 @@ namespace Ryntra::Compiler::Semantic {
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
         symbolTable.exitScope();
 
+        auto typedParamList = std::make_shared<TypedParameterListNode>(std::move(typedParams));
+        typedParamList->setRange(node.getParameterList() ? node.getParameterList()->getRange() : node.getRange());
+
         if (typedBody) {
             auto typedFunc = std::make_shared<TypedFunctionDefinitionNode>(
-                funcName, toTypedType(returnType), std::move(typedParams), typedBody);
+                funcName, toTypedType(returnType), typedParamList, typedBody);
             typedFunc->setRange(node.getRange());
             lastNode = typedFunc;
         } else {
@@ -237,6 +273,13 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         checkKnownTypeNames(node.getName(), node.getRange());
+
+        // Prefer the symbol table so struct (and other named aggregate) types keep
+        // their full definition instead of being reduced to a default primitive.
+        if (auto typeSym = std::dynamic_pointer_cast<TypeSymbol>(symbolTable.resolve(node.getName()))) {
+            lastType = typeSym->getType();
+            return;
+        }
 
         lastType = makeSTType(node.getName());
     }
@@ -442,5 +485,200 @@ namespace Ryntra::Compiler::Semantic {
         auto typedNode = std::make_shared<TypedIdentifierNode>(name, type);
         typedNode->setRange(node.getRange());
         lastNode = typedNode;
+    }
+
+    void SemanticAnalyzer::visit(StructDeclarationNode &node) {
+        auto structName = node.getName()->getName();
+
+        std::shared_ptr<STType::StructType> structSTType;
+        if (auto existing = std::dynamic_pointer_cast<TypeSymbol>(symbolTable.resolve(structName))) {
+            structSTType = std::dynamic_pointer_cast<STType::StructType>(existing->getType());
+        }
+        if (!structSTType) {
+            structSTType = std::make_shared<STType::StructType>(structName);
+        }
+
+        // First pass: collect field types so `self.field` can be resolved inside
+        // constructors and methods even before their bodies are analyzed.
+        auto memberList = node.getMemberList();
+        if (memberList) {
+            for (const auto &member : memberList->getMembers()) {
+                if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
+                    field->getType()->accept(*this);
+                    structSTType->addField(field->getName()->getName(),
+                                           lastType ? lastType : makeSTType("unknown"));
+                }
+            }
+        }
+
+        if (!std::dynamic_pointer_cast<TypeSymbol>(symbolTable.resolve(structName))) {
+            symbolTable.define(std::make_shared<TypeSymbol>(structName, structSTType), node.getRange());
+        }
+
+        auto savedStruct = currentStruct;
+        currentStruct = structSTType;
+
+        std::vector<std::shared_ptr<TypedFieldDeclarationNode>> typedFields;
+        std::vector<std::shared_ptr<TypedConstructorDeclarationNode>> typedConstructors;
+        std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> typedMethods;
+
+        if (memberList) {
+            for (const auto &member : memberList->getMembers()) {
+                if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
+                    field->accept(*this);
+                    if (auto typedField = std::dynamic_pointer_cast<TypedFieldDeclarationNode>(lastNode)) {
+                        typedFields.push_back(typedField);
+                    }
+                } else if (auto ctor = std::dynamic_pointer_cast<ConstructorDeclarationNode>(member)) {
+                    ctor->accept(*this);
+                    if (auto typedCtor = std::dynamic_pointer_cast<TypedConstructorDeclarationNode>(lastNode)) {
+                        typedConstructors.push_back(typedCtor);
+                    }
+                } else if (auto method = std::dynamic_pointer_cast<FunctionDefinitionNode>(member)) {
+                    method->accept(*this);
+                    if (auto typedMethod = std::dynamic_pointer_cast<TypedFunctionDefinitionNode>(lastNode)) {
+                        typedMethods.push_back(typedMethod);
+                    }
+                }
+            }
+        }
+
+        currentStruct = savedStruct;
+
+        auto typedStruct = std::make_shared<TypedStructDeclarationNode>(
+            structName, std::move(typedFields), std::move(typedConstructors), std::move(typedMethods));
+        typedStruct->setRange(node.getRange());
+        lastNode = typedStruct;
+    }
+
+    void SemanticAnalyzer::visit(FieldDeclarationNode &node) {
+        auto fieldName = node.getName()->getName();
+        node.getType()->accept(*this);
+        auto fieldType = lastType ? lastType : makeSTType("unknown");
+
+        auto typedField = std::make_shared<TypedFieldDeclarationNode>(fieldName, toTypedType(fieldType));
+        typedField->setRange(node.getRange());
+        lastNode = typedField;
+    }
+
+    void SemanticAnalyzer::visit(ConstructorDeclarationNode &node) {
+        auto ctorName = node.getName()->getName();
+
+        symbolTable.enterScope(Scope::Kind::Function);
+
+        std::vector<std::shared_ptr<TypedParameterNode>> typedParams;
+        if (node.getParameterList()) {
+            for (const auto &param : node.getParameterList()->getParameters()) {
+                param->getType()->accept(*this);
+                auto paramType = lastType;
+                auto paramName = param->getName()->getName();
+                if (paramType) {
+                    symbolTable.define(
+                        std::make_shared<VariableSymbol>(paramName, paramType),
+                        param->getRange());
+                    typedParams.push_back(
+                        std::make_shared<TypedParameterNode>(paramName, toTypedType(paramType)));
+                }
+            }
+        }
+
+        node.getBody()->accept(*this);
+        auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
+        symbolTable.exitScope();
+
+        auto typedParamList = std::make_shared<TypedParameterListNode>(std::move(typedParams));
+        typedParamList->setRange(node.getParameterList() ? node.getParameterList()->getRange() : node.getRange());
+
+        auto typedCtor = std::make_shared<TypedConstructorDeclarationNode>(
+            ctorName, typedParamList, typedBody);
+        typedCtor->setRange(node.getRange());
+        lastNode = typedCtor;
+    }
+
+    void SemanticAnalyzer::visit(SelfExpressionNode &node) {
+        if (!currentStruct) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE083]: 'self' can only be used inside a struct member.",
+                node.getRange());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedSelf = std::make_shared<TypedSelfExpressionNode>(toTypedType(currentStruct));
+        typedSelf->setRange(node.getRange());
+        lastNode = typedSelf;
+    }
+
+    void SemanticAnalyzer::visit(MemberAccessNode &node) {
+        node.getObject()->accept(*this);
+        auto typedObject = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedObject) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto memberName = node.getMember()->getName();
+        auto objectType = typedObject->getType();
+
+        if (objectType->getKind() != TypeKind::STRUCT) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE084]: Member access '." + memberName + "' requires a struct value, but got '" +
+                    objectType->toString() + "'.",
+                node.getRange());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto &structType = static_cast<const StructType &>(*objectType);
+        auto fieldType = structType.getField(memberName);
+        if (!fieldType) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE085]: Struct '" + structType.getName() + "' has no member named '" + memberName + "'.",
+                node.getMember()->getRange());
+            lastNode = nullptr;
+            return;
+        }
+
+        auto typedAccess = std::make_shared<TypedMemberAccessNode>(typedObject, memberName, fieldType);
+        typedAccess->setRange(node.getRange());
+        lastNode = typedAccess;
+    }
+
+    void SemanticAnalyzer::visit(MemberAssignmentNode &node) {
+        node.getTarget()->accept(*this);
+        auto typedTarget = std::dynamic_pointer_cast<TypedMemberAccessNode>(lastNode);
+        if (!typedTarget) {
+            lastNode = nullptr;
+            return;
+        }
+
+        node.getValue()->accept(*this);
+        auto typedValue = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        if (!typedValue) {
+            lastNode = nullptr;
+            return;
+        }
+
+        auto fieldType = typedTarget->getType();
+        auto valueType = typedValue->getType();
+
+        bool isAssignable = fieldType->equals(*valueType) ||
+                            (valueType->toString() == "int" && fieldType->toString() == "long");
+        if (!isAssignable && valueType->toString() == "null" && fieldType->getKind() == TypeKind::POINTER) {
+            isAssignable = true;
+        }
+        if (!isAssignable && valueType->toString() != "unknown") {
+            ErrorHandler::getInstance().makeError(
+                "[RCE086]: Cannot assign value of type '" + valueType->toString() +
+                    "' to member '" + typedTarget->getMemberName() + "' of type '" +
+                    fieldType->toString() + "'.",
+                node.getValue()->getRange());
+        }
+
+        auto resultType = isAssignable ? fieldType : TypeFactory::getPrimitive("unknown");
+        auto typedAssign = std::make_shared<TypedMemberAssignmentNode>(
+            typedTarget->getObject(), typedTarget->getMemberName(), typedValue, resultType);
+        typedAssign->setRange(node.getRange());
+        lastNode = typedAssign;
     }
 } // namespace Ryntra::Compiler::Semantic

@@ -38,7 +38,35 @@ namespace Ryntra::Compiler {
     class ExpressionNode : public IASTNode {};
     class StatementNode : public IASTNode {};
 
+    class ModifierNode : public IASTNode {
+    public:
+        enum class Kind {
+            Public
+        };
+
+        explicit ModifierNode(Kind kind) : kind(kind) {}
+        Kind getKind() const { return kind; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        Kind kind;
+    };
+
+    class ArgumentListNode : public IASTNode {
+    public:
+        explicit ArgumentListNode(std::vector<std::shared_ptr<ExpressionNode>> args)
+            : arguments(std::move(args)) {}
+        const std::vector<std::shared_ptr<ExpressionNode>> &getArguments() const { return arguments; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::vector<std::shared_ptr<ExpressionNode>> arguments;
+    };
+
     class FunctionTypeNode;
+    class StructDeclarationNode;
 
     class TypeSpecifierNode : public IASTNode {
     public:
@@ -167,16 +195,16 @@ namespace Ryntra::Compiler {
 
     class FunctionCallNode : public ExpressionNode {
     public:
-        FunctionCallNode(std::shared_ptr<IdentifierNode> name, std::vector<std::shared_ptr<ExpressionNode>> args)
-            : functionName(std::move(name)), arguments(std::move(args)) {}
+        FunctionCallNode(std::shared_ptr<IdentifierNode> name, std::shared_ptr<ArgumentListNode> args)
+            : functionName(std::move(name)), argumentList(std::move(args)) {}
         std::shared_ptr<IdentifierNode> getFunctionName() const { return functionName; }
-        const std::vector<std::shared_ptr<ExpressionNode>> &getArguments() const { return arguments; }
+        std::shared_ptr<ArgumentListNode> getArgumentList() const { return argumentList; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
 
     private:
         std::shared_ptr<IdentifierNode> functionName;
-        std::vector<std::shared_ptr<ExpressionNode>> arguments;
+        std::shared_ptr<ArgumentListNode> argumentList;
     };
 
     class ExpressionStatementNode : public StatementNode {
@@ -325,14 +353,26 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IdentifierNode> name;
     };
 
+    class ParameterListNode : public IASTNode {
+    public:
+        explicit ParameterListNode(std::vector<std::shared_ptr<ParameterNode>> params)
+            : parameters(std::move(params)) {}
+        const std::vector<std::shared_ptr<ParameterNode>> &getParameters() const { return parameters; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::vector<std::shared_ptr<ParameterNode>> parameters;
+    };
+
     class FunctionDefinitionNode : public IASTNode {
     public:
         FunctionDefinitionNode(std::shared_ptr<TypeSpecifierNode> type, std::shared_ptr<IdentifierNode> name,
-                               std::vector<std::shared_ptr<ParameterNode>> params, std::shared_ptr<BlockNode> body)
-            : returnType(std::move(type)), name(std::move(name)), parameters(std::move(params)), body(std::move(body)) {}
+                               std::shared_ptr<ParameterListNode> params, std::shared_ptr<BlockNode> body)
+            : returnType(std::move(type)), name(std::move(name)), parameterList(std::move(params)), body(std::move(body)) {}
         std::shared_ptr<TypeSpecifierNode> getReturnType() const { return returnType; }
         std::shared_ptr<IdentifierNode> getName() const { return name; }
-        const std::vector<std::shared_ptr<ParameterNode>> &getParameters() const { return parameters; }
+        std::shared_ptr<ParameterListNode> getParameterList() const { return parameterList; }
         std::shared_ptr<BlockNode> getBody() const { return body; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
@@ -340,19 +380,23 @@ namespace Ryntra::Compiler {
     private:
         std::shared_ptr<TypeSpecifierNode> returnType;
         std::shared_ptr<IdentifierNode> name;
-        std::vector<std::shared_ptr<ParameterNode>> parameters;
+        std::shared_ptr<ParameterListNode> parameterList;
         std::shared_ptr<BlockNode> body;
     };
 
     class ProgramNode : public IASTNode {
     public:
-        ProgramNode(std::vector<std::shared_ptr<FunctionDefinitionNode>> funcs) : functions(std::move(funcs)) {}
+        ProgramNode(std::vector<std::shared_ptr<FunctionDefinitionNode>> funcs,
+                    std::vector<std::shared_ptr<StructDeclarationNode>> structs)
+            : functions(std::move(funcs)), structs(std::move(structs)) {}
         const std::vector<std::shared_ptr<FunctionDefinitionNode>> &getFunctions() const { return functions; }
+        const std::vector<std::shared_ptr<StructDeclarationNode>> &getStructs() const { return structs; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
 
     private:
         std::vector<std::shared_ptr<FunctionDefinitionNode>> functions;
+        std::vector<std::shared_ptr<StructDeclarationNode>> structs;
     };
 
     class VariableDeclarationNode : public StatementNode {
@@ -558,18 +602,18 @@ namespace Ryntra::Compiler {
     class MethodCallNode : public ExpressionNode {
     public:
         MethodCallNode(std::shared_ptr<ExpressionNode> object, std::string methodName,
-                       std::vector<std::shared_ptr<ExpressionNode>> arguments)
-            : object(std::move(object)), methodName(std::move(methodName)), arguments(std::move(arguments)) {}
+                       std::shared_ptr<ArgumentListNode> arguments)
+            : object(std::move(object)), methodName(std::move(methodName)), argumentList(std::move(arguments)) {}
         std::shared_ptr<ExpressionNode> getObject() const { return object; }
         const std::string &getMethodName() const { return methodName; }
-        const std::vector<std::shared_ptr<ExpressionNode>> &getArguments() const { return arguments; }
+        std::shared_ptr<ArgumentListNode> getArgumentList() const { return argumentList; }
         void accept(IVisitor &visitor) override;
         std::string toString() const override;
 
     private:
         std::shared_ptr<ExpressionNode> object;
         std::string methodName;
-        std::vector<std::shared_ptr<ExpressionNode>> arguments;
+        std::shared_ptr<ArgumentListNode> argumentList;
     };
 
     class RefExpressionNode : public ExpressionNode {
@@ -660,5 +704,127 @@ namespace Ryntra::Compiler {
         std::shared_ptr<IdentifierNode> name;
         std::shared_ptr<ExpressionNode> init;
         std::shared_ptr<BlockNode> body;
+    };
+
+    class MemberListNode : public IASTNode {
+    public:
+        explicit MemberListNode(std::vector<std::shared_ptr<IASTNode>> members) : members(std::move(members)) {}
+        const std::vector<std::shared_ptr<IASTNode>> &getMembers() const { return members; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::vector<std::shared_ptr<IASTNode>> members;
+    };
+
+    class FieldDeclarationNode : public IASTNode {
+    public:
+        FieldDeclarationNode(std::shared_ptr<ModifierNode> modifier,
+                             std::shared_ptr<TypeSpecifierNode> type,
+                             std::shared_ptr<IdentifierNode> name)
+            : modifier(std::move(modifier)), type(std::move(type)), name(std::move(name)) {}
+        std::shared_ptr<ModifierNode> getModifier() const { return modifier; }
+        std::shared_ptr<TypeSpecifierNode> getType() const { return type; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ModifierNode> modifier;
+        std::shared_ptr<TypeSpecifierNode> type;
+        std::shared_ptr<IdentifierNode> name;
+    };
+
+    class ConstructorDeclarationNode : public IASTNode {
+    public:
+        ConstructorDeclarationNode(std::shared_ptr<ModifierNode> modifier,
+                                   std::shared_ptr<IdentifierNode> name,
+                                   std::shared_ptr<ParameterListNode> parameterList,
+                                   std::shared_ptr<BlockNode> body)
+            : modifier(std::move(modifier)), name(std::move(name)),
+              parameterList(std::move(parameterList)), body(std::move(body)) {}
+        std::shared_ptr<ModifierNode> getModifier() const { return modifier; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        std::shared_ptr<ParameterListNode> getParameterList() const { return parameterList; }
+        std::shared_ptr<BlockNode> getBody() const { return body; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ModifierNode> modifier;
+        std::shared_ptr<IdentifierNode> name;
+        std::shared_ptr<ParameterListNode> parameterList;
+        std::shared_ptr<BlockNode> body;
+    };
+
+    class AnnotationNode : public IASTNode {
+    public:
+        AnnotationNode(std::shared_ptr<IdentifierNode> name, std::shared_ptr<ArgumentListNode> arguments)
+            : name(std::move(name)), arguments(std::move(arguments)) {}
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        std::shared_ptr<ArgumentListNode> getArguments() const { return arguments; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<IdentifierNode> name;
+        std::shared_ptr<ArgumentListNode> arguments;
+    };
+
+    class StructDeclarationNode : public IASTNode {
+    public:
+        StructDeclarationNode(std::vector<std::shared_ptr<AnnotationNode>> annotations,
+                              std::shared_ptr<ModifierNode> modifier,
+                              std::shared_ptr<IdentifierNode> name,
+                              std::shared_ptr<MemberListNode> memberList)
+            : annotations(std::move(annotations)), modifier(std::move(modifier)),
+              name(std::move(name)), memberList(std::move(memberList)) {}
+        const std::vector<std::shared_ptr<AnnotationNode>> &getAnnotations() const { return annotations; }
+        std::shared_ptr<ModifierNode> getModifier() const { return modifier; }
+        std::shared_ptr<IdentifierNode> getName() const { return name; }
+        std::shared_ptr<MemberListNode> getMemberList() const { return memberList; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::vector<std::shared_ptr<AnnotationNode>> annotations;
+        std::shared_ptr<ModifierNode> modifier;
+        std::shared_ptr<IdentifierNode> name;
+        std::shared_ptr<MemberListNode> memberList;
+    };
+
+    class SelfExpressionNode : public ExpressionNode {
+    public:
+        SelfExpressionNode() = default;
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+    };
+
+    class MemberAccessNode : public ExpressionNode {
+    public:
+        MemberAccessNode(std::shared_ptr<ExpressionNode> object, std::shared_ptr<IdentifierNode> member)
+            : object(std::move(object)), member(std::move(member)) {}
+        std::shared_ptr<ExpressionNode> getObject() const { return object; }
+        std::shared_ptr<IdentifierNode> getMember() const { return member; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<ExpressionNode> object;
+        std::shared_ptr<IdentifierNode> member;
+    };
+
+    class MemberAssignmentNode : public ExpressionNode {
+    public:
+        MemberAssignmentNode(std::shared_ptr<MemberAccessNode> target, std::shared_ptr<ExpressionNode> value)
+            : target(std::move(target)), value(std::move(value)) {}
+        std::shared_ptr<MemberAccessNode> getTarget() const { return target; }
+        std::shared_ptr<ExpressionNode> getValue() const { return value; }
+        void accept(IVisitor &visitor) override;
+        std::string toString() const override;
+
+    private:
+        std::shared_ptr<MemberAccessNode> target;
+        std::shared_ptr<ExpressionNode> value;
     };
 } // namespace Ryntra::Compiler

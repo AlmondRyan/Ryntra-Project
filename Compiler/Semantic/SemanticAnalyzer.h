@@ -57,6 +57,12 @@ namespace Ryntra::Compiler::Semantic {
         void visit(NewExpressionNode &node) override;
         void visit(DeleteStatementNode &node) override;
         void visit(FixedNode &node) override;
+        void visit(StructDeclarationNode &node) override;
+        void visit(FieldDeclarationNode &node) override;
+        void visit(ConstructorDeclarationNode &node) override;
+        void visit(SelfExpressionNode &node) override;
+        void visit(MemberAccessNode &node) override;
+        void visit(MemberAssignmentNode &node) override;
 
     private:
         SymbolTable symbolTable;
@@ -69,6 +75,7 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<Type> expectedReturnType; // Expected return type from context (for __builtin_scan)
         int loopDepth_ = 0;                       // Current loop nesting depth
         int unsafeDepth_ = 0;                     // Current unsafe block nesting depth
+        std::shared_ptr<STType::StructType> currentStruct; // Enclosing struct being analyzed (for `self`)
 
         // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
         static std::shared_ptr<Type> toTypedType(const TypePtr &stType);

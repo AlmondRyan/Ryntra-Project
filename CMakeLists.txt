@@ -9,6 +9,7 @@ set(antlr4-runtime_DIR "C:/vcpkg/vcpkg/vcpkg/installed/x64-windows/share/antlr4-
 
 set(GEN_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/GenAllNodesVisitor")
 set(GEN_SCRIPT "${GEN_SCRIPT_DIR}/GenAllNodesVisitor.py")
+set(GEN_NODES_LIST "${GEN_SCRIPT_DIR}/NodesList.txt")
 set(GENERATED_HEADER "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader/AllNodesVisitor.h")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Compiler/GeneratedHeader")
 
@@ -16,7 +17,7 @@ add_custom_command(
         OUTPUT ${GENERATED_HEADER}
         COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} ${GENERATED_HEADER}
         WORKING_DIRECTORY ${GEN_SCRIPT_DIR}
-        DEPENDS ${GEN_SCRIPT}
+        DEPENDS ${GEN_SCRIPT} ${GEN_NODES_LIST}
         COMMENT "Generating AllNodesVisitor.h from GenAllNodesVisitor.py"
         VERBATIM
 )
