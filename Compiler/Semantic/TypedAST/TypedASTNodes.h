@@ -165,7 +165,9 @@ namespace Ryntra::Compiler::Semantic {
         void dump(int indent = 0) const override {
             printIndent(indent);
             std::cout << toString() << std::endl;
-            value->dump(indent + 1);
+            if (value) {
+                value->dump(indent + 1);
+            }
         }
 
     private:

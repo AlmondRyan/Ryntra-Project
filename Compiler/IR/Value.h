@@ -29,4 +29,21 @@ namespace Ryntra::IR {
         std::shared_ptr<Type> type_;
         std::string name_;
     };
+
+    // An incoming function parameter. Refers to the argument slot at `index` in
+    // the callee frame; used to copy parameters into their alloca slots.
+    class Argument : public Value {
+    public:
+        Argument(std::shared_ptr<Type> type, const std::string &name, int index)
+            : Value(type, name), index_(index) {}
+
+        int getIndex() const { return index_; }
+
+        std::string toString() const override { return type_->toString() + " %" + name_; }
+        std::string getReferenceName() const override { return name_.empty() ? "" : "%" + name_; }
+        bool isLocal() const override { return true; }
+
+    private:
+        int index_;
+    };
 } // namespace Ryntra::IR

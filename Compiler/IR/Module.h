@@ -29,6 +29,19 @@ namespace Ryntra::IR {
             }
         }
 
+        // Register a named aggregate type so it can be printed as a type definition.
+        void addType(std::shared_ptr<StructType> type) {
+            if (!type)
+                return;
+            for (const auto &existing : types_) {
+                if (existing.get() == type.get())
+                    return;
+            }
+            types_.push_back(std::move(type));
+        }
+
+        const std::vector<std::shared_ptr<StructType>> &getTypes() const { return types_; }
+
         const std::vector<std::shared_ptr<Function>> &getFunctions() const {
             return functions_;
         }
@@ -49,6 +62,20 @@ namespace Ryntra::IR {
 
         std::string toString() const {
             std::string result = "module " + name_ + " {\n\n";
+
+            // 0. Aggregate type definitions
+            for (const auto &type : types_) {
+                result += "    " + type->toString() + " = struct { ";
+                const auto &fields = type->getFields();
+                for (size_t i = 0; i < fields.size(); ++i) {
+                    if (i > 0)
+                        result += ", ";
+                    result += fields[i].type->toString();
+                }
+                result += " }\n";
+            }
+            if (!types_.empty())
+                result += "\n";
 
             // 1. External function declarations first
             bool hasExternals = false;
@@ -82,6 +109,7 @@ namespace Ryntra::IR {
         std::string name_;
         std::vector<std::shared_ptr<Function>> functions_;
         std::vector<std::shared_ptr<Constant>> constants_;
+        std::vector<std::shared_ptr<StructType>> types_;
         std::unordered_map<std::string, std::shared_ptr<Function>> functionMap_;
         std::unordered_map<std::string, std::shared_ptr<Constant>> constantMap_;
     };

@@ -71,6 +71,7 @@ set(IR_SOURCE
         Compiler/IR/Generator/Operations.cpp
         Compiler/IR/Generator/ShortCircuit.cpp
         Compiler/IR/Generator/Variables.cpp
+        Compiler/IR/Generator/Structs.cpp
         Compiler/IR/Type.h
         Compiler/IR/Value.h
         Compiler/IR/Instruction.h

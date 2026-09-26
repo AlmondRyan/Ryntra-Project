@@ -38,7 +38,9 @@ namespace Ryntra::VM {
     void BytecodeGenerator::generateFunction(const std::shared_ptr<IR::Function> &func) {
         instructionSlots_.clear();
         allocaSlotMap_.clear();
-        nextSlot_ = 0;
+        // Reserve the incoming argument slots (0..paramCount-1) so alloca/temporary
+        // slots never overwrite them; parameters are copied into their allocas.
+        nextSlot_ = static_cast<int32_t>(func->getParameters().size());
 
         // Find the matching BytecodeFunction index
         int32_t idx = getFunctionIndex(func->getName());
@@ -91,8 +93,18 @@ namespace Ryntra::VM {
             }
             int32_t poolIdx = addConstant(val);
             currentFunction_->addInstruction(OpCode::LoadConst, poolIdx);
+        } else if (auto arg = std::dynamic_pointer_cast<IR::Argument>(operand)) {
+            // A function parameter lives in the frame's argument slot.
+            currentFunction_->addInstruction(OpCode::LoadLocal, arg->getIndex());
         } else if (auto argInst = std::dynamic_pointer_cast<IR::Instruction>(operand)) {
-            if (argInst->getOpcode() == IR::Instruction::Opcode::Constant) {
+            if (argInst->getOpcode() == IR::Instruction::Opcode::Alloca) {
+                // Materialize the address of a local slot as a pointer value.
+                auto it = allocaSlotMap_.find(argInst.get());
+                if (it != allocaSlotMap_.end()) {
+                    currentFunction_->addInstruction(OpCode::LoadConst, addConstant(VMValue(it->second)));
+                    currentFunction_->addInstruction(OpCode::PtrCreate, 0);
+                }
+            } else if (argInst->getOpcode() == IR::Instruction::Opcode::Constant) {
                 if (!argInst->getOperands().empty()) {
                     pushOperandValue(argInst->getOperands()[0]);
                 }
@@ -108,8 +120,12 @@ namespace Ryntra::VM {
     void BytecodeGenerator::generateInstruction(const std::shared_ptr<IR::Instruction> &inst) {
         const auto &operands = inst->getOperands();
 
-        // Assign a local slot for instructions that produce a runtime value
-        bool needsSlot = inst->getOpcode() != IR::Instruction::Opcode::Constant && !inst->getType()->isVoid();
+        // Assign a local slot for instructions that produce a runtime value.
+        // `alloca` is excluded: its slot is managed via allocaSlotMap_, and its
+        // ptr<T> result is materialized at use sites (see pushOperandValue).
+        bool needsSlot = inst->getOpcode() != IR::Instruction::Opcode::Constant &&
+                         inst->getOpcode() != IR::Instruction::Opcode::Alloca &&
+                         !inst->getType()->isVoid();
         int32_t slot = -1;
         if (needsSlot) {
             slot = nextSlot_++;
@@ -308,23 +324,21 @@ namespace Ryntra::VM {
         }
 
         case IR::Instruction::Opcode::Load: {
-            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[0]);
-            if (allocaInst) {
-                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
-                currentFunction_->addInstruction(OpCode::LoadLocal, slotNum);
+            // operands[0] = pointer to the storage
+            if (!operands.empty()) {
+                pushOperandValue(operands[0]);
+                currentFunction_->addInstruction(OpCode::PtrLoad, 0);
             }
-            // Don't push operands — LoadLocal pushes the value directly
-            // The result will be stored in the assigned slot below (needsSlot=true)
             break;
         }
 
         case IR::Instruction::Opcode::Store: {
-            // operands[0] = value to store, operands[1] = alloca instruction
-            pushOperandValue(operands[0]);
-            auto allocaInst = std::dynamic_pointer_cast<IR::Instruction>(operands[1]);
-            if (allocaInst) {
-                int32_t slotNum = allocaSlotMap_[allocaInst.get()];
-                currentFunction_->addInstruction(OpCode::StoreLocal, slotNum);
+            // operands[0] = value to store, operands[1] = pointer to the storage.
+            // PtrStore pops the value first, so push the pointer then the value.
+            if (operands.size() >= 2) {
+                pushOperandValue(operands[1]);
+                pushOperandValue(operands[0]);
+                currentFunction_->addInstruction(OpCode::PtrStore, 0);
             }
             break;
         }
@@ -414,21 +428,6 @@ namespace Ryntra::VM {
                 pushOperandValue(operands[0]);
                 currentFunction_->addInstruction(OpCode::PtrCreate, 0);
             }
-            break;
-        }
-
-        case IR::Instruction::Opcode::PtrLoad: {
-            // operands[0] = ptr value
-            pushOperandValue(operands[0]);
-            currentFunction_->addInstruction(OpCode::PtrLoad, 0);
-            break;
-        }
-
-        case IR::Instruction::Opcode::PtrStore: {
-            // operands[0] = ptr value, operands[1] = value to store
-            pushOperandValue(operands[0]);
-            pushOperandValue(operands[1]);
-            currentFunction_->addInstruction(OpCode::PtrStore, 0);
             break;
         }
 

@@ -40,11 +40,11 @@ namespace Ryntra::IR {
                                                    std::shared_ptr<Type> elementType);
 
         std::shared_ptr<Instruction> createLoad(const std::string &name,
-                                                 std::shared_ptr<Instruction> allocaInst,
+                                                 std::shared_ptr<Value> ptrValue,
                                                  std::shared_ptr<Type> loadType);
 
         std::shared_ptr<Instruction> createStore(std::shared_ptr<Value> value,
-                                                  std::shared_ptr<Instruction> allocaInst);
+                                                  std::shared_ptr<Value> ptrValue);
 
         std::shared_ptr<Instruction> createCall(const std::string &name,
                                                  std::shared_ptr<Function> function,
@@ -121,13 +121,6 @@ namespace Ryntra::IR {
                                                       std::shared_ptr<Type> ptrType,
                                                       std::shared_ptr<Value> alloca);
 
-        std::shared_ptr<Instruction> createPtrLoad(const std::string &name,
-                                                     std::shared_ptr<Value> ptrValue,
-                                                     std::shared_ptr<Type> loadType);
-
-        std::shared_ptr<Instruction> createPtrStore(std::shared_ptr<Value> ptrValue,
-                                                       std::shared_ptr<Value> value);
-
         std::shared_ptr<Instruction> createNewHeap(const std::string &name,
                                                      std::shared_ptr<Type> ptrType,
                                                      std::shared_ptr<Value> initializer);
@@ -151,6 +144,12 @@ namespace Ryntra::IR {
         std::shared_ptr<Instruction> createPtrFromArray(const std::string &name,
                                                          std::shared_ptr<Type> ptrType,
                                                          std::shared_ptr<Value> arrayValue);
+
+        std::shared_ptr<Instruction> createFieldPtr(const std::string &name,
+                                                     std::shared_ptr<Type> structType,
+                                                     std::shared_ptr<Value> basePtr,
+                                                     int fieldIndex,
+                                                     std::shared_ptr<Type> fieldPtrType);
 
         void setInsertPoint(std::shared_ptr<BasicBlock> block);
         std::shared_ptr<BasicBlock> getInsertPoint() const;

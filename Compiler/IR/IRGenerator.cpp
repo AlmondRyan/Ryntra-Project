@@ -19,6 +19,7 @@ namespace Ryntra::IR {
             return Type::getVoidType();
 
         switch (semType->getKind()) {
+
         case Sem::TypeKind::VOID:
             return Type::getVoidType();
 
@@ -57,6 +58,22 @@ namespace Ryntra::IR {
         case Sem::TypeKind::POINTER: {
             const auto &ptrType = static_cast<const Sem::PointerType &>(*semType);
             return std::make_shared<IR::PtrType>(toIRType(ptrType.getElementType()));
+        }
+
+        case Sem::TypeKind::STRUCT: {
+            const auto &structType = static_cast<const Sem::StructType &>(*semType);
+            auto it = structTypeMap_.find(structType.getName());
+            if (it != structTypeMap_.end())
+                return it->second;
+
+            // Struct types are normally pre-created in registerStructFunctions;
+            // fall back to building one on demand (fields in declaration order).
+            auto irStruct = std::make_shared<IR::StructType>(structType.getName());
+            structTypeMap_[structType.getName()] = irStruct;
+            for (const auto &field : structType.getOrderedFields()) {
+                irStruct->addField(field.first, toIRType(field.second));
+            }
+            return irStruct;
         }
 
         default:

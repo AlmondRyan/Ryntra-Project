@@ -629,7 +629,9 @@ namespace Ryntra::VM {
                     }
                 } else if (refVal.isReference()) {
                     int32_t slot = refVal.getReferenceSlot();
-                    if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                    if (slot >= 0) {
+                        if (slot >= static_cast<int32_t>(frame.locals.size()))
+                            frame.locals.resize(slot + 1);
                         push(frame.locals[slot]);
                     } else {
                         throw std::runtime_error("RefLoad: invalid reference slot");
@@ -652,7 +654,9 @@ namespace Ryntra::VM {
                     }
                 } else if (refVal.isReference()) {
                     int32_t slot = refVal.getReferenceSlot();
-                    if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                    if (slot >= 0) {
+                        if (slot >= static_cast<int32_t>(frame.locals.size()))
+                            frame.locals.resize(slot + 1);
                         frame.locals[slot] = val;
                     } else {
                         throw std::runtime_error("RefStore: invalid reference slot");
@@ -694,7 +698,9 @@ namespace Ryntra::VM {
                         }
                     } else {
                         int32_t slot = ptrVal.getPointerSlot();
-                        if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                        if (slot >= 0) {
+                            if (slot >= static_cast<int32_t>(frame.locals.size()))
+                                frame.locals.resize(slot + 1);
                             push(frame.locals[slot]);
                         } else {
                             throw std::runtime_error("PtrLoad: invalid pointer slot");
@@ -727,7 +733,9 @@ namespace Ryntra::VM {
                         }
                     } else {
                         int32_t slot = ptrVal.getPointerSlot();
-                        if (slot >= 0 && slot < static_cast<int32_t>(frame.locals.size())) {
+                        if (slot >= 0) {
+                            if (slot >= static_cast<int32_t>(frame.locals.size()))
+                                frame.locals.resize(slot + 1);
                             frame.locals[slot] = val;
                         } else {
                             throw std::runtime_error("PtrStore: invalid pointer slot");

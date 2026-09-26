@@ -182,6 +182,16 @@ namespace Ryntra::Compiler::Semantic {
         const std::string &getName() const { return name; }
 
         void addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
+            if (fields.find(fieldName) == fields.end()) {
+                orderedFields.emplace_back(fieldName, fieldType);
+            } else {
+                for (auto &entry : orderedFields) {
+                    if (entry.first == fieldName) {
+                        entry.second = fieldType;
+                        break;
+                    }
+                }
+            }
             fields[fieldName] = std::move(fieldType);
         }
 
@@ -192,9 +202,15 @@ namespace Ryntra::Compiler::Semantic {
 
         const std::unordered_map<std::string, std::shared_ptr<Type>> &getFields() const { return fields; }
 
+        // Source-declaration order of fields (deterministic layout for codegen).
+        const std::vector<std::pair<std::string, std::shared_ptr<Type>>> &getOrderedFields() const {
+            return orderedFields;
+        }
+
     private:
         std::string name;
         std::unordered_map<std::string, std::shared_ptr<Type>> fields;
+        std::vector<std::pair<std::string, std::shared_ptr<Type>>> orderedFields;
     };
 
     // Helper to create types

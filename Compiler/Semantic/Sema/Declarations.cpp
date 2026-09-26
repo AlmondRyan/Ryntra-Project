@@ -325,8 +325,11 @@ namespace Ryntra::Compiler::Semantic {
     }
 
     void SemanticAnalyzer::visit(ReturnNode &node) {
-        node.getValue()->accept(*this);
-        auto typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        std::shared_ptr<TypedExpressionNode> typedExpr = nullptr;
+        if (node.getValue()) {
+            node.getValue()->accept(*this);
+            typedExpr = std::dynamic_pointer_cast<TypedExpressionNode>(lastNode);
+        }
 
         if (typedExpr) {
             if (currentFunctionReturnType) {
@@ -344,9 +347,22 @@ namespace Ryntra::Compiler::Semantic {
             auto typedReturn = std::make_shared<TypedReturnNode>(typedExpr);
             typedReturn->setRange(node.getRange());
             lastNode = typedReturn;
-        } else {
-            lastNode = nullptr;
+            return;
         }
+
+        // Bare `return;`: only valid in a void-returning function/constructor.
+        if (currentFunctionReturnType &&
+            currentFunctionReturnType->getKind() != STType::TypeKind::Void) {
+            ErrorHandler::getInstance().makeError(
+                "[RCE006]: Return type mismatch. Expected '" +
+                    toTypedType(currentFunctionReturnType)->toString() +
+                    "', but no value was returned.",
+                node.getRange());
+        }
+
+        auto typedReturn = std::make_shared<TypedReturnNode>(nullptr);
+        typedReturn->setRange(node.getRange());
+        lastNode = typedReturn;
     }
 
     void SemanticAnalyzer::visit(TypeSpecifierNode &node) {

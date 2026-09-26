@@ -144,6 +144,8 @@ namespace Ryntra::Compiler::Semantic {
                 return it == fields.end() ? nullptr : it->second;
             }
             const std::unordered_map<std::string, std::shared_ptr<Type>> &getFields() const { return fields; }
+            // Source-declaration order of field names (deterministic layout for codegen).
+            const std::vector<std::string> &getFieldOrder() const { return fieldOrder; }
 
             // Member symbol table (fields and methods). The scope has `Scope::Kind::Class`.
             void defineMethod(std::shared_ptr<FunctionSymbol> method);
@@ -155,6 +157,7 @@ namespace Ryntra::Compiler::Semantic {
 
             std::string name;
             std::unordered_map<std::string, std::shared_ptr<Type>> fields;
+            std::vector<std::string> fieldOrder;
             mutable std::shared_ptr<Scope> memberScope;
         };
     } // namespace STType

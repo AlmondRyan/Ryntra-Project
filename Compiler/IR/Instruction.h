@@ -47,16 +47,15 @@ namespace Ryntra::IR {
             RefCreate,         // create a reference from an alloca
             RefLoad,           // auto-dereference a ref
             RefStore,          // store through a ref
-            PtrCreate,         // create a pointer from an alloca
-            PtrLoad,           // manually dereference a pointer
-            PtrStore,          // store through a pointer
+            PtrCreate,         // create a pointer from a slot index / computed address
             NewHeap,           // allocate on heap
             DeleteHeap,        // free from heap
             ArrRef,            // create ref to array element (for arr[i] returning ref<T>)
             PtrIndexRef,       // create ref to pointer + index (for p[i] returning ref<T>)
             PinArray,          // pin an array for fixed statement
             UnpinArray,        // unpin an array for fixed statement
-            PtrFromArray       // create a pointer to array element 0 from an array value
+            PtrFromArray,      // create a pointer to array element 0 from an array value
+            FieldPtr           // compute pointer to a struct field: (ptr<Struct>, fieldIndex)
         };
         // clang-format on
 
@@ -67,6 +66,11 @@ namespace Ryntra::IR {
 
         Opcode getOpcode() const { return opcode_; }
         const std::vector<std::shared_ptr<Value>> &getOperands() const { return operands_; }
+
+        // Optional aggregate type carried by memory instructions (e.g. FieldPtr),
+        // so field layout / alignment can be derived without a raw integer offset.
+        void setAggregateType(std::shared_ptr<Type> type) { aggregateType_ = std::move(type); }
+        std::shared_ptr<Type> getAggregateType() const { return aggregateType_; }
 
         // SSA instructions are local values — reference with %
         std::string getReferenceName() const override {
@@ -257,24 +261,35 @@ namespace Ryntra::IR {
 
             case Opcode::Alloca: {
                 result += "alloca ";
-                if (!operands_.empty())
+                if (auto ptrType = std::dynamic_pointer_cast<PtrType>(type_)) {
+                    result += ptrType->getElementType()->toString();
+                } else if (!operands_.empty()) {
                     result += operands_[0]->getReferenceName();
+                }
                 break;
             }
 
             case Opcode::Load: {
-                result += "load ";
-                if (operands_.size() >= 1)
-                    result += operands_[0]->getReferenceName();
+                // load T, ptr<T> %p
+                result += "load " + type_->toString();
+                if (!operands_.empty()) {
+                    result += ", " + operands_[0]->getType()->toString() + " " +
+                              operands_[0]->getReferenceName();
+                }
                 break;
             }
 
             case Opcode::Store: {
+                // store T %v, ptr<T> %p
                 result += "store ";
-                if (operands_.size() >= 1)
-                    result += operands_[0]->getReferenceName();
-                if (operands_.size() >= 2)
-                    result += ", " + operands_[1]->getReferenceName();
+                if (operands_.size() >= 1) {
+                    result += operands_[0]->getType()->toString() + " " +
+                              operands_[0]->getReferenceName();
+                }
+                if (operands_.size() >= 2) {
+                    result += ", " + operands_[1]->getType()->toString() + " " +
+                              operands_[1]->getReferenceName();
+                }
                 break;
             }
 
@@ -370,23 +385,6 @@ namespace Ryntra::IR {
                 break;
             }
 
-            case Opcode::PtrLoad: {
-                result += "ptr.load ";
-                if (!operands_.empty())
-                    result += operands_[0]->getReferenceName();
-                break;
-            }
-
-            case Opcode::PtrStore: {
-                result += "ptr.store ";
-                for (size_t i = 0; i < operands_.size(); ++i) {
-                    if (i > 0)
-                        result += ", ";
-                    result += operands_[i]->getReferenceName();
-                }
-                break;
-            }
-
             case Opcode::NewHeap: {
                 result += "newheap ";
                 for (size_t i = 0; i < operands_.size(); ++i) {
@@ -451,6 +449,25 @@ namespace Ryntra::IR {
                 break;
             }
 
+            case Opcode::FieldPtr: {
+                // getelementptr-style: keep the aggregate type and index explicitly.
+                result += "fieldptr ";
+                if (aggregateType_)
+                    result += aggregateType_->toString() + ", ";
+                if (!operands_.empty()) {
+                    result += operands_[0]->getType()->toString() + " ";
+                    result += operands_[0]->getReferenceName();
+                }
+                if (operands_.size() >= 2) {
+                    result += ", i32 0, i32 ";
+                    if (auto *imm = dynamic_cast<ImmediateValue *>(operands_[1].get()))
+                        result += imm->getLiteralValue();
+                    else
+                        result += operands_[1]->getReferenceName();
+                }
+                break;
+            }
+
             default:
                 break;
             }
@@ -461,5 +478,6 @@ namespace Ryntra::IR {
     private:
         Opcode opcode_;
         std::vector<std::shared_ptr<Value>> operands_;
+        std::shared_ptr<Type> aggregateType_;
     };
 } // namespace Ryntra::IR

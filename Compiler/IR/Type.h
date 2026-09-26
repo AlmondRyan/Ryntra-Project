@@ -16,7 +16,8 @@ namespace Ryntra::IR {
             Function,
             Array,
             Ref,
-            Ptr
+            Ptr,
+            Struct
         };
 
         Type(Kind kind) : kind_(kind) {}
@@ -36,6 +37,7 @@ namespace Ryntra::IR {
         bool isArray() const { return kind_ == Kind::Array; }
         bool isRef() const { return kind_ == Kind::Ref; }
         bool isPtr() const { return kind_ == Kind::Ptr; }
+        bool isStruct() const { return kind_ == Kind::Struct; }
 
         static std::shared_ptr<Type> getVoidType();
         static std::shared_ptr<Type> getInt32Type();
@@ -176,6 +178,66 @@ namespace Ryntra::IR {
 
     private:
         std::shared_ptr<Type> elementType_;
+    };
+
+    // A named aggregate with an ordered field layout. Field order follows source
+    // declaration order and determines each field's index.
+    class StructType : public Type {
+    public:
+        struct Field {
+            std::string name;
+            std::shared_ptr<Type> type;
+
+            Field(std::string name, std::shared_ptr<Type> type)
+                : name(std::move(name)), type(std::move(type)) {}
+        };
+
+        explicit StructType(std::string name)
+            : Type(Kind::Struct), name_(std::move(name)) {}
+
+        const std::string &getName() const { return name_; }
+
+        void addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
+            for (auto &field : fields_) {
+                if (field.name == fieldName) {
+                    field.type = std::move(fieldType);
+                    return;
+                }
+            }
+            fields_.emplace_back(fieldName, std::move(fieldType));
+        }
+
+        const std::vector<Field> &getFields() const { return fields_; }
+
+        int getFieldIndex(const std::string &fieldName) const {
+            for (size_t i = 0; i < fields_.size(); ++i) {
+                if (fields_[i].name == fieldName)
+                    return static_cast<int>(i);
+            }
+            return -1;
+        }
+
+        std::shared_ptr<Type> getFieldType(const std::string &fieldName) const {
+            for (const auto &field : fields_) {
+                if (field.name == fieldName)
+                    return field.type;
+            }
+            return nullptr;
+        }
+
+        std::string toString() const override { return "%" + name_; }
+
+        // Nominal typing: two structs are the same type iff their names match,
+        // even when their field layouts are identical.
+        bool isEqual(const Type *other) const override {
+            if (!other->isStruct())
+                return false;
+            return name_ == static_cast<const StructType *>(other)->name_;
+        }
+
+    private:
+        std::string name_;
+        std::vector<Field> fields_;
     };
 
     class FunctionType : public Type {

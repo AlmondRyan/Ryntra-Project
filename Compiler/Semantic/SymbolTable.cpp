@@ -23,6 +23,9 @@ namespace Ryntra::Compiler::Semantic {
         }
 
         void StructType::addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
+            if (fields.find(fieldName) == fields.end()) {
+                fieldOrder.push_back(fieldName);
+            }
             fields[fieldName] = fieldType;
             ensureMemberScope();
             memberScope->symbols[fieldName] = std::make_shared<FieldSymbol>(fieldName, std::move(fieldType));

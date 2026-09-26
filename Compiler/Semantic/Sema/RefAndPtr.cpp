@@ -318,10 +318,17 @@ namespace Ryntra::Compiler::Semantic {
                 }
             }
 
+            std::vector<std::shared_ptr<Type>> resolvedParamTypes;
+            if (selected) {
+                for (const auto &paramSTType : selected->getParamTypes()) {
+                    resolvedParamTypes.push_back(toTypedType(paramSTType));
+                }
+            }
+
             auto resultType = selected ? toTypedType(selected->getReturnType())
                                        : TypeFactory::getPrimitive("unknown");
             auto typedCall = std::make_shared<TypedMethodCallNode>(
-                typedObject, methodName, std::move(typedArgs), resultType);
+                typedObject, methodName, std::move(typedArgs), std::move(resolvedParamTypes), resultType);
             typedCall->setRange(node.getRange());
             lastNode = typedCall;
             return;

@@ -69,3 +69,4 @@ Semantic Note:
 - ✅ V0.1.1.3 Struct AST Generation
 - ✅ V0.1.1.4 Struct Symbol/Type, Field Symbol, Method Symbol
 - ✅ V0.1.1.5 Struct Semantic Analysis (excludes `private` functionality)
+- ❌ V0.1.1.6 Struct IR Generation

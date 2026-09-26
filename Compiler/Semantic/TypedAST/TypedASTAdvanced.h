@@ -786,13 +786,17 @@ namespace Ryntra::Compiler::Semantic {
     public:
         TypedMethodCallNode(std::shared_ptr<TypedExpressionNode> object, std::string methodName,
                             std::vector<std::shared_ptr<TypedExpressionNode>> arguments,
+                            std::vector<std::shared_ptr<Type>> parameterTypes,
                             std::shared_ptr<Type> type)
             : TypedExpressionNode(std::move(type)), object(std::move(object)),
-              methodName(std::move(methodName)), arguments(std::move(arguments)) {}
+              methodName(std::move(methodName)), arguments(std::move(arguments)),
+              parameterTypes(std::move(parameterTypes)) {}
 
         std::shared_ptr<TypedExpressionNode> getObject() const { return object; }
         const std::string &getMethodName() const { return methodName; }
         const std::vector<std::shared_ptr<TypedExpressionNode>> &getArguments() const { return arguments; }
+        // Resolved overload's parameter types (used for method mangling in codegen).
+        const std::vector<std::shared_ptr<Type>> &getParameterTypes() const { return parameterTypes; }
 
         void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
         std::string toString() const override { return "TypedMethodCall(." + methodName + "): " + type->toString(); }
@@ -813,6 +817,7 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> object;
         std::string methodName;
         std::vector<std::shared_ptr<TypedExpressionNode>> arguments;
+        std::vector<std::shared_ptr<Type>> parameterTypes;
     };
 
     class TypedProgramNode : public ITypedASTNode {

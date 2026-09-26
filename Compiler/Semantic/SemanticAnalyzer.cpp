@@ -222,8 +222,10 @@ namespace Ryntra::Compiler::Semantic {
         case STType::TypeKind::Struct: {
             auto &structSTType = static_cast<const STType::StructType &>(*stType);
             auto structType = TypeFactory::getStruct(structSTType.getName());
-            for (const auto &field : structSTType.getFields()) {
-                structType->addField(field.first, toTypedType(field.second));
+            for (const auto &fieldName : structSTType.getFieldOrder()) {
+                if (auto fieldType = structSTType.getField(fieldName)) {
+                    structType->addField(fieldName, toTypedType(fieldType));
+                }
             }
             return structType;
         }

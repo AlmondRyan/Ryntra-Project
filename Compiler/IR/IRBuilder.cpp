@@ -93,9 +93,13 @@ namespace Ryntra::IR {
 
     std::shared_ptr<Instruction> IRBuilder::createAlloca(const std::string &name,
                                                           std::shared_ptr<Type> elementType) {
+        // `alloca T` yields the address of the allocated slot: ptr<T> (LLVM-style).
+        std::shared_ptr<Type> resultType = elementType
+                                               ? std::make_shared<PtrType>(elementType)
+                                               : Type::getVoidType();
         auto instruction = std::make_shared<Instruction>(
             Instruction::Opcode::Alloca,
-            Type::getVoidType(),
+            resultType,
             std::vector<std::shared_ptr<Value>>{},
             name);
 
@@ -106,12 +110,12 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createLoad(const std::string &name,
-                                                        std::shared_ptr<Instruction> allocaInst,
+                                                        std::shared_ptr<Value> ptrValue,
                                                         std::shared_ptr<Type> loadType) {
-        if (!allocaInst)
+        if (!ptrValue)
             return nullptr;
 
-        std::vector<std::shared_ptr<Value>> operands = {allocaInst};
+        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
 
         auto instruction = std::make_shared<Instruction>(
             Instruction::Opcode::Load,
@@ -126,11 +130,11 @@ namespace Ryntra::IR {
     }
 
     std::shared_ptr<Instruction> IRBuilder::createStore(std::shared_ptr<Value> value,
-                                                         std::shared_ptr<Instruction> allocaInst) {
-        if (!value || !allocaInst)
+                                                         std::shared_ptr<Value> ptrValue) {
+        if (!value || !ptrValue)
             return nullptr;
 
-        std::vector<std::shared_ptr<Value>> operands = {value, allocaInst};
+        std::vector<std::shared_ptr<Value>> operands = {value, ptrValue};
 
         auto instruction = std::make_shared<Instruction>(
             Instruction::Opcode::Store,
@@ -526,41 +530,6 @@ namespace Ryntra::IR {
         return instruction;
     }
 
-    std::shared_ptr<Instruction> IRBuilder::createPtrLoad(const std::string &name,
-                                                           std::shared_ptr<Value> ptrValue,
-                                                           std::shared_ptr<Type> loadType) {
-        if (!ptrValue)
-            return nullptr;
-
-        std::vector<std::shared_ptr<Value>> operands = {ptrValue};
-        auto instruction = std::make_shared<Instruction>(
-            Instruction::Opcode::PtrLoad,
-            loadType,
-            operands,
-            name);
-
-        if (currentBlock_)
-            currentBlock_->addInstruction(instruction);
-        return instruction;
-    }
-
-    std::shared_ptr<Instruction> IRBuilder::createPtrStore(std::shared_ptr<Value> ptrValue,
-                                                             std::shared_ptr<Value> value) {
-        if (!ptrValue || !value)
-            return nullptr;
-
-        std::vector<std::shared_ptr<Value>> operands = {ptrValue, value};
-        auto instruction = std::make_shared<Instruction>(
-            Instruction::Opcode::PtrStore,
-            Type::getVoidType(),
-            operands,
-            "");
-
-        if (currentBlock_)
-            currentBlock_->addInstruction(instruction);
-        return instruction;
-    }
-
     std::shared_ptr<Instruction> IRBuilder::createNewHeap(const std::string &name,
                                                            std::shared_ptr<Type> ptrType,
                                                            std::shared_ptr<Value> initializer) {
@@ -677,6 +646,30 @@ namespace Ryntra::IR {
             ptrType,
             operands,
             name);
+
+        if (currentBlock_)
+            currentBlock_->addInstruction(instruction);
+        return instruction;
+    }
+
+    std::shared_ptr<Instruction> IRBuilder::createFieldPtr(const std::string &name,
+                                                           std::shared_ptr<Type> structType,
+                                                           std::shared_ptr<Value> basePtr,
+                                                           int fieldIndex,
+                                                           std::shared_ptr<Type> fieldPtrType) {
+        if (!basePtr)
+            return nullptr;
+
+        auto indexValue = std::make_shared<ImmediateValue>(
+            Type::getInt32Type(), std::to_string(fieldIndex));
+        std::vector<std::shared_ptr<Value>> operands = {basePtr, indexValue};
+
+        auto instruction = std::make_shared<Instruction>(
+            Instruction::Opcode::FieldPtr,
+            fieldPtrType ? fieldPtrType : Type::getVoidType(),
+            operands,
+            name);
+        instruction->setAggregateType(std::move(structType));
 
         if (currentBlock_)
             currentBlock_->addInstruction(instruction);

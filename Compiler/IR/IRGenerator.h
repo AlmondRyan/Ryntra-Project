@@ -62,6 +62,11 @@ namespace Ryntra::IR {
         void visit(Compiler::Semantic::TypedPtrFromArrayNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionAddressNode &node) override;
         void visit(Compiler::Semantic::TypedFunctionPointerCallNode &node) override;
+        void visit(Compiler::Semantic::TypedStructDeclarationNode &node) override;
+        void visit(Compiler::Semantic::TypedSelfExpressionNode &node) override;
+        void visit(Compiler::Semantic::TypedMemberAccessNode &node) override;
+        void visit(Compiler::Semantic::TypedMemberAssignmentNode &node) override;
+        void visit(Compiler::Semantic::TypedMethodCallNode &node) override;
 
     private:
         IRBuilder builder_;
@@ -94,7 +99,34 @@ namespace Ryntra::IR {
         // Map from variable name -> Alloca instruction (for load/store)
         std::unordered_map<std::string, std::shared_ptr<Instruction>> allocaMap_;
 
+        // Struct support -------------------------------------------------------
+        // Canonical IR struct type per struct name (shared so field layout is stable).
+        std::unordered_map<std::string, std::shared_ptr<StructType>> structTypeMap_;
+        // The receiver (`this`) of the method/constructor currently being generated.
+        // It is the incoming argument value itself, so `self` needs no alloca.
+        std::shared_ptr<Value> currentSelfValue_;
+
+        // Wrap an ImmediateValue in a materialized Constant instruction.
+        std::shared_ptr<Value> materialize(const std::shared_ptr<Value> &value);
+        // Compute the address (pointer) of an lvalue expression, or nullptr.
+        std::shared_ptr<Value> addressOf(const std::shared_ptr<Compiler::Semantic::TypedExpressionNode> &expr);
+        // Compute a pointer to a struct field via FieldPtr.
+        std::shared_ptr<Value> createFieldPtr(const std::shared_ptr<Value> &base,
+                                              const std::shared_ptr<Compiler::Semantic::Type> &ownerType,
+                                              const std::string &fieldName);
+        // Mangle a method/constructor into a unique IR function name.
+        std::string mangleMethod(const std::string &structName, const std::string &methodName,
+                                 const std::vector<std::shared_ptr<Compiler::Semantic::Type>> &paramTypes);
+        // Register IR functions for every struct method/constructor.
+        void registerStructFunctions(
+            const std::vector<std::shared_ptr<Compiler::Semantic::TypedStructDeclarationNode>> &structs);
+        // Emit the body of a function/method/constructor.
+        void generateCallableBody(const std::shared_ptr<Function> &irFunc,
+                                  const std::shared_ptr<Compiler::Semantic::TypedParameterListNode> &params,
+                                  Compiler::Semantic::TypedBlockNode &body,
+                                  bool hasSelf);
+
         // Convert a Semantic::Type to an IR::Type
-        static std::shared_ptr<Type> toIRType(const std::shared_ptr<Compiler::Semantic::Type> &semType);
+        std::shared_ptr<Type> toIRType(const std::shared_ptr<Compiler::Semantic::Type> &semType);
     };
 } // namespace Ryntra::IR
