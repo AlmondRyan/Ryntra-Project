@@ -148,6 +148,7 @@ namespace Ryntra::Compiler::Semantic {
                 }
                 if (!std::dynamic_pointer_cast<AssignmentNode>(rawExpr) &&
                     !std::dynamic_pointer_cast<ArrayIndexAssignmentNode>(rawExpr) &&
+                    !std::dynamic_pointer_cast<MemberAssignmentNode>(rawExpr) &&
                     !std::dynamic_pointer_cast<PrefixOpNode>(rawExpr) &&
                     !std::dynamic_pointer_cast<PostfixOpNode>(rawExpr) &&
                     !std::dynamic_pointer_cast<ConditionalAndNode>(rawExpr) &&

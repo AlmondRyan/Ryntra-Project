@@ -66,6 +66,7 @@ namespace Ryntra::Compiler::Semantic {
     class TypedSelfExpressionNode;
     class TypedMemberAccessNode;
     class TypedMemberAssignmentNode;
+    class TypedMethodCallNode;
     class TypedParameterListNode;
 
     class ITypedVisitor {
@@ -125,6 +126,7 @@ namespace Ryntra::Compiler::Semantic {
         virtual void visit(TypedSelfExpressionNode &node) {}
         virtual void visit(TypedMemberAccessNode &node) {}
         virtual void visit(TypedMemberAssignmentNode &node) {}
+        virtual void visit(TypedMethodCallNode &node) {}
         virtual void visit(TypedParameterListNode &node) {}
     };
 

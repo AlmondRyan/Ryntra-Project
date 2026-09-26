@@ -782,6 +782,39 @@ namespace Ryntra::Compiler::Semantic {
         std::shared_ptr<TypedExpressionNode> value;
     };
 
+    class TypedMethodCallNode : public TypedExpressionNode {
+    public:
+        TypedMethodCallNode(std::shared_ptr<TypedExpressionNode> object, std::string methodName,
+                            std::vector<std::shared_ptr<TypedExpressionNode>> arguments,
+                            std::shared_ptr<Type> type)
+            : TypedExpressionNode(std::move(type)), object(std::move(object)),
+              methodName(std::move(methodName)), arguments(std::move(arguments)) {}
+
+        std::shared_ptr<TypedExpressionNode> getObject() const { return object; }
+        const std::string &getMethodName() const { return methodName; }
+        const std::vector<std::shared_ptr<TypedExpressionNode>> &getArguments() const { return arguments; }
+
+        void accept(ITypedVisitor &visitor) override { visitor.visit(*this); }
+        std::string toString() const override { return "TypedMethodCall(." + methodName + "): " + type->toString(); }
+        void dump(int indent = 0) const override {
+            printIndent(indent);
+            std::cout << toString() << std::endl;
+            printIndent(indent + 1);
+            std::cout << "Object:" << std::endl;
+            object->dump(indent + 2);
+            printIndent(indent + 1);
+            std::cout << "Arguments:" << std::endl;
+            for (const auto &arg : arguments) {
+                arg->dump(indent + 2);
+            }
+        }
+
+    private:
+        std::shared_ptr<TypedExpressionNode> object;
+        std::string methodName;
+        std::vector<std::shared_ptr<TypedExpressionNode>> arguments;
+    };
+
     class TypedProgramNode : public ITypedASTNode {
     public:
         TypedProgramNode(std::vector<std::shared_ptr<TypedFunctionDefinitionNode>> funcs,

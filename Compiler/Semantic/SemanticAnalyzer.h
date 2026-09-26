@@ -5,6 +5,7 @@
 #include "Compiler/GeneratedHeader/AllNodesVisitor.h"
 #include "SymbolTable.h"
 #include "TypedAST.h"
+#include <unordered_map>
 
 namespace Ryntra::Compiler::Semantic {
     class SemanticAnalyzer : public AllNodesVisitor {
@@ -76,9 +77,18 @@ namespace Ryntra::Compiler::Semantic {
         int loopDepth_ = 0;                       // Current loop nesting depth
         int unsafeDepth_ = 0;                     // Current unsafe block nesting depth
         std::shared_ptr<STType::StructType> currentStruct; // Enclosing struct being analyzed (for `self`)
+        // Struct name -> its semantic type (fields + member symbol scope). Used to
+        // resolve fields/methods from the `TypeSystem::StructType` stored in the
+        // typed AST, which only carries the struct name.
+        std::unordered_map<std::string, std::shared_ptr<STType::StructType>> structTypes;
 
         // Convert STType::Type -> TypeSystem::Type (for TypedAST nodes)
         static std::shared_ptr<Type> toTypedType(const TypePtr &stType);
+
+        // Register a struct's field/method/constructor symbols into its member scope.
+        // Duplicate fields / member signatures are diagnosed here.
+        void registerStructMembers(const std::shared_ptr<STType::StructType> &structType,
+                                   const std::shared_ptr<MemberListNode> &memberList);
 
         // Build a TypePtr from a type-name string
         static TypePtr makeSTType(const std::string &name);

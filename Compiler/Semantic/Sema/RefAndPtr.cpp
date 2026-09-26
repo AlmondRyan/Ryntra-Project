@@ -217,10 +217,120 @@ namespace Ryntra::Compiler::Semantic {
 
         auto objectType = typedObject->getType();
 
-        // Only pointer method calls ('.load()' / '.store()') are supported for now.
-        if (objectType->getKind() != TypeKind::POINTER && objectType->toString() != "unknown") {
+        if (objectType->toString() == "unknown") {
+            lastNode = nullptr;
+            return;
+        }
+
+        // Struct method call: `value.method(...)` / `self.method(...)`.
+        if (objectType->getKind() == TypeKind::STRUCT) {
+            auto &structType = static_cast<const StructType &>(*objectType);
+            auto structIt = structTypes.find(structType.getName());
+            if (structIt == structTypes.end()) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE100]: Struct '" + structType.getName() + "' has no method named '" + methodName + "'.",
+                    node.getRange());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto member = structIt->second->lookupMember(methodName);
+            if (!member) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE100]: Struct '" + structType.getName() + "' has no method named '" + methodName + "'.",
+                    node.getRange());
+                lastNode = nullptr;
+                return;
+            }
+
+            if (std::dynamic_pointer_cast<FieldSymbol>(member)) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE104]: '" + methodName + "' is a field of struct '" + structType.getName() +
+                        "', not a method.",
+                    node.getRange());
+                lastNode = nullptr;
+                return;
+            }
+
+            std::vector<std::shared_ptr<TypedExpressionNode>> typedArgs;
+            for (const auto &arg : args) {
+                arg->accept(*this);
+                typedArgs.push_back(std::dynamic_pointer_cast<TypedExpressionNode>(lastNode));
+            }
+
+            std::shared_ptr<OverloadSet> overloadSet = std::dynamic_pointer_cast<OverloadSet>(member);
+            if (!overloadSet) {
+                ErrorHandler::getInstance().makeError(
+                    "[RCE100]: Struct '" + structType.getName() + "' has no method named '" + methodName + "'.",
+                    node.getRange());
+                lastNode = nullptr;
+                return;
+            }
+
+            auto paramMatches = [&](const std::shared_ptr<FunctionSymbol> &fn) {
+                if (fn->getParamTypes().size() != typedArgs.size())
+                    return false;
+                for (size_t i = 0; i < typedArgs.size(); ++i) {
+                    if (!typedArgs[i])
+                        return false;
+                    auto expected = toTypedType(fn->getParamTypes()[i]);
+                    auto actual = typedArgs[i]->getType();
+                    bool ok = expected->equals(*actual) ||
+                              (actual->toString() == "int" && expected->toString() == "long");
+                    if (!ok && actual->toString() != "unknown")
+                        return false;
+                }
+                return true;
+            };
+
+            std::shared_ptr<FunctionSymbol> selected;
+            std::shared_ptr<FunctionSymbol> sameArity;
+            for (const auto &fn : overloadSet->getFunctions()) {
+                if (fn->getParamTypes().size() == args.size() && !sameArity)
+                    sameArity = fn;
+                if (paramMatches(fn)) {
+                    selected = fn;
+                    break;
+                }
+            }
+
+            if (!selected) {
+                if (!sameArity) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE101]: Method '" + structType.getName() + "." + methodName +
+                            "' has no overload accepting " + std::to_string(args.size()) + " argument(s).",
+                        node.getRange());
+                } else {
+                    for (size_t i = 0; i < typedArgs.size(); ++i) {
+                        if (!typedArgs[i])
+                            continue;
+                        auto expected = toTypedType(sameArity->getParamTypes()[i]);
+                        auto actual = typedArgs[i]->getType();
+                        if (!expected->equals(*actual) && actual->toString() != "unknown" &&
+                            !(actual->toString() == "int" && expected->toString() == "long")) {
+                            ErrorHandler::getInstance().makeError(
+                                "[RCE102]: Argument " + std::to_string(i + 1) + " of method '" +
+                                    structType.getName() + "." + methodName + "' expects type '" +
+                                    expected->toString() + "', but got '" + actual->toString() + "'.",
+                                args[i]->getRange());
+                        }
+                    }
+                }
+            }
+
+            auto resultType = selected ? toTypedType(selected->getReturnType())
+                                       : TypeFactory::getPrimitive("unknown");
+            auto typedCall = std::make_shared<TypedMethodCallNode>(
+                typedObject, methodName, std::move(typedArgs), resultType);
+            typedCall->setRange(node.getRange());
+            lastNode = typedCall;
+            return;
+        }
+
+        // Pointer method calls ('.load()' / '.store()') are the only other supported form.
+        if (objectType->getKind() != TypeKind::POINTER) {
             ErrorHandler::getInstance().makeError(
-                "[RCE080]: Method call '." + methodName + "()' requires a pointer expression, but got '" +
+                "[RCE099]: Method call '." + methodName + "()' requires a struct or pointer expression, but got '" +
                     objectType->toString() + "'.",
                 node.getRange());
             lastNode = nullptr;

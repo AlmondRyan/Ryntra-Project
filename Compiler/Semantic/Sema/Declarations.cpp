@@ -1,7 +1,104 @@
 #include "../SemanticAnalyzer.h"
 #include "ErrorHandler/ErrorHandler.h"
+#include <unordered_set>
 
 namespace Ryntra::Compiler::Semantic {
+    void SemanticAnalyzer::registerStructMembers(const std::shared_ptr<STType::StructType> &structType,
+                                                 const std::shared_ptr<MemberListNode> &memberList) {
+        if (!memberList) {
+            return;
+        }
+
+        const auto &members = memberList->getMembers();
+        const auto &structName = structType->getName();
+
+        std::unordered_set<std::string> fieldNames;
+        for (const auto &member : members) {
+            if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
+                auto fieldName = field->getName()->getName();
+                if (!fieldNames.insert(fieldName).second) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE097]: Field '" + fieldName + "' is already defined in struct '" +
+                            structName + "'.",
+                        field->getRange());
+                    continue;
+                }
+                field->getType()->accept(*this);
+                structType->addField(fieldName, lastType ? lastType : makeSTType("unknown"));
+            }
+        }
+
+        std::unordered_set<std::string> memberSignatures;
+        for (const auto &member : members) {
+            if (auto method = std::dynamic_pointer_cast<FunctionDefinitionNode>(member)) {
+                auto methodName = method->getName()->getName();
+
+                method->getReturnType()->accept(*this);
+                auto returnType = lastType ? lastType : makeSTType("unknown");
+
+                std::vector<TypePtr> paramTypes;
+                if (method->getParameterList()) {
+                    for (const auto &param : method->getParameterList()->getParameters()) {
+                        param->getType()->accept(*this);
+                        paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+                    }
+                }
+
+                if (fieldNames.count(methodName)) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE098]: Member '" + methodName + "' is already defined as a field in struct '" +
+                            structName + "'.",
+                        method->getRange());
+                    continue;
+                }
+
+                std::string signature = methodName + "(";
+                for (size_t i = 0; i < paramTypes.size(); ++i) {
+                    if (i > 0)
+                        signature += ",";
+                    signature += std::to_string(static_cast<int>(paramTypes[i]->getKind()));
+                }
+                signature += ")";
+                if (!memberSignatures.insert(signature).second) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE098]: Method '" + methodName +
+                            "' is already defined with the same signature in struct '" + structName + "'.",
+                        method->getRange());
+                    continue;
+                }
+
+                structType->defineMethod(std::make_shared<FunctionSymbol>(
+                    methodName, returnType, std::move(paramTypes)));
+            } else if (auto ctor = std::dynamic_pointer_cast<ConstructorDeclarationNode>(member)) {
+                std::vector<TypePtr> paramTypes;
+                if (ctor->getParameterList()) {
+                    for (const auto &param : ctor->getParameterList()->getParameters()) {
+                        param->getType()->accept(*this);
+                        paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+                    }
+                }
+
+                std::string signature = ctor->getName()->getName() + "(";
+                for (size_t i = 0; i < paramTypes.size(); ++i) {
+                    if (i > 0)
+                        signature += ",";
+                    signature += std::to_string(static_cast<int>(paramTypes[i]->getKind()));
+                }
+                signature += ")";
+                if (!memberSignatures.insert(signature).second) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE098]: Constructor '" + ctor->getName()->getName() +
+                            "' is already defined with the same signature in struct '" + structName + "'.",
+                        ctor->getRange());
+                    continue;
+                }
+
+                structType->defineMethod(std::make_shared<FunctionSymbol>(
+                    ctor->getName()->getName(), structType, std::move(paramTypes)));
+            }
+        }
+    }
+
     void SemanticAnalyzer::visit(ProgramNode &node) {
         // Pre-register struct types so function/method signatures can name them.
         // The bodies are analyzed later, once builtins are available.
@@ -12,16 +109,9 @@ namespace Ryntra::Compiler::Semantic {
             }
 
             auto structSTType = std::make_shared<STType::StructType>(structName);
-            if (auto memberList = strct->getMemberList()) {
-                for (const auto &member : memberList->getMembers()) {
-                    if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
-                        field->getType()->accept(*this);
-                        structSTType->addField(field->getName()->getName(),
-                                               lastType ? lastType : makeSTType("unknown"));
-                    }
-                }
-            }
+            structTypes[structName] = structSTType;
             symbolTable.define(std::make_shared<TypeSymbol>(structName, structSTType), strct->getRange());
+            registerStructMembers(structSTType, strct->getMemberList());
         }
 
         for (const auto &func : node.getFunctions()) {
@@ -498,52 +588,14 @@ namespace Ryntra::Compiler::Semantic {
             structSTType = std::make_shared<STType::StructType>(structName);
         }
 
-        // First pass: collect field types so `self.field` can be resolved inside
-        // constructors and methods even before their bodies are analyzed.
+        // Member symbols (fields/methods/constructors) were already registered
+        // during pre-registration; here we only analyze the member bodies.
         auto memberList = node.getMemberList();
-        if (memberList) {
-            for (const auto &member : memberList->getMembers()) {
-                if (auto field = std::dynamic_pointer_cast<FieldDeclarationNode>(member)) {
-                    field->getType()->accept(*this);
-                    structSTType->addField(field->getName()->getName(),
-                                           lastType ? lastType : makeSTType("unknown"));
-                }
-            }
-        }
+
+        structTypes[structName] = structSTType;
 
         if (!std::dynamic_pointer_cast<TypeSymbol>(symbolTable.resolve(structName))) {
             symbolTable.define(std::make_shared<TypeSymbol>(structName, structSTType), node.getRange());
-        }
-
-        if (memberList) {
-            for (const auto &member : memberList->getMembers()) {
-                if (auto method = std::dynamic_pointer_cast<FunctionDefinitionNode>(member)) {
-                    method->getReturnType()->accept(*this);
-                    auto returnType = lastType ? lastType : makeSTType("unknown");
-
-                    std::vector<TypePtr> paramTypes;
-                    if (method->getParameterList()) {
-                        for (const auto &param : method->getParameterList()->getParameters()) {
-                            param->getType()->accept(*this);
-                            paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
-                        }
-                    }
-
-                    structSTType->defineMethod(std::make_shared<FunctionSymbol>(
-                        method->getName()->getName(), returnType, std::move(paramTypes)));
-                } else if (auto ctor = std::dynamic_pointer_cast<ConstructorDeclarationNode>(member)) {
-                    std::vector<TypePtr> paramTypes;
-                    if (ctor->getParameterList()) {
-                        for (const auto &param : ctor->getParameterList()->getParameters()) {
-                            param->getType()->accept(*this);
-                            paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
-                        }
-                    }
-
-                    structSTType->defineMethod(std::make_shared<FunctionSymbol>(
-                        ctor->getName()->getName(), structSTType, std::move(paramTypes)));
-                }
-            }
         }
 
         auto savedStruct = currentStruct;
@@ -613,8 +665,11 @@ namespace Ryntra::Compiler::Semantic {
             }
         }
 
+        auto savedReturnType = currentFunctionReturnType;
+        currentFunctionReturnType = makeSTType("void");
         node.getBody()->accept(*this);
         auto typedBody = std::dynamic_pointer_cast<TypedBlockNode>(lastNode);
+        currentFunctionReturnType = savedReturnType;
         symbolTable.exitScope();
 
         auto typedParamList = std::make_shared<TypedParameterListNode>(std::move(typedParams));
@@ -630,7 +685,7 @@ namespace Ryntra::Compiler::Semantic {
         if (!currentStruct) {
             // TODO: This should be replaced by something in the future, because not only struct can hold self
             ErrorHandler::getInstance().makeError(
-                "[RCE083]: 'self' can only be used inside a struct member.",
+                "[RCE093]: 'self' can only be used inside a struct member.",
                 node.getRange());
             lastNode = nullptr;
             return;
@@ -654,7 +709,7 @@ namespace Ryntra::Compiler::Semantic {
 
         if (objectType->getKind() != TypeKind::STRUCT) {
             ErrorHandler::getInstance().makeError(
-                "[RCE084]: Member access '." + memberName + "' requires a struct value, but got '" +
+                "[RCE094]: Member access '." + memberName + "' requires a struct value, but got '" +
                     objectType->toString() + "'.",
                 node.getRange());
             lastNode = nullptr;
@@ -664,8 +719,23 @@ namespace Ryntra::Compiler::Semantic {
         auto &structType = static_cast<const StructType &>(*objectType);
         auto fieldType = structType.getField(memberName);
         if (!fieldType) {
+            // The name may refer to a method: accessing a method without calling it
+            // is not a value expression.
+            auto structIt = structTypes.find(structType.getName());
+            if (structIt != structTypes.end()) {
+                auto member = structIt->second->lookupMember(memberName);
+                if (member && std::dynamic_pointer_cast<OverloadSet>(member)) {
+                    ErrorHandler::getInstance().makeError(
+                        "[RCE103]: '" + memberName + "' is a method of struct '" + structType.getName() +
+                            "' and must be called, e.g. '." + memberName + "(...)'.",
+                        node.getMember()->getRange());
+                    lastNode = nullptr;
+                    return;
+                }
+            }
+
             ErrorHandler::getInstance().makeError(
-                "[RCE085]: Struct '" + structType.getName() + "' has no member named '" + memberName + "'.",
+                "[RCE095]: Struct '" + structType.getName() + "' has no member named '" + memberName + "'.",
                 node.getMember()->getRange());
             lastNode = nullptr;
             return;
@@ -701,7 +771,7 @@ namespace Ryntra::Compiler::Semantic {
         }
         if (!isAssignable && valueType->toString() != "unknown") {
             ErrorHandler::getInstance().makeError(
-                "[RCE086]: Cannot assign value of type '" + valueType->toString() +
+                "[RCE096]: Cannot assign value of type '" + valueType->toString() +
                     "' to member '" + typedTarget->getMemberName() + "' of type '" +
                     fieldType->toString() + "'.",
                 node.getValue()->getRange());
