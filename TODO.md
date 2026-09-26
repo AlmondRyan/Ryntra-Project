@@ -64,3 +64,8 @@ Semantic Note:
 - ✅ V0.1.0.4 Call Stack, Call Frame
 - ✅ V0.1.0.5 Function VM and Recursion
 - ✅ V0.1.0.6 Function Pointer
+- ✅ V0.1.1.1 Annotation and Struct Declaration
+- ✅ V0.1.1.2 Struct Constructor & Function Declaration
+- ✅ V0.1.1.3 Struct AST Generation
+- ❌ V0.1.1.4 Struct Symbol/Type, Field Symbol, Method Symbol
+- ❌ V0.1.1.5 Struct Semantic Analysis

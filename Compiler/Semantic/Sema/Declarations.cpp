@@ -515,6 +515,37 @@ namespace Ryntra::Compiler::Semantic {
             symbolTable.define(std::make_shared<TypeSymbol>(structName, structSTType), node.getRange());
         }
 
+        if (memberList) {
+            for (const auto &member : memberList->getMembers()) {
+                if (auto method = std::dynamic_pointer_cast<FunctionDefinitionNode>(member)) {
+                    method->getReturnType()->accept(*this);
+                    auto returnType = lastType ? lastType : makeSTType("unknown");
+
+                    std::vector<TypePtr> paramTypes;
+                    if (method->getParameterList()) {
+                        for (const auto &param : method->getParameterList()->getParameters()) {
+                            param->getType()->accept(*this);
+                            paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+                        }
+                    }
+
+                    structSTType->defineMethod(std::make_shared<FunctionSymbol>(
+                        method->getName()->getName(), returnType, std::move(paramTypes)));
+                } else if (auto ctor = std::dynamic_pointer_cast<ConstructorDeclarationNode>(member)) {
+                    std::vector<TypePtr> paramTypes;
+                    if (ctor->getParameterList()) {
+                        for (const auto &param : ctor->getParameterList()->getParameters()) {
+                            param->getType()->accept(*this);
+                            paramTypes.push_back(lastType ? lastType : makeSTType("unknown"));
+                        }
+                    }
+
+                    structSTType->defineMethod(std::make_shared<FunctionSymbol>(
+                        ctor->getName()->getName(), structSTType, std::move(paramTypes)));
+                }
+            }
+        }
+
         auto savedStruct = currentStruct;
         currentStruct = structSTType;
 
@@ -597,6 +628,7 @@ namespace Ryntra::Compiler::Semantic {
 
     void SemanticAnalyzer::visit(SelfExpressionNode &node) {
         if (!currentStruct) {
+            // TODO: This should be replaced by something in the future, because not only struct can hold self
             ErrorHandler::getInstance().makeError(
                 "[RCE083]: 'self' can only be used inside a struct member.",
                 node.getRange());

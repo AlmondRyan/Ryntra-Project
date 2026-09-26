@@ -8,6 +8,11 @@
 #include <vector>
 
 namespace Ryntra::Compiler::Semantic {
+    class Scope;
+    class Symbol;
+    class FunctionSymbol;
+    class FieldSymbol;
+
     namespace STType {
         // clang-format off
         enum class TypeKind {
@@ -126,20 +131,31 @@ namespace Ryntra::Compiler::Semantic {
 
         class StructType : public Type {
         public:
-            explicit StructType(std::string name) : name(std::move(name)) {}
+            explicit StructType(std::string name);
+            ~StructType() override;
+
             TypeKind getKind() const override { return TypeKind::Struct; }
             const std::string &getName() const { return name; }
-            void addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
-                fields[fieldName] = std::move(fieldType);
-            }
+
+            // Registers a field type and the matching FieldSymbol in the member scope.
+            void addField(const std::string &fieldName, std::shared_ptr<Type> fieldType);
             std::shared_ptr<Type> getField(const std::string &fieldName) const {
                 auto it = fields.find(fieldName);
                 return it == fields.end() ? nullptr : it->second;
             }
             const std::unordered_map<std::string, std::shared_ptr<Type>> &getFields() const { return fields; }
+
+            // Member symbol table (fields and methods). The scope has `Scope::Kind::Class`.
+            void defineMethod(std::shared_ptr<FunctionSymbol> method);
+            std::shared_ptr<Symbol> lookupMember(const std::string &memberName) const;
+            Scope &getMemberScope() const;
+
         private:
+            void ensureMemberScope() const;
+
             std::string name;
             std::unordered_map<std::string, std::shared_ptr<Type>> fields;
+            mutable std::shared_ptr<Scope> memberScope;
         };
     } // namespace STType
 
@@ -186,6 +202,18 @@ namespace Ryntra::Compiler::Semantic {
 
         const TypePtr &getType() const { return type; }
         SymbolKind getKind() const override { return SymbolKind::Variable; }
+
+    private:
+        TypePtr type;
+    };
+
+    class FieldSymbol : public Symbol {
+    public:
+        FieldSymbol(std::string name, TypePtr type)
+            : Symbol(std::move(name)), type(std::move(type)) {}
+
+        const TypePtr &getType() const { return type; }
+        SymbolKind getKind() const override { return SymbolKind::Field; }
 
     private:
         TypePtr type;

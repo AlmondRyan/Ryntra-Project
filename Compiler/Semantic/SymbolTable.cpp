@@ -9,6 +9,77 @@ namespace Ryntra::Compiler::Semantic {
         functions.push_back(std::move(fn));
     }
 
+    namespace STType {
+        StructType::StructType(std::string name) : name(std::move(name)) {}
+
+        StructType::~StructType() = default;
+
+        void StructType::ensureMemberScope() const {
+            if (!memberScope) {
+                memberScope = std::make_shared<Scope>();
+                memberScope->parent = nullptr;
+                memberScope->kind = Scope::Kind::Class;
+            }
+        }
+
+        void StructType::addField(const std::string &fieldName, std::shared_ptr<Type> fieldType) {
+            fields[fieldName] = fieldType;
+            ensureMemberScope();
+            memberScope->symbols[fieldName] = std::make_shared<FieldSymbol>(fieldName, std::move(fieldType));
+        }
+
+        void StructType::defineMethod(std::shared_ptr<FunctionSymbol> method) {
+            ensureMemberScope();
+
+            auto &symbols = memberScope->symbols;
+            auto iterator = symbols.find(method->getName());
+            if (iterator == symbols.end()) {
+                auto overloadSet = std::make_shared<OverloadSet>(method->getName());
+                overloadSet->addFunction(std::move(method));
+                symbols[overloadSet->getName()] = std::move(overloadSet);
+                return;
+            }
+
+            if (auto overloadSet = std::dynamic_pointer_cast<OverloadSet>(iterator->second)) {
+                for (const auto &existing : overloadSet->getFunctions()) {
+                    if (existing->getParamTypes().size() != method->getParamTypes().size()) {
+                        continue;
+                    }
+                    bool match = true;
+                    for (size_t i = 0; i < existing->getParamTypes().size(); ++i) {
+                        if (existing->getParamTypes()[i]->getKind() != method->getParamTypes()[i]->getKind()) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        return; // Already registered
+                    }
+                }
+                overloadSet->addFunction(std::move(method));
+                return;
+            }
+
+            // A member with the same name is not an overload set (e.g. a field):
+            // replace it with a fresh overload set for the method.
+            auto overloadSet = std::make_shared<OverloadSet>(method->getName());
+            overloadSet->addFunction(std::move(method));
+            symbols[overloadSet->getName()] = std::move(overloadSet);
+        }
+
+        std::shared_ptr<Symbol> StructType::lookupMember(const std::string &memberName) const {
+            if (!memberScope) {
+                return nullptr;
+            }
+            return memberScope->find(memberName);
+        }
+
+        Scope &StructType::getMemberScope() const {
+            ensureMemberScope();
+            return *memberScope;
+        }
+    } // namespace STType
+
     SymbolTable::SymbolTable() {
         enterScope(Scope::Kind::Global); // Global scope
 
